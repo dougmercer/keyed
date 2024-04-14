@@ -1,0 +1,41 @@
+[build-system]
+requires = [
+    "setuptools >= 48",
+    "wheel >= 0.29.0",
+]
+build-backend = 'setuptools.build_meta'
+
+[tool.black]
+target-version = ['py311']
+exclude = '''
+(
+	build
+  | docs
+  | envs
+  | htmlcov
+  | results
+  | tests-reports
+  | manic.egg-info
+  | data
+  | junk
+  | \.egg
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.hypothesis
+  | \.ipynb_checkpoints
+  | \.__pycache__
+)
+'''
+
+[tool.isort]
+known_third_party = ["tqdm"]
+profile = "black"
+case_sensitive = true
+combine_as_imports = true
+include_trailing_comma = true
+line_length = 88
+multi_line_output=3
+py_version = 310
+src_paths = ["src/manic", "tests"]
+skip_glob = [ "**/.ipynb_checkpoints"]
