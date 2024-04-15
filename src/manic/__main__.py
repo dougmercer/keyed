@@ -1,24 +1,33 @@
-import sys
-
 from pygments import format, lex
 from pygments.lexers import PythonLexer
 
 from manic import manic_pygments
-from manic.animation import Animation, Code
+from manic.animation import Animation, Character, Code, Scene, lag_animation
+
 with open("example.py", "r") as f:
     content = f.read()
 tokens = lex(content, PythonLexer())
-json_str = format(tokens, manic_pygments.ManicFormatter())
-print(json_str)
+json_str = format(tokens, manic_pygments.ManicFormatter(style="base16-nord"))
 styled_tokens = manic_pygments.StyledTokens.validate_json(json_str)
-print(styled_tokens)
 
+scene = Scene(num_frames=24, width=1920, height=1080)
+code = Code(scene.ctx, styled_tokens, font_size=48)
 
-animation = Animation(num_frames=1)
-code = Code(animation.ctx, styled_tokens)
+runner = Character(
+    scene.ctx, "hello", size=64, font="Anonymous Pro", color=(0.5, 0.5, 0.5), x=10, y=10
+)
+runner.x.add_animation(Animation(start_frame=0, end_frame=24, start_value=10, end_value=500))
+runner.y.add_animation(Animation(start_frame=0, end_frame=24, start_value=10, end_value=500))
 
-print(code.lines)
+scene.add(code)
+scene.add(runner)
 
-code.draw(animation.ctx)
+# code.chars[:10].animate(
+#     "alpha", Animation(start_frame=0, end_frame=24, start_value=0, end_value=1),
+# )
 
-animation.surface.write_to_png("manic.png")
+code.lines[:].write_on(
+    "alpha", lagged_animation=lag_animation(), delay=2, duration=1, start_frame=2
+)
+
+scene.draw()

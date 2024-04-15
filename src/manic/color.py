@@ -3,11 +3,10 @@
 from dataclasses import dataclass
 
 from pygments.style import StyleMeta
-from pygments.styles import get_style_by_name
 from pygments.token import _TokenType
 from typing_extensions import Self
 
-__all__ = ["style_to_color_map", "as_rgb", "make_background"]
+__all__ = ["style_to_color_map", "as_rgb"]
 
 
 @dataclass

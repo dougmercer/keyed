@@ -16,21 +16,22 @@ class StyledToken(BaseModel, arbitrary_types_allowed=True):
     bold: bool
 
     @field_serializer("token_type")
-    def serialize_token_type(self, token_type: _TokenType, _info):
+    def serialize_token_type(self, token_type: _TokenType, _info: Any) -> str:
         return str(token_type)
 
     @field_validator("token_type", mode="before")
-    def deserialize_token_type(cls, val: Any):
+    def deserialize_token_type(cls, val: Any) -> Any:
         if isinstance(val, str):
             return eval(val)
         return val
-    
-    def to_cairo(self):
+
+    def to_cairo(self) -> dict[str, Any]:
         import cairo
+
         return {
             "color": self.color,
-            "slant": cairo.FONT_SLANT_NORMAL if not self.italic else cairo.FONT_SLANT_ITALIC,
-            "weight": cairo.FONT_WEIGHT_NORMAL if not self.bold else cairo.FONT_WEIGHT_BOLD,
+            "slant": (cairo.FONT_SLANT_NORMAL if not self.italic else cairo.FONT_SLANT_ITALIC),
+            "weight": (cairo.FONT_WEIGHT_NORMAL if not self.bold else cairo.FONT_WEIGHT_BOLD),
         }
 
 

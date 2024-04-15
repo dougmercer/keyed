@@ -7,6 +7,7 @@ build-backend = 'setuptools.build_meta'
 
 [tool.black]
 target-version = ['py311']
+line_length = 100
 exclude = '''
 (
 	build
@@ -34,7 +35,7 @@ profile = "black"
 case_sensitive = true
 combine_as_imports = true
 include_trailing_comma = true
-line_length = 88
+line_length = 100
 multi_line_output=3
 py_version = 310
 src_paths = ["src/manic", "tests"]
