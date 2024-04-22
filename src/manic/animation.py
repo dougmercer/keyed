@@ -212,8 +212,8 @@ class Code:
         tokens: list[StyledToken],
         font: str = "Anonymous Pro",
         font_size: int = 24,
-        x: int = 10,
-        y: int = 10,
+        x: float = 10,
+        y: float = 10,
     ) -> None:
         self.lines: Selection[Line] = Selection()
         self.font = font
