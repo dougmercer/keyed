@@ -25,7 +25,7 @@ from .manic_pygments import StyledToken
 
 
 class Drawable(Protocol):
-    def draw(self, ctx: cairo.Context, frame: int) -> None: ...
+    def draw(self, frame: int) -> None: ...
 
 
 # AlignTo  Top/left/bottom/right, buffer
@@ -67,7 +67,7 @@ class Scene:
             clear_ctx(self.ctx)
             filename = self.full_output_dir / f"frame_{frame:03}.png"
             for content in self.content:
-                content.draw(self.ctx, frame)
+                content.draw(frame)
             self.surface.write_to_png(filename)  # type: ignore[arg-type]
 
 
@@ -148,15 +148,13 @@ class Text:
         self.size = size
         self.x = Property(value=x)
         self.y = Property(value=y)
+        self.ctx = ctx
 
-        ctx.move_to(x, y)
-        self.extents = ctx.text_extents(text)
-
-    def draw(self, ctx: cairo.Context, frame: int) -> None:
-        ctx.select_font_face(self.font, self.slant, self.weight)
-        ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-        ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
-        ctx.show_text(self.text)
+    def draw(self, frame: int) -> None:
+        self.ctx.select_font_face(self.font, self.slant, self.weight)
+        self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+        self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+        self.ctx.show_text(self.text)
 
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
@@ -190,9 +188,9 @@ class Line:
                 extents = ctx.text_extents(char)
                 x += extents.x_advance
 
-    def draw(self, ctx: cairo.Context, frame: int) -> None:
+    def draw(self, frame: int) -> None:
         for char in self.characters:
-            char.draw(ctx, frame)
+            char.draw(frame)
 
     def __len__(self) -> int:
         return len(self.characters)
@@ -218,7 +216,9 @@ class Code:
         self.lines: Selection[Line] = Selection()
         self.font = font
         self.font_size = font_size
-        self.set_default_font(ctx)
+        self.ctx = ctx
+
+        self.set_default_font()
 
         ascent, _, height, *_ = ctx.font_extents()
         y += ascent
@@ -237,13 +237,13 @@ class Code:
             self.lines.append(Line(ctx, tokens=line, x=x, y=y, font=font, font_size=font_size))
             y += line_height
 
-    def set_default_font(self, ctx: cairo.Context) -> None:
-        ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        ctx.set_font_size(self.font_size)
+    def set_default_font(self) -> None:
+        self.ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        self.ctx.set_font_size(self.font_size)
 
-    def draw(self, ctx: cairo.Context, frame: int) -> None:
+    def draw(self, frame: int) -> None:
         for line in self.lines:
-            line.draw(ctx, frame)
+            line.draw(frame)
 
     def __len__(self) -> int:
         return sum(len(line) for line in self.lines)
