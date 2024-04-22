@@ -31,13 +31,6 @@ class Drawable(Protocol):
 # AlignTo  Top/left/bottom/right, buffer
 
 
-def clear_ctx(ctx: cairo.Context) -> None:
-    ctx.set_source_rgba(0, 0, 0, 0)
-    ctx.set_operator(cairo.OPERATOR_CLEAR)
-    ctx.paint()
-    ctx.set_operator(cairo.OPERATOR_OVER)
-
-
 @dataclass
 class Scene:
     scene_name: str
@@ -58,13 +51,19 @@ class Scene:
     def add(self, content: Drawable) -> None:
         self.content.append(content)
 
+    def clear(self):
+        self.ctx.set_source_rgba(0, 0, 0, 0)
+        self.ctx.set_operator(cairo.OPERATOR_CLEAR)
+        self.ctx.paint()
+        self.ctx.set_operator(cairo.OPERATOR_OVER)
+
     def draw(self) -> None:
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
         # clear old frames
         for file in self.full_output_dir.glob("frame*.png"):
             file.unlink()
         for frame in tqdm(range(self.num_frames)):
-            clear_ctx(self.ctx)
+            self.clear()
             filename = self.full_output_dir / f"frame_{frame:03}.png"
             for content in self.content:
                 content.draw(frame)
