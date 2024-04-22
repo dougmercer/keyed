@@ -80,6 +80,9 @@ class Animation:
         end_value: float,
         easing: Type[EasingFunction] = LinearInOut,
     ) -> None:
+        if start_frame > end_frame:
+            raise ValueError("Ending frame must be after starting frame.")
+
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.start_value = start_value
@@ -93,6 +96,10 @@ class Animation:
 
     def apply(self, current_frame: int) -> float:
         return self.easing(current_frame)
+
+    @property
+    def duration(self) -> int:
+        return self.end_frame - self.start_frame + 1
 
 
 def lag_animation(
