@@ -136,13 +136,14 @@ class Text:
         y: float,
         font: str,
         color: tuple[float, float, float],
+        alpha: float = 1,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
     ):
         self.text = text
         self.font = font
         self.color = color
-        self.alpha = Property(value=1)
+        self.alpha = Property(value=alpha)
         self.slant = slant
         self.weight = weight
         self.size = size
