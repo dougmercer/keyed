@@ -18,6 +18,7 @@ from typing import (
 
 import cairo
 from pygments.token import Token
+from pygments.token import _TokenType
 from tqdm import tqdm
 
 from .easing import EasingFunction, LinearInOut
@@ -135,11 +136,13 @@ class Text:
         y: float,
         font: str,
         color: tuple[float, float, float],
+        token_type: _TokenType | None = None,
         alpha: float = 1,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
     ):
         self.text = text
+        self.token_type = token_type
         self.font = font
         self.color = color
         self.alpha = Property(value=alpha)
@@ -165,34 +168,58 @@ class Text:
         self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
         return self.ctx.text_extents(self.text)
 
+    def is_whitespace(self) -> bool:
+        return (self.token_type is Token.Text.Whitespace) or (
+            self.token_type is Token.Text and self.text.strip() == ""
+        )
 
-class Line:
+
+class ManicToken:
     def __init__(
         self,
         ctx: cairo.Context,
-        tokens: list[StyledToken],
+        token: StyledToken,
         x: float,
         y: float,
         font: str = "Anonymous Pro",
         font_size: int = 24,
     ):
         self.characters: list[Text] = []
-        for token in tokens:
-            # add another layer of abstraction here
-            for char in token.text:
-                self.characters.append(
-                    Text(
-                        ctx,
-                        char,
-                        **token.to_cairo(),
-                        x=x,
-                        y=y,
-                        size=font_size,
-                        font=font,
-                    )
+        for char in token.text:
+            self.characters.append(
+                Text(
+                    ctx,
+                    char,
+                    **token.to_cairo(),
+                    x=x,
+                    y=y,
+                    size=font_size,
+                    font=font,
                 )
-                extents = self.characters[-1].extents()
-                x += extents.x_advance
+            )
+            extents = self.characters[-1].extents()
+            x += extents.x_advance
+
+    def extents(self, frame: int = 0) -> cairo.TextExtents:
+        _extents = [char.extents(frame=frame) for char in self.characters]
+        # Calculating combined extents
+        min_x_bearing = _extents[0].x_bearing
+        min_y_bearing = min(e.y_bearing for e in _extents)
+        max_y_bearing = max(e.y_bearing + e.height for e in _extents)
+        total_width = (
+            sum(e.x_advance for e in _extents[:-1]) + _extents[-1].width - _extents[0].x_bearing
+        )
+        max_height = max_y_bearing - min_y_bearing
+        total_x_advance = sum(e.x_advance for e in _extents)
+        total_y_advance = sum(e.y_advance for e in _extents)
+        return cairo.TextExtents(
+            x_bearing=min_x_bearing,
+            y_bearing=min_y_bearing,
+            width=total_width,
+            height=max_height,
+            x_advance=total_x_advance,
+            y_advance=total_y_advance,
+        )
 
     def draw(self, frame: int) -> None:
         for char in self.characters:
@@ -207,6 +234,43 @@ class Line:
     def animate(self, property: str, animation: Animation) -> None:
         for char in self:
             char.animate(property, animation)
+
+    def is_whitespace(self):
+        return all(obj.is_whitespace() for obj in self)
+
+
+class Line:
+    def __init__(
+        self,
+        ctx: cairo.Context,
+        tokens: list[StyledToken],
+        x: float,
+        y: float,
+        font: str = "Anonymous Pro",
+        font_size: int = 24,
+    ):
+        self.tokens: list[ManicToken] = []
+        for token in tokens:
+            self.tokens.append(ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font))
+            extents = self.tokens[-1].extents()
+            x += extents.x_advance
+
+    def draw(self, frame: int) -> None:
+        for token in self.tokens:
+            token.draw(frame)
+
+    def __len__(self) -> int:
+        return len(self.tokens)
+
+    def __iter__(self) -> Iterator[ManicToken]:
+        return iter(self.tokens)
+
+    def animate(self, property: str, animation: Animation) -> None:
+        for token in self:
+            token.animate(property, animation)
+
+    def is_whitespace(self):
+        return all(obj.is_whitespace() for obj in self)
 
 
 class Code:
@@ -256,6 +320,10 @@ class Code:
 
     @property
     def chars(self) -> Selection[Text]:
+        return Selection(itertools.chain(*itertools.chain(*self.lines)))
+
+    @property
+    def tokens(self) -> Selection[ManicToken]:
         return Selection(itertools.chain(*self.lines))
 
 
@@ -274,12 +342,20 @@ class Selection(list[T], Generic[T]):
                 raise ValueError("Unsupported item.")
 
     def write_on(
-        self, property: str, lagged_animation: Callable, start_frame: int, delay: int, duration: int
+        self,
+        property: str,
+        lagged_animation: Callable,
+        start_frame: int,
+        delay: int,
+        duration: int,
+        skip_whitespace=True,
     ) -> None:
         frame = start_frame
         for item in self:
+            if item.is_whitespace():
+                continue
             animation = lagged_animation(start_frame=frame, end_frame=frame + duration)
-            if isinstance(item, Line):
+            if isinstance(item, Line) or isinstance(item, ManicToken):
                 item.animate(property, animation)
             elif isinstance(item, Text):
                 getattr(item, property).add_animation(animation)

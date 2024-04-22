@@ -32,6 +32,7 @@ class StyledToken(BaseModel, arbitrary_types_allowed=True):
             "color": self.color,
             "slant": (cairo.FONT_SLANT_NORMAL if not self.italic else cairo.FONT_SLANT_ITALIC),
             "weight": (cairo.FONT_WEIGHT_NORMAL if not self.bold else cairo.FONT_WEIGHT_BOLD),
+            "token_type": self.token_type,
         }
 
 
