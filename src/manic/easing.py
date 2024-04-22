@@ -1,12 +1,12 @@
 import math
 from typing import Protocol, runtime_checkable
 
+
 @runtime_checkable
 class EasingFunction(Protocol):
-    def __init__(self, start: float, end: float, start_frame: int, end_frame: int) -> None:
-        ...
-    def __call__(self, frame: float) -> float:
-        ...
+    def __init__(self, start: float, end: float, start_frame: int, end_frame: int) -> None: ...
+    def __call__(self, frame: float) -> float: ...
+
 
 class EasingBase:
     def __init__(

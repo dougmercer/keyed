@@ -4,7 +4,17 @@ import itertools
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Generic, Iterator, Protocol, TypeVar, Union, overload, SupportsIndex, Type
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterator,
+    Protocol,
+    SupportsIndex,
+    Type,
+    TypeVar,
+    overload,
+)
 
 import cairo
 from pygments.token import Token
@@ -68,7 +78,7 @@ class Animation:
         end_frame: int,
         start_value: float,
         end_value: float,
-        easing: Type[EasingFunction]=LinearInOut,
+        easing: Type[EasingFunction] = LinearInOut,
     ) -> None:
         self.start_frame = start_frame
         self.end_frame = end_frame
@@ -85,7 +95,9 @@ class Animation:
         return self.easing(current_frame)
 
 
-def lag_animation(start_value: float = 0, end_value: float = 1, easing: Type[EasingFunction] = LinearInOut) -> partial[Animation]:
+def lag_animation(
+    start_value: float = 0, end_value: float = 1, easing: Type[EasingFunction] = LinearInOut
+) -> partial[Animation]:
     return partial(Animation, start_value=start_value, end_value=end_value, easing=easing)
 
 
@@ -232,7 +244,6 @@ class Code:
     @property
     def chars(self) -> list[Character]:
         return Selection(itertools.chain(*self.lines))
-
 
 
 T = TypeVar("T")
