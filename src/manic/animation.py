@@ -160,6 +160,12 @@ class Text:
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
 
+    def extents(self, frame: int = 0) -> cairo.TextExtents:
+        self.ctx.select_font_face(self.font, self.slant, self.weight)
+        self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+        self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+        return self.ctx.text_extents(self.text)
+
 
 class Line:
     def __init__(
@@ -186,7 +192,7 @@ class Line:
                         font=font,
                     )
                 )
-                extents = ctx.text_extents(char)
+                extents = self.characters[-1].extents()
                 x += extents.x_advance
 
     def draw(self, frame: int) -> None:
