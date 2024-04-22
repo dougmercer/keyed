@@ -193,6 +193,8 @@ class Code:
         tokens: list[StyledToken],
         font: str = "Anonymous Pro",
         font_size: int = 24,
+        x: int = 10,
+        y: int = 10,
     ) -> None:
         self.lines: Selection[Line] = Selection()
         self.font = font
@@ -200,8 +202,7 @@ class Code:
         self.set_default_font(ctx)
 
         ascent, _, height, *_ = ctx.font_extents()
-        x = 10
-        y = ascent + 10
+        y += ascent
         line_height = 1.2 * height
 
         lines = []
