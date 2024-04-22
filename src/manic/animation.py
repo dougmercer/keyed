@@ -119,7 +119,7 @@ class Property:
         return current_value
 
 
-class Character:
+class Text:
     def __init__(
         self,
         ctx: cairo.Context,
@@ -165,12 +165,12 @@ class Line:
         font: str = "Anonymous Pro",
         font_size: int = 24,
     ):
-        self.characters: list[Character] = []
+        self.characters: list[Text] = []
         for token in tokens:
             # add another layer of abstraction here
             for char in token.text:
                 self.characters.append(
-                    Character(
+                    Text(
                         ctx,
                         char,
                         **token.to_cairo(),
@@ -190,7 +190,7 @@ class Line:
     def __len__(self) -> int:
         return len(self.characters)
 
-    def __iter__(self) -> Iterator[Character]:
+    def __iter__(self) -> Iterator[Text]:
         return iter(self.characters)
 
     def animate(self, property: str, animation: Animation) -> None:
@@ -242,7 +242,7 @@ class Code:
         return sum(len(line) for line in self.lines)
 
     @property
-    def chars(self) -> list[Character]:
+    def chars(self) -> Selection[Text]:
         return Selection(itertools.chain(*self.lines))
 
 
@@ -255,7 +255,7 @@ class Selection(list[T], Generic[T]):
         for item in self:
             if isinstance(item, Line):
                 item.animate(property, animation)
-            elif isinstance(item, Character):
+            elif isinstance(item, Text):
                 getattr(item, property).add_animation(animation)
             else:
                 raise ValueError("Unsupported item.")
@@ -268,7 +268,7 @@ class Selection(list[T], Generic[T]):
             animation = lagged_animation(start_frame=frame, end_frame=frame + duration)
             if isinstance(item, Line):
                 item.animate(property, animation)
-            elif isinstance(item, Character):
+            elif isinstance(item, Text):
                 getattr(item, property).add_animation(animation)
             else:
                 raise ValueError("Unsupported item.")
