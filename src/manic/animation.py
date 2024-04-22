@@ -30,6 +30,7 @@ def clear_ctx(ctx: cairo.Context) -> None:
 
 @dataclass
 class Scene:
+    scene_name: str
     num_frames: int = 60
     output_dir: Path = Path("media")
     width: int = 3840
@@ -40,14 +41,21 @@ class Scene:
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
 
+    @property
+    def full_output_dir(self) -> Path:
+        return self.output_dir / self.scene_name
+
     def add(self, content: Drawable) -> None:
         self.content.append(content)
 
     def draw(self) -> None:
-        self.output_dir.mkdir(exist_ok=True)
+        self.full_output_dir.mkdir(exist_ok=True, parents=True)
+        # clear old frames
+        for file in self.full_output_dir.glob("frame*.png"):
+            file.unlink()
         for frame in tqdm(range(self.num_frames)):
             clear_ctx(self.ctx)
-            filename = self.output_dir / f"frame_{frame:03}.png"
+            filename = self.full_output_dir / f"frame_{frame:03}.png"
             for content in self.content:
                 content.draw(self.ctx, frame)
             self.surface.write_to_png(filename)  # type: ignore[arg-type]
