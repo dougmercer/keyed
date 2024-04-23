@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Generic,
-    Iterator,
     Iterable,
+    Iterator,
     Protocol,
     SupportsIndex,
     Type,
@@ -18,8 +18,7 @@ from typing import (
 )
 
 import cairo
-from pygments.token import Token
-from pygments.token import _TokenType
+from pygments.token import Token, _TokenType
 from tqdm import tqdm
 
 from .easing import EasingFunction, LinearInOut
@@ -59,7 +58,7 @@ class Scene:
     def add(self, content: Drawable) -> None:
         self.content.append(content)
 
-    def clear(self):
+    def clear(self) -> None:
         self.ctx.set_source_rgba(0, 0, 0, 0)
         self.ctx.set_operator(cairo.OPERATOR_CLEAR)
         self.ctx.paint()
@@ -78,6 +77,12 @@ class Scene:
             self.surface.write_to_png(filename)  # type: ignore[arg-type]
 
 
+class AnimationType(Enum):
+    MULTIPLICATIVE = auto()
+    ABSOLUTE = auto()
+    ADDITIVE = auto()
+
+
 class Animation:
     def __init__(
         self,
@@ -86,6 +91,7 @@ class Animation:
         start_value: float,
         end_value: float,
         easing: Type[EasingFunction] = LinearInOut,
+        animation_type: AnimationType = AnimationType.ABSOLUTE,
     ) -> None:
         if start_frame > end_frame:
             raise ValueError("Ending frame must be after starting frame.")
@@ -100,13 +106,34 @@ class Animation:
             start=start_value,
             end=end_value,
         )
+        self.animation_type = animation_type
 
-    def apply(self, current_frame: int) -> float:
-        return self.easing(current_frame)
+    def apply(self, current_frame: int, current_value: float) -> float:
+        easing = self.easing(current_frame)
+        match self.animation_type:
+            case AnimationType.ABSOLUTE:
+                return easing
+            case AnimationType.ADDITIVE:
+                return current_value + easing
+            case AnimationType.MULTIPLICATIVE:
+                return current_value * easing
+            case _:
+                raise ValueError("blah")
 
     @property
     def duration(self) -> int:
         return self.end_frame - self.start_frame + 1
+
+    def is_active(self, frame: int) -> bool:
+        match self.animation_type:
+            case AnimationType.ABSOLUTE:
+                return frame in range(self.start_frame, self.end_frame + 1)
+            case AnimationType.ADDITIVE:
+                return frame >= self.start_frame
+            case AnimationType.MULTIPLICATIVE:
+                return frame >= self.start_frame
+            case _:
+                raise ValueError("blah")
 
 
 def lag_animation(
@@ -129,7 +156,10 @@ class Property:
     def get_value_at_frame(self, frame: int) -> Any:
         current_value = self.value
         for animation in self.animations:
-            current_value = animation.apply(frame)
+            _val = current_value
+            if animation.is_active(frame):
+                current_value = animation.apply(frame, current_value)
+                print(frame, _val, current_value)
         return current_value
 
 
@@ -238,7 +268,7 @@ class ManicToken:
         for char in self.characters:
             char.draw(frame)
 
-    def __getitem__(self, key) -> Text:
+    def __getitem__(self, key: SupportsIndex) -> Text:
         return self.characters[key]
 
     def __len__(self) -> int:
@@ -251,10 +281,10 @@ class ManicToken:
         for char in self:
             char.animate(property, animation)
 
-    def is_whitespace(self):
+    def is_whitespace(self) -> bool:
         return all(obj.is_whitespace() for obj in self)
 
-    def bl(self, frame: int = 0) -> tuple[float, float]:
+    def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
     def chars(self) -> list[Text]:
@@ -281,7 +311,7 @@ class Line:
         for token in self.tokens:
             token.draw(frame)
 
-    def __getitem__(self, key) -> ManicToken:
+    def __getitem__(self, key: SupportsIndex) -> ManicToken:
         return self.tokens[key]
 
     def __len__(self) -> int:
@@ -294,10 +324,10 @@ class Line:
         for token in self:
             token.animate(property, animation)
 
-    def is_whitespace(self):
+    def is_whitespace(self) -> bool:
         return all(obj.is_whitespace() for obj in self)
 
-    def bl(self, frame: int = 0) -> tuple[float, float]:
+    def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
     def chars(self) -> Iterable[Text]:
@@ -361,7 +391,7 @@ class Code:
 T = TypeVar("T", Line, ManicToken, Text)
 
 
-class Selection(list[T], Generic[T]):
+class Selection(list[T]):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""
         for item in self:
@@ -373,7 +403,7 @@ class Selection(list[T], Generic[T]):
                 raise ValueError("Unsupported item.")
 
     def chars(self) -> Iterable[Text]:
-        stuff = []
+        stuff: list[Text | Iterable[Text]] = []
         for thing in self:
             if isinstance(thing, Line) or isinstance(thing, ManicToken):
                 stuff.append(thing.chars())
@@ -389,15 +419,14 @@ class Selection(list[T], Generic[T]):
         end_frame: int,
     ) -> None:
         for char in self.chars():
-            x = char.x.get_value_at_frame(start_frame)
-            y = char.y.get_value_at_frame(start_frame)
             char.animate(
                 "x",
                 Animation(
                     start_frame=start_frame,
                     end_frame=end_frame,
-                    start_value=x,
-                    end_value=x + delta_x,
+                    start_value=0,
+                    end_value=delta_x,
+                    animation_type=AnimationType.ADDITIVE,
                 ),
             )
             char.animate(
@@ -405,8 +434,9 @@ class Selection(list[T], Generic[T]):
                 Animation(
                     start_frame=start_frame,
                     end_frame=end_frame,
-                    start_value=y,
-                    end_value=y + delta_y,
+                    start_value=0,
+                    end_value=delta_y,
+                    animation_type=AnimationType.ADDITIVE,
                 ),
             )
 
@@ -417,7 +447,7 @@ class Selection(list[T], Generic[T]):
         start_frame: int,
         delay: int,
         duration: int,
-        skip_whitespace=True,
+        skip_whitespace: bool = True,
     ) -> None:
         frame = start_frame
         for item in self:

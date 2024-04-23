@@ -16,7 +16,11 @@ code = Code(scene.ctx, styled_tokens, font_size=48)
 scene.add(code)
 
 code.tokens[:].write_on(
-    "alpha", lagged_animation=lag_animation(start_value=1, end_value=0), delay=1, duration=1, start_frame=0
+    "alpha",
+    lagged_animation=lag_animation(start_value=1, end_value=0),
+    delay=1,
+    duration=1,
+    start_frame=0,
 )
 
 scene.draw()
