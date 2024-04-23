@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Generic,
     Iterator,
+    Iterable,
     Protocol,
     SupportsIndex,
     Type,
@@ -30,6 +31,12 @@ class Drawable(Protocol):
 
 
 # AlignTo  Top/left/bottom/right, buffer
+
+
+@dataclass
+class Point:
+    x: float
+    y: float
 
 
 @dataclass
@@ -173,6 +180,12 @@ class Text:
             self.token_type is Token.Text and self.text.strip() == ""
         )
 
+    def bl(self, frame: int = 0) -> Point:
+        return Point(
+            x=self.x.get_value_at_frame(frame),
+            y=self.y.get_value_at_frame(frame),
+        )
+
 
 class ManicToken:
     def __init__(
@@ -225,6 +238,9 @@ class ManicToken:
         for char in self.characters:
             char.draw(frame)
 
+    def __getitem__(self, key) -> Text:
+        return self.characters[key]
+
     def __len__(self) -> int:
         return len(self.characters)
 
@@ -237,6 +253,12 @@ class ManicToken:
 
     def is_whitespace(self):
         return all(obj.is_whitespace() for obj in self)
+
+    def bl(self, frame: int = 0) -> tuple[float, float]:
+        return self[0].bl(frame=frame)
+
+    def chars(self) -> list[Text]:
+        return self.characters
 
 
 class Line:
@@ -259,6 +281,9 @@ class Line:
         for token in self.tokens:
             token.draw(frame)
 
+    def __getitem__(self, key) -> ManicToken:
+        return self.tokens[key]
+
     def __len__(self) -> int:
         return len(self.tokens)
 
@@ -271,6 +296,12 @@ class Line:
 
     def is_whitespace(self):
         return all(obj.is_whitespace() for obj in self)
+
+    def bl(self, frame: int = 0) -> tuple[float, float]:
+        return self[0].bl(frame=frame)
+
+    def chars(self) -> Iterable[Text]:
+        return itertools.chain(*self.tokens)
 
 
 class Code:
@@ -327,19 +358,57 @@ class Code:
         return Selection(itertools.chain(*self.lines))
 
 
-T = TypeVar("T")
+T = TypeVar("T", Line, ManicToken, Text)
 
 
 class Selection(list[T], Generic[T]):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""
         for item in self:
-            if isinstance(item, Line):
+            if isinstance(item, Line) or isinstance(item, ManicToken):
                 item.animate(property, animation)
             elif isinstance(item, Text):
                 getattr(item, property).add_animation(animation)
             else:
                 raise ValueError("Unsupported item.")
+
+    def chars(self) -> Iterable[Text]:
+        stuff = []
+        for thing in self:
+            if isinstance(thing, Line) or isinstance(thing, ManicToken):
+                stuff.append(thing.chars())
+            else:
+                stuff.append(thing)
+        return itertools.chain(*stuff)
+
+    def shift(
+        self,
+        delta_x: float,
+        delta_y: float,
+        start_frame: int,
+        end_frame: int,
+    ) -> None:
+        for char in self.chars():
+            x = char.x.get_value_at_frame(start_frame)
+            y = char.y.get_value_at_frame(start_frame)
+            char.animate(
+                "x",
+                Animation(
+                    start_frame=start_frame,
+                    end_frame=end_frame,
+                    start_value=x,
+                    end_value=x + delta_x,
+                ),
+            )
+            char.animate(
+                "y",
+                Animation(
+                    start_frame=start_frame,
+                    end_frame=end_frame,
+                    start_value=y,
+                    end_value=y + delta_y,
+                ),
+            )
 
     def write_on(
         self,
