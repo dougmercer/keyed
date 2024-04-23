@@ -23,6 +23,7 @@ from tqdm import tqdm
 
 from .easing import EasingFunction, LinearInOut
 from .manic_pygments import StyledToken
+from .previewer import create_animation_window
 
 
 class Drawable(Protocol):
@@ -47,7 +48,9 @@ class Scene:
     height: int = 2160
 
     def __post_init__(self) -> None:
-        self.surface = cairo.ImageSurface(cairo.FORMAT_RGBA128F, self.width, self.height)
+        self.surface = cairo.ImageSurface(
+            cairo.FORMAT_ARGB32, self.width, self.height
+        )  # FORMAT_RGBA128F
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
 
@@ -75,6 +78,14 @@ class Scene:
             for content in self.content:
                 content.draw(frame)
             self.surface.write_to_png(filename)  # type: ignore[arg-type]
+
+    def draw_frame(self, frame: int) -> None:
+        self.clear()
+        for content in self.content:
+            content.draw(frame)
+
+    def preview(self) -> None:
+        create_animation_window(self)
 
 
 class AnimationType(Enum):
@@ -156,10 +167,8 @@ class Property:
     def get_value_at_frame(self, frame: int) -> Any:
         current_value = self.value
         for animation in self.animations:
-            _val = current_value
             if animation.is_active(frame):
                 current_value = animation.apply(frame, current_value)
-                print(frame, _val, current_value)
         return current_value
 
 
