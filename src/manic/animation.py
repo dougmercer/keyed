@@ -421,7 +421,7 @@ class Selection(list[T], Generic[T]):
     ) -> None:
         frame = start_frame
         for item in self:
-            if item.is_whitespace():
+            if skip_whitespace and item.is_whitespace():
                 continue
             animation = lagged_animation(start_frame=frame, end_frame=frame + duration)
             if isinstance(item, Line) or isinstance(item, ManicToken):
