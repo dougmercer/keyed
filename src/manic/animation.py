@@ -310,8 +310,9 @@ class ManicToken:
     def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
-    def chars(self) -> list[Text]:
-        return self.characters
+    @property
+    def chars(self) -> Selection[Text]:
+        return Selection(self.characters)
 
 
 class Line:
@@ -356,8 +357,9 @@ class Line:
     def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
-    def chars(self) -> Iterable[Text]:
-        return itertools.chain(*self.tokens)
+    @property
+    def chars(self) -> Selection[Text]:
+        return Selection(list(itertools.chain(*self.tokens)))
 
 
 class Code:
@@ -431,14 +433,15 @@ class Selection(list[T]):
             else:
                 raise ValueError("Unsupported item.")
 
+    @property
     def chars(self) -> Iterable[Text]:
         stuff: list[Text | Iterable[Text]] = []
         for thing in self:
             if isinstance(thing, Line) or isinstance(thing, ManicToken):
-                stuff.append(thing.chars())
+                stuff.append(thing.chars)
             else:
-                stuff.append(thing)
-        return itertools.chain(*stuff)
+                stuff.append([thing])
+        return Selection(itertools.chain(*stuff))
 
     def shift(
         self,
@@ -447,7 +450,7 @@ class Selection(list[T]):
         start_frame: int,
         end_frame: int,
     ) -> None:
-        for char in self.chars():
+        for char in self.chars:
             char.animate(
                 "x",
                 Animation(
