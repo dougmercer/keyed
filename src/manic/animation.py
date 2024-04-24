@@ -139,7 +139,7 @@ class Animation:
             case AnimationType.MULTIPLICATIVE:
                 return current_value * easing
             case _:
-                raise ValueError("blah")
+                raise ValueError("Undefined AnimationType")
 
     @property
     def duration(self) -> int:
