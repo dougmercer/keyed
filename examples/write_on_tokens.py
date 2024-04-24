@@ -2,7 +2,7 @@ from pygments import format, lex
 from pygments.lexers import PythonLexer
 
 from manic import manic_pygments
-from manic.animation import Code, Scene, lag_animation
+from manic.animation import Code, Scene, lag_animation, AnimationType
 
 with open("example.py", "r") as f:
     content = f.read()
@@ -16,7 +16,11 @@ code = Code(scene.ctx, styled_tokens, font_size=48, alpha=0)
 scene.add(code)
 
 code.tokens[:].write_on(
-    "alpha", lagged_animation=lag_animation(), delay=1, duration=1, start_frame=0
+    "alpha",
+    lagged_animation=lag_animation(animation_type=AnimationType.ABSOLUTE),
+    delay=1,
+    duration=1,
+    start_frame=0,
 )
 
 scene.preview()
