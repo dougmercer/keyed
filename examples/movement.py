@@ -8,4 +8,4 @@ runner.y.add_animation(Animation(start_frame=0, end_frame=24, start_value=10, en
 
 scene.add(runner)
 
-scene.draw()
+scene.preview()

@@ -138,7 +138,8 @@ class Animation:
     def is_active(self, frame: int) -> bool:
         match self.animation_type:
             case AnimationType.ABSOLUTE:
-                return frame in range(self.start_frame, self.end_frame + 1)
+                # return frame in range(self.start_frame, self.end_frame + 1)
+                return frame >= self.start_frame
             case AnimationType.ADDITIVE:
                 return frame >= self.start_frame
             case AnimationType.MULTIPLICATIVE:
@@ -148,9 +149,18 @@ class Animation:
 
 
 def lag_animation(
-    start_value: float = 0, end_value: float = 1, easing: Type[EasingFunction] = LinearInOut
+    start_value: float = 0,
+    end_value: float = 1,
+    easing: Type[EasingFunction] = LinearInOut,
+    animation_type: AnimationType = AnimationType.MULTIPLICATIVE,
 ) -> partial[Animation]:
-    return partial(Animation, start_value=start_value, end_value=end_value, easing=easing)
+    return partial(
+        Animation,
+        start_value=start_value,
+        end_value=end_value,
+        easing=easing,
+        animation_type=animation_type,
+    )
 
 
 class Property:
@@ -201,6 +211,7 @@ class Text:
 
     def draw(self, frame: int) -> None:
         self.ctx.select_font_face(self.font, self.slant, self.weight)
+        self.ctx.set_font_size(self.size)
         self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
         self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
         self.ctx.show_text(self.text)
@@ -210,6 +221,7 @@ class Text:
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
         self.ctx.select_font_face(self.font, self.slant, self.weight)
+        self.ctx.set_font_size(self.size)
         self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
         self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
         return self.ctx.text_extents(self.text)
@@ -235,6 +247,7 @@ class ManicToken:
         y: float,
         font: str = "Anonymous Pro",
         font_size: int = 24,
+        alpha: float = 1,
     ):
         self.characters: list[Text] = []
         for char in token.text:
@@ -247,6 +260,7 @@ class ManicToken:
                     y=y,
                     size=font_size,
                     font=font,
+                    alpha=alpha,
                 )
             )
             extents = self.characters[-1].extents()
@@ -309,10 +323,13 @@ class Line:
         y: float,
         font: str = "Anonymous Pro",
         font_size: int = 24,
+        alpha: float = 1,
     ):
         self.tokens: list[ManicToken] = []
         for token in tokens:
-            self.tokens.append(ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font))
+            self.tokens.append(
+                ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
+            )
             extents = self.tokens[-1].extents()
             x += extents.x_advance
 
@@ -352,6 +369,7 @@ class Code:
         font_size: int = 24,
         x: float = 10,
         y: float = 10,
+        alpha: float = 1,
     ) -> None:
         self.lines: Selection[Line] = Selection()
         self.font = font
@@ -374,7 +392,9 @@ class Code:
                 line.append(token)
 
         for line in lines:
-            self.lines.append(Line(ctx, tokens=line, x=x, y=y, font=font, font_size=font_size))
+            self.lines.append(
+                Line(ctx, tokens=line, x=x, y=y, font=font, font_size=font_size, alpha=alpha)
+            )
             y += line_height
 
     def set_default_font(self) -> None:

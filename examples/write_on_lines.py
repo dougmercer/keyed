@@ -2,7 +2,7 @@ from pygments import format, lex
 from pygments.lexers import PythonLexer
 
 from manic import manic_pygments
-from manic.animation import Code, Scene, lag_animation
+from manic.animation import AnimationType, Code, Scene, lag_animation
 
 with open("example.py", "r") as f:
     content = f.read()
@@ -11,12 +11,16 @@ json_str = format(tokens, manic_pygments.ManicFormatter(style="base16-nord"))
 styled_tokens = manic_pygments.StyledTokens.validate_json(json_str)
 
 scene = Scene(scene_name="write_on_lines", num_frames=24, width=1920, height=1080)
-code = Code(scene.ctx, styled_tokens, font_size=48)
+code = Code(scene.ctx, styled_tokens, font_size=48, alpha=0)
 
 scene.add(code)
 
 code.lines[:].write_on(
-    "alpha", lagged_animation=lag_animation(), delay=2, duration=1, start_frame=2
+    "alpha",
+    lagged_animation=lag_animation(animation_type=AnimationType.ADDITIVE),
+    delay=2,
+    duration=1,
+    start_frame=2,
 )
 
-scene.draw()
+scene.preview()

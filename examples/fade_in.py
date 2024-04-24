@@ -20,4 +20,4 @@ code.chars[:10].animate(
     Animation(start_frame=0, end_frame=24, start_value=0, end_value=1),
 )
 
-scene.draw()
+scene.preview()

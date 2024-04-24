@@ -23,4 +23,4 @@ code.tokens[:].write_on(
     start_frame=0,
 )
 
-scene.draw()
+scene.preview()
