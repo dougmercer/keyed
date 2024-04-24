@@ -193,27 +193,27 @@ class Text:
         self.y = Property(value=y)
         self.ctx = ctx
 
-    def draw(self, frame: int) -> None:
+    def _prepare_context(self, frame: int) -> None:
         self.ctx.select_font_face(self.font, self.slant, self.weight)
         self.ctx.set_font_size(self.size)
         self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
         self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+
+    def draw(self, frame: int) -> None:
+        self._prepare_context(frame)
         self.ctx.show_text(self.text)
 
-    def animate(self, property: str, animation: Animation) -> None:
-        getattr(self, property).add_animation(animation)
-
     def extents(self, frame: int = 0) -> cairo.TextExtents:
-        self.ctx.select_font_face(self.font, self.slant, self.weight)
-        self.ctx.set_font_size(self.size)
-        self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-        self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+        self._prepare_context(frame)
         return self.ctx.text_extents(self.text)
 
     def is_whitespace(self) -> bool:
         return (self.token_type is Token.Text.Whitespace) or (
             self.token_type is Token.Text and self.text.strip() == ""
         )
+
+    def animate(self, property: str, animation: Animation) -> None:
+        getattr(self, property).add_animation(animation)
 
     @property
     def chars(self) -> list[Self]:
