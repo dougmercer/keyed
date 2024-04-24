@@ -8,9 +8,11 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Generic,
     Iterable,
     Iterator,
     Protocol,
+    Self,
     SupportsIndex,
     Type,
     TypeVar,
@@ -28,6 +30,14 @@ from .previewer import create_animation_window
 
 class Drawable(Protocol):
     def draw(self, frame: int) -> None: ...
+
+
+class Animatable(Protocol):
+    def draw(self, frame: int) -> None: ...
+    def animate(self, property: str, animation: Animation) -> None: ...
+    def is_whitespace(self) -> bool: ...
+    @property
+    def chars(self) -> Iterable[Text]: ...
 
 
 # AlignTo  Top/left/bottom/right, buffer
@@ -237,8 +247,40 @@ class Text:
             y=self.y.get_value_at_frame(frame),
         )
 
+    @property
+    def chars(self) -> list[Self]:
+        return [self]
 
-class ManicToken:
+
+T = TypeVar("T", bound=Animatable)
+
+
+class Composite(Generic[T]):
+    def __init__(self, objects: Iterable[Any]) -> None:
+        self.objects = list(objects)
+
+    def draw(self, frame: int) -> None:
+        for obj in self.objects:
+            obj.draw(frame)
+
+    def __getitem__(self, key: SupportsIndex) -> T:
+        return self.objects[key]
+
+    def __len__(self) -> int:
+        return len(self.objects)
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self.objects)
+
+    def animate(self, property: str, animation: Animation) -> None:
+        for obj in self:
+            obj.animate(property, animation)
+
+    def is_whitespace(self) -> bool:
+        return all(obj.is_whitespace() for obj in self)
+
+
+class ManicToken(Composite[Text]):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -249,9 +291,9 @@ class ManicToken:
         font_size: int = 24,
         alpha: float = 1,
     ):
-        self.characters: list[Text] = []
+        self.objects: list[Text] = []
         for char in token.text:
-            self.characters.append(
+            self.objects.append(
                 Text(
                     ctx,
                     char,
@@ -263,11 +305,11 @@ class ManicToken:
                     alpha=alpha,
                 )
             )
-            extents = self.characters[-1].extents()
+            extents = self.objects[-1].extents()
             x += extents.x_advance
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
-        _extents = [char.extents(frame=frame) for char in self.characters]
+        _extents = [char.extents(frame=frame) for char in self.objects]
         # Calculating combined extents
         min_x_bearing = _extents[0].x_bearing
         min_y_bearing = min(e.y_bearing for e in _extents)
@@ -287,35 +329,19 @@ class ManicToken:
             y_advance=total_y_advance,
         )
 
-    def draw(self, frame: int) -> None:
-        for char in self.characters:
-            char.draw(frame)
-
-    def __getitem__(self, key: SupportsIndex) -> Text:
-        return self.characters[key]
-
-    def __len__(self) -> int:
-        return len(self.characters)
-
-    def __iter__(self) -> Iterator[Text]:
-        return iter(self.characters)
-
-    def animate(self, property: str, animation: Animation) -> None:
-        for char in self:
-            char.animate(property, animation)
-
-    def is_whitespace(self) -> bool:
-        return all(obj.is_whitespace() for obj in self)
-
     def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
     @property
     def chars(self) -> Selection[Text]:
-        return Selection(self.characters)
+        return Selection(self.objects)
+
+    @property
+    def characters(self) -> list[Text]:
+        return self.objects
 
 
-class Line:
+class Line(Composite[ManicToken]):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -326,43 +352,27 @@ class Line:
         font_size: int = 24,
         alpha: float = 1,
     ):
-        self.tokens: list[ManicToken] = []
+        self.objects: list[ManicToken] = []
         for token in tokens:
-            self.tokens.append(
+            self.objects.append(
                 ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
             )
-            extents = self.tokens[-1].extents()
+            extents = self.objects[-1].extents()
             x += extents.x_advance
-
-    def draw(self, frame: int) -> None:
-        for token in self.tokens:
-            token.draw(frame)
-
-    def __getitem__(self, key: SupportsIndex) -> ManicToken:
-        return self.tokens[key]
-
-    def __len__(self) -> int:
-        return len(self.tokens)
-
-    def __iter__(self) -> Iterator[ManicToken]:
-        return iter(self.tokens)
-
-    def animate(self, property: str, animation: Animation) -> None:
-        for token in self:
-            token.animate(property, animation)
-
-    def is_whitespace(self) -> bool:
-        return all(obj.is_whitespace() for obj in self)
 
     def bl(self, frame: int = 0) -> Point:
         return self[0].bl(frame=frame)
 
     @property
     def chars(self) -> Selection[Text]:
-        return Selection(list(itertools.chain(*self.tokens)))
+        return Selection(list(itertools.chain(*self.objects)))
+
+    @property
+    def tokens(self) -> list[ManicToken]:
+        return self.objects
 
 
-class Code:
+class Code(Composite[Line]):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -373,7 +383,7 @@ class Code:
         y: float = 10,
         alpha: float = 1,
     ) -> None:
-        self.lines: Selection[Line] = Selection()
+        self.objects: Selection[Line] = Selection()
         self.font = font
         self.font_size = font_size
         self.ctx = ctx
@@ -403,13 +413,6 @@ class Code:
         self.ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         self.ctx.set_font_size(self.font_size)
 
-    def draw(self, frame: int) -> None:
-        for line in self.lines:
-            line.draw(frame)
-
-    def __len__(self) -> int:
-        return sum(len(line) for line in self.lines)
-
     @property
     def chars(self) -> Selection[Text]:
         return Selection(itertools.chain(*itertools.chain(*self.lines)))
@@ -418,8 +421,9 @@ class Code:
     def tokens(self) -> Selection[ManicToken]:
         return Selection(itertools.chain(*self.lines))
 
-
-T = TypeVar("T", Line, ManicToken, Text)
+    @property
+    def lines(self) -> Selection[Line]:
+        return self.objects
 
 
 class Selection(list[T]):
@@ -435,13 +439,7 @@ class Selection(list[T]):
 
     @property
     def chars(self) -> Iterable[Text]:
-        stuff: list[Text | Iterable[Text]] = []
-        for thing in self:
-            if isinstance(thing, Line) or isinstance(thing, ManicToken):
-                stuff.append(thing.chars)
-            else:
-                stuff.append([thing])
-        return Selection(itertools.chain(*stuff))
+        return Selection(itertools.chain.from_iterable(item.chars for item in self))
 
     def shift(
         self,
@@ -449,7 +447,7 @@ class Selection(list[T]):
         delta_y: float,
         start_frame: int,
         end_frame: int,
-        easing: EasingFunction = CubicEaseInOut,
+        easing: type[EasingFunction] = CubicEaseInOut,
     ) -> None:
         for char in self.chars:
             if delta_x:
