@@ -2,10 +2,13 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter, field_serializer, field_validator
 from pygments.formatter import Formatter
+from pygments.lexer import Lexer
 from pygments.style import StyleMeta
 from pygments.token import Token, _TokenType  # noqa
 
 from .color import Style, style_to_color_map
+
+DEFAULT_STYLE = "base16-nord"
 
 
 class StyledToken(BaseModel, arbitrary_types_allowed=True):
@@ -72,3 +75,14 @@ class ManicFormatter(Formatter):
     def format_unencoded(self, tokensource, outfile) -> None:  # type: ignore[no-untyped-def]
         formatted_output = format_code(list(tokensource), style=self.style)
         outfile.write(formatted_output)
+
+
+def tokenize(text: str, lexer: Lexer = None, formatter: Formatter = None) -> list[StyledToken]:
+    from pygments import format, lex
+    from pygments.lexers import PythonLexer
+
+    lexer = lexer or PythonLexer()
+    formatter = formatter or ManicFormatter(style=DEFAULT_STYLE)
+    tokens = lex(text, lexer)
+    json_str = format(tokens, formatter)
+    return StyledTokens.validate_json(json_str)
