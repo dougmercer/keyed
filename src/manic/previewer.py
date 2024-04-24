@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from manic.animation import Scene
 
 
-def create_animation_window(scene: "Scene"):
+def create_animation_window(scene: "Scene") -> None:
     # Create the main window
     root = tk.Tk()
     root.title("Manic Preview")
@@ -32,11 +32,12 @@ def create_animation_window(scene: "Scene"):
     playing = False
     looping = False  # Variable to control looping
 
-    def on_slider_change(val):
+    def on_slider_change(val: int) -> None:
         frame_number = int(val)
         update_canvas(frame_number)
 
-    def update_canvas(frame_number):
+    def update_canvas(frame_number: float) -> None:
+        assert isinstance(frame_number, int)
         scene.draw_frame(frame_number)
 
         # Convert the Cairo surface to a PIL Image
@@ -47,10 +48,10 @@ def create_animation_window(scene: "Scene"):
 
         # Display the image in Tkinter
         canvas.create_image((0, 0), image=photo, anchor="nw")
-        canvas.image = photo  # Prevent garbage collection
+        canvas.image = photo  # type: ignore[attr-defined]
         slider.set(frame_number)
 
-    def toggle_play():
+    def toggle_play() -> None:
         nonlocal playing
         playing = not playing
         if playing:
@@ -59,12 +60,12 @@ def create_animation_window(scene: "Scene"):
         else:
             play_button.config(text="▶️")
 
-    def toggle_loop():
+    def toggle_loop() -> None:
         nonlocal looping
         looping = not looping
         loop_button.config(text="🔁" if looping else "Loop")
 
-    def play_animation():
+    def play_animation() -> None:
         if playing:
             # Increment the frame
             current_frame = slider.get()
@@ -78,12 +79,16 @@ def create_animation_window(scene: "Scene"):
             update_canvas(current_frame)
             root.after(int(100 / 24), play_animation)
 
-    def save_scene():
+    def save_scene() -> None:
         scene.draw()  # Assuming this function saves or updates the scene
 
     # Scale for navigation
     slider = Scale(
-        root, from_=0, to=scene.num_frames - 1, orient="horizontal", command=on_slider_change
+        root,
+        from_=0,
+        to=scene.num_frames - 1,
+        orient="horizontal",
+        command=on_slider_change,  # type: ignore[arg-type]
     )
     slider.grid(row=1, column=0, sticky="ew", columnspan=3)  # Span across two columns
 
