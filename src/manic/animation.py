@@ -40,15 +40,6 @@ class Animatable(Protocol):
     def chars(self) -> Iterable[Text]: ...
 
 
-# AlignTo  Top/left/bottom/right, buffer
-
-
-@dataclass
-class Point:
-    x: float
-    y: float
-
-
 @dataclass
 class Scene:
     scene_name: str
@@ -226,12 +217,6 @@ class Text:
             self.token_type is Token.Text and self.text.strip() == ""
         )
 
-    def bl(self, frame: int = 0) -> Point:
-        return Point(
-            x=self.x.get_value_at_frame(frame),
-            y=self.y.get_value_at_frame(frame),
-        )
-
     @property
     def chars(self) -> list[Self]:
         return [self]
@@ -314,9 +299,6 @@ class ManicToken(Composite[Text]):
             y_advance=total_y_advance,
         )
 
-    def bl(self, frame: int = 0) -> Point:
-        return self[0].bl(frame=frame)
-
     @property
     def chars(self) -> Selection[Text]:
         return Selection(self.objects)
@@ -344,9 +326,6 @@ class Line(Composite[ManicToken]):
             )
             extents = self.objects[-1].extents()
             x += extents.x_advance
-
-    def bl(self, frame: int = 0) -> Point:
-        return self[0].bl(frame=frame)
 
     @property
     def chars(self) -> Selection[Text]:
