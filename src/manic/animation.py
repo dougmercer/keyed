@@ -49,9 +49,7 @@ class Scene:
     height: int = 2160
 
     def __post_init__(self) -> None:
-        self.surface = cairo.ImageSurface(
-            cairo.FORMAT_ARGB32, self.width, self.height
-        )  # FORMAT_RGBA128F
+        self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
 
