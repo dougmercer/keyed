@@ -21,7 +21,7 @@ import cairo
 from pygments.token import Token, _TokenType
 from tqdm import tqdm
 
-from .easing import EasingFunction, LinearInOut
+from .easing import CubicEaseInOut, EasingFunction, LinearInOut
 from .manic_pygments import StyledToken
 from .previewer import create_animation_window
 
@@ -449,28 +449,33 @@ class Selection(list[T]):
         delta_y: float,
         start_frame: int,
         end_frame: int,
+        easing: EasingFunction = CubicEaseInOut,
     ) -> None:
         for char in self.chars:
-            char.animate(
-                "x",
-                Animation(
-                    start_frame=start_frame,
-                    end_frame=end_frame,
-                    start_value=0,
-                    end_value=delta_x,
-                    animation_type=AnimationType.ADDITIVE,
-                ),
-            )
-            char.animate(
-                "y",
-                Animation(
-                    start_frame=start_frame,
-                    end_frame=end_frame,
-                    start_value=0,
-                    end_value=delta_y,
-                    animation_type=AnimationType.ADDITIVE,
-                ),
-            )
+            if delta_x:
+                char.animate(
+                    "x",
+                    Animation(
+                        start_frame=start_frame,
+                        end_frame=end_frame,
+                        start_value=0,
+                        end_value=delta_x,
+                        animation_type=AnimationType.ADDITIVE,
+                        easing=easing,
+                    ),
+                )
+            if delta_y:
+                char.animate(
+                    "y",
+                    Animation(
+                        start_frame=start_frame,
+                        end_frame=end_frame,
+                        start_value=0,
+                        end_value=delta_y,
+                        animation_type=AnimationType.ADDITIVE,
+                        easing=easing,
+                    ),
+                )
 
     def write_on(
         self,
