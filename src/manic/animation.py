@@ -146,16 +146,7 @@ class Animation:
         return self.end_frame - self.start_frame + 1
 
     def is_active(self, frame: int) -> bool:
-        match self.animation_type:
-            case AnimationType.ABSOLUTE:
-                # return frame in range(self.start_frame, self.end_frame + 1)
-                return frame >= self.start_frame
-            case AnimationType.ADDITIVE:
-                return frame >= self.start_frame
-            case AnimationType.MULTIPLICATIVE:
-                return frame >= self.start_frame
-            case _:
-                raise ValueError("blah")
+        return frame >= self.start_frame
 
 
 def lag_animation(
