@@ -104,33 +104,27 @@ class AnimationType(Enum):
     ADDITIVE = auto()
 
 
+@dataclass
 class Animation:
-    def __init__(
-        self,
-        start_frame: int,
-        end_frame: int,
-        start_value: float,
-        end_value: float,
-        easing: Type[EasingFunction] = LinearInOut,
-        animation_type: AnimationType = AnimationType.ABSOLUTE,
-    ) -> None:
-        if start_frame > end_frame:
-            raise ValueError("Ending frame must be after starting frame.")
+    start_frame: int
+    end_frame: int
+    start_value: float
+    end_value: float
+    easing: Type[EasingFunction] = LinearInOut
+    animation_type: AnimationType = AnimationType.ABSOLUTE
 
-        self.start_frame = start_frame
-        self.end_frame = end_frame
-        self.start_value = start_value
-        self.end_value = end_value
-        self.easing = easing(
-            start_frame=start_frame,
-            end_frame=end_frame,
-            start=start_value,
-            end=end_value,
+    def __post_init__(self) -> None:
+        if self.start_frame > self.end_frame:
+            raise ValueError("Ending frame must be after starting frame.")
+        self.ease = self.easing(
+            start_frame=self.start_frame,
+            end_frame=self.end_frame,
+            start=self.start_value,
+            end=self.end_value,
         )
-        self.animation_type = animation_type
 
     def apply(self, current_frame: int, current_value: float) -> float:
-        easing = self.easing(current_frame)
+        easing = self.ease(current_frame)
         match self.animation_type:
             case AnimationType.ABSOLUTE:
                 return easing
