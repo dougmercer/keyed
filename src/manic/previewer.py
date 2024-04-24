@@ -76,13 +76,16 @@ def create_animation_window(scene: "Scene"):
                 toggle_play()  # Stop at the end
 
             update_canvas(current_frame)
-            root.after(100, play_animation)  # Schedule next frame update
+            root.after(int(100 / 24), play_animation)
+
+    def save_scene():
+        scene.draw()  # Assuming this function saves or updates the scene
 
     # Scale for navigation
     slider = Scale(
         root, from_=0, to=scene.num_frames - 1, orient="horizontal", command=on_slider_change
     )
-    slider.grid(row=1, column=0, sticky="ew", columnspan=2)  # Span across two columns
+    slider.grid(row=1, column=0, sticky="ew", columnspan=3)  # Span across two columns
 
     # Play button
     play_button = Button(root, text="▶️", command=toggle_play)
@@ -93,6 +96,10 @@ def create_animation_window(scene: "Scene"):
     loop_button.grid(
         row=2, column=1
     )  # Place loop button next to the play button in row 2, column 1
+
+    # Save button
+    save_button = Button(root, text="💾", command=save_scene)
+    save_button.grid(row=2, column=2)  # Adjust the column index as needed
 
     update_canvas(0)  # Initialize with the first frame
 
