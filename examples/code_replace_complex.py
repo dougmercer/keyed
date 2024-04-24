@@ -1,7 +1,7 @@
 from manic.animation import Animation, AnimationType, Code, Scene, lag_animation
 from manic.manic_pygments import tokenize
 
-scene = Scene(scene_name="code_replace", num_frames=60, width=800, height=600)
+scene = Scene(scene_name="code_replace", num_frames=90, width=800, height=600)
 
 styled_tokens1 = tokenize(r"x = 1 + 2 + 3")
 code1 = Code(scene.ctx, styled_tokens1, font_size=36)
@@ -18,8 +18,8 @@ code1.lines[0].chars[8].animate(
         start_value=1,
         end_value=0,
         animation_type=AnimationType.ABSOLUTE,
-        start_frame=6,
-        end_frame=7,
+        start_frame=0,
+        end_frame=12,
     ),
 )
 
@@ -30,8 +30,8 @@ delta_x = code2.lines[0].chars[-3].x.get_value_at_frame(0) - code1.lines[0].char
 code1.lines[0].chars[10:].shift(
     delta_x=delta_x,
     delta_y=0,
-    start_frame=6,
-    end_frame=12,
+    start_frame=12,
+    end_frame=36,
 )
 
 code2.lines[0].chars[8:18].write_on(
@@ -41,7 +41,7 @@ code2.lines[0].chars[8:18].write_on(
     ),
     delay=4,
     duration=1,
-    start_frame=12,
+    start_frame=36,
 )
 
 scene.preview()
