@@ -58,8 +58,8 @@ class Scene:
     def full_output_dir(self) -> Path:
         return self.output_dir / self.scene_name
 
-    def add(self, content: Drawable) -> None:
-        self.content.append(content)
+    def add(self, *content: Drawable) -> None:
+        self.content.extend(content)
 
     def clear(self) -> None:
         self.ctx.set_source_rgba(0, 0, 0, 0)
