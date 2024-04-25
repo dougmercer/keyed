@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Generator, Protocol
 
 import cairo
 from tqdm import tqdm
 
-from .previewer import create_animation_window
 from .animation import Property
+from .previewer import create_animation_window
 
 __all__ = ["Scene"]
 
@@ -30,7 +31,7 @@ class Scene:
         self.output_dir = output_dir
         self.width = width
         self.height = height
-        self.surface = cairo.SVGSurface(None, self.width, self.height)
+        self.surface = cairo.SVGSurface(None, self.width, self.height)  # type: ignore[arg-type]
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
         self.pivot_x = Property(value=0)
@@ -76,23 +77,28 @@ class Scene:
             content.draw(frame)
 
     def rasterize(self, frame: int) -> cairo.ImageSurface:
-        self.transform(frame)
-        self.draw_frame(frame)
+        with self.transform(frame):
+            self.draw_frame(frame)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
         ctx.set_source_surface(self.surface, 0, 0)
         ctx.paint()
-        self.ctx.identity_matrix()
         return raster
 
-    def transform(self, frame: int) -> None:
-        """Zoom about pivot."""
+    @contextmanager
+    def transform(self, frame: int) -> Generator[None, Any, Any]:
+        """Context manager to handle transformations."""
         pivot_x = self.pivot_x.get_value_at_frame(frame)
         pivot_y = self.pivot_y.get_value_at_frame(frame)
         zoom = self.zoom.get_value_at_frame(frame)
         self.ctx.translate(pivot_x, pivot_y)
         self.ctx.scale(zoom, zoom)
         self.ctx.translate(-pivot_x, -pivot_y)
+
+        try:
+            yield
+        finally:
+            self.ctx.identity_matrix()
 
     def preview(self) -> None:
         create_animation_window(self)
