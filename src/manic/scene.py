@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from functools import cache
 from pathlib import Path
 from typing import Any, Generator, Protocol
 
@@ -76,6 +77,7 @@ class Scene:
         for content in self.content:
             content.draw(frame)
 
+    @cache
     def rasterize(self, frame: int) -> cairo.ImageSurface:
         with self.transform(frame):
             self.draw_frame(frame)
@@ -88,17 +90,20 @@ class Scene:
     @contextmanager
     def transform(self, frame: int) -> Generator[None, Any, Any]:
         """Context manager to handle transformations."""
-        pivot_x = self.pivot_x.get_value_at_frame(frame)
-        pivot_y = self.pivot_y.get_value_at_frame(frame)
-        zoom = self.zoom.get_value_at_frame(frame)
-        self.ctx.translate(pivot_x, pivot_y)
-        self.ctx.scale(zoom, zoom)
-        self.ctx.translate(-pivot_x, -pivot_y)
+        if self.zoom.is_animated:
+            pivot_x = self.pivot_x.get_value_at_frame(frame)
+            pivot_y = self.pivot_y.get_value_at_frame(frame)
+            zoom = self.zoom.get_value_at_frame(frame)
+            self.ctx.translate(pivot_x, pivot_y)
+            self.ctx.scale(zoom, zoom)
+            self.ctx.translate(-pivot_x, -pivot_y)
 
-        try:
+            try:
+                yield
+            finally:
+                self.ctx.identity_matrix()
+        else:
             yield
-        finally:
-            self.ctx.identity_matrix()
 
     def preview(self) -> None:
         create_animation_window(self)

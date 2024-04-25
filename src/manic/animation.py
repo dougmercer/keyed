@@ -135,6 +135,10 @@ class Property:
                 current_value = animation.apply(frame, current_value)
         return current_value
 
+    @property
+    def is_animated(self) -> bool:
+        return len(self.animations) > 0
+
 
 class Text:
     def __init__(
