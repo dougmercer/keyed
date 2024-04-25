@@ -1,11 +1,9 @@
-from manic.animation import Animation, AnimationType, Code, Scene, lag_animation
-from manic.manic_pygments import tokenize
+from manic import Animation, AnimationType, Code, Scene, lag_animation, tokenize
 
 scene = Scene(scene_name="code_replace", num_frames=90, width=800, height=600)
 
 styled_tokens1 = tokenize(r"x = 1 + 2 + 3")
 code1 = Code(scene.ctx, styled_tokens1, font_size=36)
-
 
 styled_tokens2 = tokenize(r"x = 1 + get_two() + 3")
 code2 = Code(scene.ctx, styled_tokens2, font_size=36, alpha=0)

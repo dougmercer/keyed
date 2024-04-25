@@ -1,16 +1,10 @@
-from pygments import format, lex
-from pygments.lexers import PythonLexer
-
-from manic import manic_pygments
-from manic.animation import Animation, Code, Scene
+from manic import Animation, Code, Scene, tokenize
 
 with open("example.py", "r") as f:
     content = f.read()
-tokens = lex(content, PythonLexer())
-json_str = format(tokens, manic_pygments.ManicFormatter(style="base16-nord"))
-styled_tokens = manic_pygments.StyledTokens.validate_json(json_str)
+styled_tokens = tokenize(content)
 
-scene = Scene(scene_name="fade_in_example", num_frames=24, width=1920, height=1080)
+scene = Scene(scene_name="fade_in", num_frames=24, width=1920, height=1080)
 code = Code(scene.ctx, styled_tokens, font_size=48)
 
 scene.add(code)

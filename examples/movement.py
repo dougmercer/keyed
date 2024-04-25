@@ -1,4 +1,4 @@
-from manic.animation import Animation, Scene, Text
+from manic import Animation, Scene, Text
 
 scene = Scene(scene_name="movement", num_frames=24, width=1920, height=1080)
 

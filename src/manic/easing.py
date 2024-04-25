@@ -1,6 +1,27 @@
 import math
 from typing import Protocol, runtime_checkable
 
+easing_types = [
+    "Quad",
+    "Cubic",
+    "Quartic",
+    "Quintic",
+    "Sine",
+    "Circular",
+    "Elastic",
+    "Exponential",
+    "Back",
+    "Bounce",
+]
+modifiers = ["EaseIn", "EaseOut", "EaseInOut"]
+
+# Generate the list for __all__
+__all__ = ["EasingFunction", "LinearInOut"] + [
+    f"{ease_type}{modifier}" for ease_type in easing_types for modifier in modifiers
+]
+
+del easing_types, modifiers
+
 
 @runtime_checkable
 class EasingFunction(Protocol):
