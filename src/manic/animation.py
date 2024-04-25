@@ -21,7 +21,7 @@ import cairo
 from pygments.token import Token, _TokenType
 
 from .easing import CubicEaseInOut, EasingFunction, LinearInOut
-from .manic_pygments import StyledToken
+from .highlight import StyledToken
 
 __all__ = [
     "AnimationType",
