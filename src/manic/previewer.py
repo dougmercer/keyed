@@ -43,10 +43,10 @@ def create_animation_window(scene: "Scene") -> None:
 
     def update_canvas(frame_number: float) -> None:
         assert isinstance(frame_number, int)
-        scene.draw_frame(frame_number)
+        raster = scene.rasterize(frame_number)
 
         # Convert the Cairo surface to a PIL Image
-        data = scene.surface.get_data()
+        data = raster.get_data()
         width, height = scene.width, scene.height
         pil_image = Image.frombuffer("RGBA", (width, height), data, "raw", "BGRA", 0, 1)
         photo = ImageTk.PhotoImage(image=pil_image)
