@@ -1,6 +1,6 @@
 from manic import Animation, Code, Scene, tokenize
 
-with open("example.py", "r") as f:
+with open("examples/example.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 
