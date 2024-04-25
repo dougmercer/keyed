@@ -32,6 +32,11 @@ def create_animation_window(scene: "Scene") -> None:
     playing = False
     looping = False  # Variable to control looping
 
+    # Explicit type annotations
+    slider: Scale
+    play_button: Button
+    loop_button: Button
+
     def on_slider_change(val: int) -> None:
         frame_number = int(val)
         update_canvas(frame_number)
