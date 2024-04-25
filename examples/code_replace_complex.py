@@ -41,5 +41,7 @@ code2.lines[0].chars[8:18].write_on(
     duration=1,
     start_frame=36,
 )
+scene.pivot_x.add_animation(Animation(start_frame=0, end_frame=0, start_value=100, end_value=100))
+scene.zoom.add_animation(Animation(start_frame=0, end_frame=24, start_value=1, end_value=3))
 
 scene.preview()
