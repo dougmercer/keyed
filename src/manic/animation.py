@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
@@ -40,18 +39,33 @@ class Animatable(Protocol):
     def chars(self) -> Iterable[Text]: ...
 
 
-@dataclass
 class Scene:
-    scene_name: str
-    num_frames: int = 60
-    output_dir: Path = Path("media")
-    width: int = 3840
-    height: int = 2160
-
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        scene_name: str,
+        num_frames: int = 60,
+        output_dir: Path = Path("media"),
+        width: int = 3840,
+        height: int = 2160,
+    ) -> None:
+        self.scene_name = scene_name
+        self.num_frames = num_frames
+        self.output_dir = output_dir
+        self.width = width
+        self.height = height
         self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"scene_name={self.scene_name!r}, "
+            f"num_frames={self.num_frames}, "
+            f"output_dir={self.output_dir!r}, "
+            f"width={self.width}, "
+            f"height={self.height})"
+        )
 
     @property
     def full_output_dir(self) -> Path:
@@ -93,27 +107,40 @@ class AnimationType(Enum):
     ADDITIVE = auto()
 
 
-@dataclass
 class Animation:
-    start_frame: int
-    end_frame: int
-    start_value: float
-    end_value: float
-    easing: Type[EasingFunction] = LinearInOut
-    animation_type: AnimationType = AnimationType.ABSOLUTE
-
-    def __post_init__(self) -> None:
-        if self.start_frame > self.end_frame:
+    def __init__(
+        self,
+        start_frame: int,
+        end_frame: int,
+        start_value: float,
+        end_value: float,
+        easing: Type[EasingFunction] = LinearInOut,
+        animation_type: AnimationType = AnimationType.ABSOLUTE,
+    ) -> None:
+        if start_frame > end_frame:
             raise ValueError("Ending frame must be after starting frame.")
-        self.ease = self.easing(
+        self.start_frame = start_frame
+        self.end_frame = end_frame
+        self.start_value = start_value
+        self.end_value = end_value
+        self.easing = easing(
             start_frame=self.start_frame,
             end_frame=self.end_frame,
             start=self.start_value,
             end=self.end_value,
         )
+        self.animation_type = animation_type
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(start_frame={self.start_frame}, "
+            f"end_frame={self.end_frame}, start_value={self.start_value}, "
+            f"end_value={self.end_value}, easing={self.easing.__class__.__name__}, "
+            f"animation_type={self.animation_type.name})"
+        )
 
     def apply(self, current_frame: int, current_value: float) -> float:
-        easing = self.ease(current_frame)
+        easing = self.easing(current_frame)
         match self.animation_type:
             case AnimationType.ABSOLUTE:
                 return easing
@@ -153,7 +180,7 @@ class Property:
         self.animations: list[Animation] = []
 
     def __repr__(self) -> str:
-        return repr(self.value)
+        return f"Property(value={self.value}, animations={self.animations!r})"
 
     def add_animation(self, animation: Animation) -> None:
         self.animations.append(animation)
@@ -192,6 +219,16 @@ class Text:
         self.x = Property(value=x)
         self.y = Property(value=y)
         self.ctx = ctx
+
+    def __repr__(self) -> str:
+        color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
+        return (
+            f"{self.__class__.__name__}(text={self.text!r}, "
+            f"x={self.x.value}, y={self.y.value}, "
+            f"color={color_str}, alpha={self.alpha.value}, "
+            f"slant={self.slant!r}, weight={self.weight!r}, "
+            f"token_type={self.token_type!r})"
+        )
 
     def _prepare_context(self, frame: int) -> None:
         self.ctx.select_font_face(self.font, self.slant, self.weight)
@@ -239,6 +276,9 @@ class Composite(Generic[T]):
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.objects)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.objects!r})"
 
     def animate(self, property: str, animation: Animation) -> None:
         for obj in self:
