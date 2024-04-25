@@ -7,6 +7,7 @@ import cairo
 from tqdm import tqdm
 
 from .previewer import create_animation_window
+from .animation import Property
 
 __all__ = ["Scene"]
 
@@ -32,6 +33,9 @@ class Scene:
         self.surface = cairo.SVGSurface(None, self.width, self.height)
         self.ctx = cairo.Context(self.surface)
         self.content: list[Drawable] = []
+        self.pivot_x = Property(value=0)
+        self.pivot_y = Property(value=0)
+        self.zoom = Property(value=1)
 
     def __repr__(self) -> str:
         return (
@@ -72,13 +76,23 @@ class Scene:
             content.draw(frame)
 
     def rasterize(self, frame: int) -> cairo.ImageSurface:
+        self.transform(frame)
         self.draw_frame(frame)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
         ctx.set_source_surface(self.surface, 0, 0)
         ctx.paint()
-        # raster.finish()
+        self.ctx.identity_matrix()
         return raster
+
+    def transform(self, frame: int) -> None:
+        """Zoom about pivot."""
+        pivot_x = self.pivot_x.get_value_at_frame(frame)
+        pivot_y = self.pivot_y.get_value_at_frame(frame)
+        zoom = self.zoom.get_value_at_frame(frame)
+        self.ctx.translate(pivot_x, pivot_y)
+        self.ctx.scale(zoom, zoom)
+        self.ctx.translate(-pivot_x, -pivot_y)
 
     def preview(self) -> None:
         create_animation_window(self)
