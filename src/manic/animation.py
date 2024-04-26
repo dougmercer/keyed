@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from functools import partial
-from typing import Any, Type
+from typing import Any, Self, Type
 
 from .easing import EasingFunction, LinearInOut
 
@@ -158,6 +158,7 @@ class Property:
     def __init__(self, value: Any) -> None:
         self.value = value
         self.animations: list[Animation] = []
+        self.following: None | Property = None
 
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
@@ -166,7 +167,8 @@ class Property:
         self.animations.append(animation)
 
     def get_value_at_frame(self, frame: int) -> Any:
-        current_value = self.value
+        current_value = self.following.get_value_at_frame(frame) if self.following else self.value
+
         for animation in self.animations:
             if animation.is_active(frame):
                 current_value = animation.apply(frame, current_value)
@@ -175,3 +177,19 @@ class Property:
     @property
     def is_animated(self) -> bool:
         return len(self.animations) > 0
+
+    def follow(self, other) -> Self:
+        self.following = other
+        return self
+
+    def offset(self, value: float) -> Self:
+        self.add_animation(
+            Animation(
+                start_frame=0,
+                end_frame=0,
+                start_value=value,
+                end_value=value,
+                animation_type=AnimationType.ADDITIVE,
+            ),
+        )
+        return self
