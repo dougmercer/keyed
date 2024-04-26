@@ -33,6 +33,8 @@ __all__ = [
     "Line",
     "Code",
     "Selection",
+    "Loop",
+    "PingPong",
 ]
 
 
@@ -94,12 +96,77 @@ class Animation:
             case _:
                 raise ValueError("Undefined AnimationType")
 
-    @property
-    def duration(self) -> int:
-        return self.end_frame - self.start_frame + 1
-
     def is_active(self, frame: int) -> bool:
         return frame >= self.start_frame
+
+    def __len__(self) -> int:
+        return self.end_frame - self.start_frame + 1
+
+
+class Loop(Animation):
+    def __init__(self, animation: Animation, n: int):
+        self.animation = animation
+        self.n = n
+
+    @property
+    def start_frame(self) -> int:
+        return self.animation.start_frame
+
+    @property
+    def end_frame(self) -> int:
+        return self.animation.start_frame + len(self.animation) * self.n
+
+    def apply(self, current_frame: int, current_value: float) -> float:
+        if current_frame < self.start_frame:
+            print("hello")
+            return current_value
+        elif current_frame > self.end_frame:
+            print(self.start_frame, self.end_frame, current_frame, "uh oh")
+            return self.animation.apply(self.animation.end_frame, current_value)
+
+        # Calculate the frame position within the entire loop cycle
+        frame_in_cycle = (current_frame - self.animation.start_frame) % len(self.animation)
+        effective_frame = self.animation.start_frame + frame_in_cycle
+        print(effective_frame)
+        return self.animation.apply(effective_frame, current_value)
+
+    def __repr__(self) -> str:
+        return f"Loop(animation={self.animation}, n={self.n})"
+
+
+class PingPong(Animation):
+    def __init__(self, animation: Animation, n: int):
+        self.animation = animation
+        self.n = n  # Number of full back-and-forth cycles
+
+    @property
+    def start_frame(self) -> int:
+        return self.animation.start_frame
+
+    @property
+    def end_frame(self) -> int:
+        # Each cycle consists of going forward and coming back
+        return self.animation.start_frame + (2 * len(self.animation) - 2) * self.n
+
+    def apply(self, current_frame: int, current_value: float) -> float:
+        if current_frame < self.start_frame or current_frame > self.end_frame:
+            return current_value
+
+        # Calculate the position within a single forward and backward cycle
+        cycle_length = 2 * len(self.animation) - 2
+        frame_in_cycle = (current_frame - self.start_frame) % cycle_length
+
+        # Determine if the frame is in the first half (forward) or second half (backward) of the cycle
+        if frame_in_cycle < len(self.animation):
+            effective_frame = self.animation.start_frame + frame_in_cycle
+        else:
+            # Reverse the animation for the backward phase
+            effective_frame = self.animation.end_frame - (frame_in_cycle - len(self.animation) + 1)
+
+        return self.animation.apply(effective_frame, current_value)
+
+    def __repr__(self) -> str:
+        return f"PingPong(animation={self.animation}, n={self.n})"
 
 
 def lag_animation(
