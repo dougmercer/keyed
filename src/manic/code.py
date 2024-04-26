@@ -20,6 +20,7 @@ from pygments.token import Token, _TokenType
 from .animation import Animation, AnimationType, Property
 from .easing import CubicEaseInOut, EasingFunction
 from .highlight import StyledToken
+from .shapes import Rectangle
 
 __all__ = [
     "Text",
@@ -96,6 +97,21 @@ class Text:
 
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
+
+    def emphasize(self, buffer=5) -> Rectangle:
+        exents = self.extents()
+        r = Rectangle(
+            self.ctx,
+            x=0,
+            y=0,
+            width=exents.width + 2 * buffer,
+            height=exents.height + 2 * buffer,
+            color=(1, 1, 1),
+            alpha=0.5,
+        )
+        r.x.follow(self.x).offset(-buffer)
+        r.y.follow(self.y).offset(-exents.height - buffer)
+        return r
 
     @property
     def chars(self) -> list[Self]:
