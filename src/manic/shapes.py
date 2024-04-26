@@ -11,11 +11,11 @@ class Rectangle:
     def __init__(
         self,
         ctx: cairo.Context,
-        x: float,
-        y: float,
         width: float,
         height: float,
-        color: tuple[float, float, float],
+        x: float = 10,
+        y: float = 10,
+        color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
     ) -> None:
         self.ctx = ctx
@@ -27,7 +27,10 @@ class Rectangle:
         self.color = color
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+        return (
+            f"{self.__class__.__name__}"
+            f"(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+        )
 
     def draw(self, frame: int) -> None:
         self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))

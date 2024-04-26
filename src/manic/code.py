@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import itertools
+from abc import ABC, abstractmethod
 from typing import (
-    Any,
     Callable,
     Generic,
     Iterable,
@@ -15,9 +15,10 @@ from typing import (
 )
 
 import cairo
+import shapely
 from pygments.token import Token, _TokenType
 
-from .animation import Animation, AnimationType, Property
+from .animation import Animation, AnimationType, LambdaFollower, Property
 from .easing import CubicEaseInOut, EasingFunction
 from .highlight import StyledToken
 from .shapes import Rectangle
@@ -37,6 +38,8 @@ class Animatable(Protocol):
     def is_whitespace(self) -> bool: ...
     @property
     def chars(self) -> Iterable[Text]: ...
+    @property
+    def ctx(self) -> cairo.Context: ...
 
 
 class Text:
@@ -98,32 +101,41 @@ class Text:
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
 
-    def emphasize(self, buffer=5) -> Rectangle:
-        exents = self.extents()
+    def emphasize(self, buffer: float = 5) -> Rectangle:
+        e = self.extents(0)
         r = Rectangle(
             self.ctx,
-            x=0,
-            y=0,
-            width=exents.width + 2 * buffer,
-            height=exents.height + 2 * buffer,
-            color=(1, 1, 1),
+            width=e.width + 2 * buffer,
+            height=e.height + 2 * buffer,
             alpha=0.5,
         )
-        r.x.follow(self.x).offset(-buffer)
-        r.y.follow(self.y).offset(-exents.height - buffer)
+        r.x.follow(self.x).offset(e.x_bearing - buffer)
+        r.y.follow(self.y).offset(e.y_bearing - buffer)
         return r
 
     @property
     def chars(self) -> list[Self]:
         return [self]
 
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        e = self.extents(frame)
+        x = self.x.get_value_at_frame(frame) + e.x_bearing
+        y = self.y.get_value_at_frame(frame) + e.y_bearing
+        return shapely.box(x, y, x + e.width, y + e.height)
+
 
 T = TypeVar("T", bound=Animatable)
 
 
-class Composite(Generic[T]):
-    def __init__(self, objects: Iterable[Any]) -> None:
+class Composite(ABC, Generic[T]):
+    def __init__(self, ctx: cairo.Context, objects: Iterable[T]) -> None:
+        self.ctx = ctx
         self.objects = list(objects)
+
+    @property
+    @abstractmethod
+    def chars(self) -> list[Text]:
+        pass
 
     def draw(self, frame: int) -> None:
         for obj in self.objects:
@@ -148,6 +160,27 @@ class Composite(Generic[T]):
     def is_whitespace(self) -> bool:
         return all(obj.is_whitespace() for obj in self)
 
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
+
+    def emphasize(self, buffer: float = 5) -> Rectangle:
+        assert len(self) > 0
+        min_x, min_y, max_x, max_y = self.geom().bounds
+        r = Rectangle(
+            self.ctx,
+            x=min_x,
+            y=min_y,
+            width=max_x - min_x + 2 * buffer,
+            height=max_y - min_y + 2 * buffer,
+            color=(1, 1, 1),
+            alpha=0.5,
+        )
+        x_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[0])
+        y_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[1])
+        r.x.follow(x_follower).offset(-buffer)
+        r.y.follow(y_follower).offset(-buffer)
+        return r
+
 
 class ManicToken(Composite[Text]):
     def __init__(
@@ -161,6 +194,7 @@ class ManicToken(Composite[Text]):
         alpha: float = 1,
     ):
         self.objects: list[Text] = []
+        self.ctx = ctx
         for char in token.text:
             self.objects.append(
                 Text(
@@ -219,6 +253,7 @@ class Line(Composite[ManicToken]):
         alpha: float = 1,
     ):
         self.objects: list[ManicToken] = []
+        self.ctx = ctx
         for token in tokens:
             self.objects.append(
                 ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
@@ -373,3 +408,23 @@ class Selection(list[T]):
             return Selection(super().__getitem__(key))
         else:
             return super().__getitem__(key)
+
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
+
+    def emphasize(self, buffer: float = 5) -> Rectangle:
+        assert len(self) > 0
+        min_x, min_y, max_x, max_y = self.geom().bounds
+        r = Rectangle(
+            self[0].ctx,
+            x=min_x,
+            y=min_y,
+            width=max_x - min_x + 2 * buffer,
+            height=max_y - min_y + 2 * buffer,
+            alpha=0.1,
+        )
+        x_follower = LambdaFollower(self[0].ctx, lambda frame: self.geom(frame).bounds[0])
+        y_follower = LambdaFollower(self[0].ctx, lambda frame: self.geom(frame).bounds[1])
+        r.x.follow(x_follower).offset(-buffer)
+        r.y.follow(y_follower).offset(-buffer)
+        return r

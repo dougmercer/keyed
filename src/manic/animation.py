@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from functools import partial
-from typing import Any, Self, Type
+from typing import Any, Callable, Protocol, Self, Type
+
+import cairo
 
 from .easing import EasingFunction, LinearInOut
 
@@ -14,6 +16,10 @@ __all__ = [
     "Loop",
     "PingPong",
 ]
+
+
+class Followable(Protocol):
+    def get_value_at_frame(self, frame: int) -> Any: ...
 
 
 class AnimationType(Enum):
@@ -158,7 +164,7 @@ class Property:
     def __init__(self, value: Any) -> None:
         self.value = value
         self.animations: list[Animation] = []
-        self.following: None | Property = None
+        self.following: None | Followable = None
 
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
@@ -178,7 +184,7 @@ class Property:
     def is_animated(self) -> bool:
         return len(self.animations) > 0
 
-    def follow(self, other) -> Self:
+    def follow(self, other: Followable) -> Self:
         self.following = other
         return self
 
@@ -193,3 +199,15 @@ class Property:
             ),
         )
         return self
+
+
+class LambdaFollower:
+    def __init__(self, ctx: cairo.Context, func: Callable[[int], float]) -> None:
+        self.ctx = ctx
+        self.func = func
+
+    def get_value_at_frame(self, frame: int) -> Any:
+        self.ctx.save()
+        out = self.func(frame)
+        self.ctx.restore()
+        return out
