@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import (
     Callable,
     Generic,
@@ -16,16 +16,17 @@ from typing import (
 
 import cairo
 import shapely
-from pygments.token import Token, _TokenType
+from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenType
 
 from .animation import Animation, AnimationType, LambdaFollower, Property
+from .base import BaseText
 from .easing import CubicEaseInOut, EasingFunction
 from .highlight import StyledToken
 from .shapes import Rectangle
 
 __all__ = [
     "Text",
-    "ManicToken",
+    "Token",
     "Line",
     "Code",
     "Selection",
@@ -42,7 +43,7 @@ class Animatable(Protocol):
     def ctx(self) -> cairo.Context: ...
 
 
-class Text:
+class Text(BaseText):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -52,7 +53,7 @@ class Text:
         y: float,
         font: str,
         color: tuple[float, float, float],
-        token_type: _TokenType | None = None,
+        token_type: Pygments_TokenType | None = None,
         alpha: float = 1,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
@@ -94,28 +95,16 @@ class Text:
         return self.ctx.text_extents(self.text)
 
     def is_whitespace(self) -> bool:
-        return (self.token_type is Token.Text.Whitespace) or (
-            self.token_type is Token.Text and self.text.strip() == ""
+        return (self.token_type is PygmentsToken.Text.Whitespace) or (
+            self.token_type is PygmentsToken.Text and self.text.strip() == ""
         )
 
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
 
-    def emphasize(self, buffer: float = 5) -> Rectangle:
-        e = self.extents(0)
-        r = Rectangle(
-            self.ctx,
-            width=e.width + 2 * buffer,
-            height=e.height + 2 * buffer,
-            alpha=0.5,
-        )
-        r.x.follow(self.x).offset(e.x_bearing - buffer)
-        r.y.follow(self.y).offset(e.y_bearing - buffer)
-        return r
-
     @property
-    def chars(self) -> list[Self]:
-        return [self]
+    def chars(self) -> Selection[Self]:
+        return Selection([self])
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
@@ -127,14 +116,14 @@ class Text:
 T = TypeVar("T", bound=Animatable)
 
 
-class Composite(ABC, Generic[T]):
+class Composite(BaseText, Generic[T]):
     def __init__(self, ctx: cairo.Context, objects: Iterable[T]) -> None:
         self.ctx = ctx
         self.objects = list(objects)
 
     @property
     @abstractmethod
-    def chars(self) -> list[Text]:
+    def chars(self) -> Selection[Text]:
         pass
 
     def draw(self, frame: int) -> None:
@@ -163,26 +152,8 @@ class Composite(ABC, Generic[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
 
-    def emphasize(self, buffer: float = 5) -> Rectangle:
-        assert len(self) > 0
-        min_x, min_y, max_x, max_y = self.geom().bounds
-        r = Rectangle(
-            self.ctx,
-            x=min_x,
-            y=min_y,
-            width=max_x - min_x + 2 * buffer,
-            height=max_y - min_y + 2 * buffer,
-            color=(1, 1, 1),
-            alpha=0.5,
-        )
-        x_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[0])
-        y_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[1])
-        r.x.follow(x_follower).offset(-buffer)
-        r.y.follow(y_follower).offset(-buffer)
-        return r
 
-
-class ManicToken(Composite[Text]):
+class Token(Composite[Text]):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -241,7 +212,7 @@ class ManicToken(Composite[Text]):
         return self.objects
 
 
-class Line(Composite[ManicToken]):
+class Line(Composite[Token]):
     def __init__(
         self,
         ctx: cairo.Context,
@@ -252,21 +223,20 @@ class Line(Composite[ManicToken]):
         font_size: int = 24,
         alpha: float = 1,
     ):
-        self.objects: list[ManicToken] = []
+        self.objects: list[Token] = []
         self.ctx = ctx
         for token in tokens:
             self.objects.append(
-                ManicToken(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
+                Token(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
             )
-            extents = self.objects[-1].extents()
-            x += extents.x_advance
+            x += self.objects[-1].extents().x_advance
 
     @property
     def chars(self) -> Selection[Text]:
         return Selection(list(itertools.chain(*self.objects)))
 
     @property
-    def tokens(self) -> list[ManicToken]:
+    def tokens(self) -> list[Token]:
         return self.objects
 
 
@@ -295,7 +265,7 @@ class Code(Composite[Line]):
         lines = []
         line: list[StyledToken] = []
         for token in tokens:
-            if (token.token_type, token.text) == (Token.Text.Whitespace, "\n"):
+            if (token.token_type, token.text) == (PygmentsToken.Text.Whitespace, "\n"):
                 lines.append(line)
                 line = []
             else:
@@ -316,7 +286,7 @@ class Code(Composite[Line]):
         return Selection(itertools.chain(*itertools.chain(*self.lines)))
 
     @property
-    def tokens(self) -> Selection[ManicToken]:
+    def tokens(self) -> Selection[Token]:
         return Selection(itertools.chain(*self.lines))
 
     @property
@@ -324,19 +294,18 @@ class Code(Composite[Line]):
         return self.objects
 
 
-class Selection(list[T]):
+class Selection(BaseText, list[T]):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""
         for item in self:
-            if isinstance(item, Line) or isinstance(item, ManicToken):
-                item.animate(property, animation)
-            elif isinstance(item, Text):
-                getattr(item, property).add_animation(animation)
-            else:
-                raise ValueError("Unsupported item.")
+            item.animate(property, animation)
+
+    def draw(self, frame: int) -> None:
+        for object in self:
+            object.draw(frame)
 
     @property
-    def chars(self) -> Iterable[Text]:
+    def chars(self) -> Selection[Text]:
         return Selection(itertools.chain.from_iterable(item.chars for item in self))
 
     def shift(
@@ -387,12 +356,7 @@ class Selection(list[T]):
             if skip_whitespace and item.is_whitespace():
                 continue
             animation = lagged_animation(start_frame=frame, end_frame=frame + duration)
-            if isinstance(item, Line) or isinstance(item, ManicToken):
-                item.animate(property, animation)
-            elif isinstance(item, Text):
-                getattr(item, property).add_animation(animation)
-            else:
-                raise ValueError("Unsupported item.")
+            item.animate(property, animation)
             frame += delay
 
     @overload
