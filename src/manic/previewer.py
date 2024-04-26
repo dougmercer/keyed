@@ -19,7 +19,7 @@ def create_animation_window(scene: "Scene") -> None:
     monospace_font = tkfont.Font(family="Courier", weight="bold")
 
     last_frame_time = time.perf_counter()
-    frame_times = deque(maxlen=24)
+    frame_times: deque[float] = deque(maxlen=24)
 
     # Configure grid (root window)
     root.grid_rowconfigure(0, weight=1)

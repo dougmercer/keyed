@@ -117,7 +117,7 @@ class PingPong(Animation):
 
     @property
     def cycle_len(self) -> int:
-        return 2*(len(self.animation) - 1)
+        return 2 * (len(self.animation) - 1)
 
     def apply(self, current_frame: int, current_value: float) -> float:
         if current_frame < self.start_frame or current_frame > self.end_frame:
