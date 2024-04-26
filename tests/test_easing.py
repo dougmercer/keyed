@@ -45,9 +45,5 @@ def test_easing_classes(EasingFunc, expected):
     assert pytest.approx(results, abs=1e-4) == expected, (results, expected)
 
 
-# Optional: Test the protocol implementation correctness
 def test_protocol_implementation():
     assert isinstance(LinearInOut(), EasingFunction)
-
-
-# To run the tests, simply execute the pytest command in the directory containing this test file.

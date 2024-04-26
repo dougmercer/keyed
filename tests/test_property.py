@@ -3,9 +3,7 @@ import pytest
 from manic.animation import Animation, AnimationType, Property
 
 
-@pytest.mark.parametrize(
-    "frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)]  # Testing beyond the end frame
-)
+@pytest.mark.parametrize("frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)])
 def test_value_with_single_animation(frame, expected_value):
     prop = Property(value=0)
     anim = Animation(start_frame=0, end_frame=10, start_value=0, end_value=100)
@@ -30,7 +28,7 @@ def test_multiple_animations():
     "animation_type, expected_value",
     [
         (AnimationType.ABSOLUTE, 30),
-        (AnimationType.ADDITIVE, 30 + 10),  # 10 is initial value
+        (AnimationType.ADDITIVE, 30 + 10),
         (AnimationType.MULTIPLICATIVE, 10 * 30),
     ],
 )
@@ -81,9 +79,7 @@ def test_sequential_different_types():
 
     assert prop.get_value_at_frame(2) == 25  # Midway through first additive
     assert prop.get_value_at_frame(3) == 30  # done with first animation, starting second
-    assert (
-        prop.get_value_at_frame(12) == 60
-    )  # Midway through multiplicative spanning [1,3], so multiply by 2.
+    assert prop.get_value_at_frame(12) == 60  # Midway, so multiply by 2.
     assert prop.get_value_at_frame(21) == 40  # start of absolute
     assert prop.get_value_at_frame(22) == 60  # middle of absolute
     assert prop.get_value_at_frame(23) == 80  # end of absolute
@@ -163,7 +159,6 @@ def test_interwoven_animations():
     prop.add_animation(mul_anim)
     prop.add_animation(abs_anim)
 
-    # Verify that the final, absolute animation overrides everything
     assert prop.get_value_at_frame(0) == 1  # All start at 1
     assert prop.get_value_at_frame(5) == 3  # Absolute in action, should override others
     assert prop.get_value_at_frame(10) == 5  # Absolute ends, should have priority
