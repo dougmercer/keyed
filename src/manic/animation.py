@@ -90,12 +90,12 @@ class Loop(Animation):
 
     @property
     def end_frame(self) -> int:  # type: ignore[override]
-        return self.animation.start_frame + (len(self.animation) - 1) * self.n
+        return self.animation.start_frame + len(self.animation) * self.n
 
     def apply(self, current_frame: int, current_value: float) -> float:
         if current_frame < self.start_frame:
             return current_value
-        elif current_frame > self.end_frame:
+        elif current_frame >= self.end_frame:
             return self.animation.apply(self.animation.end_frame, current_value)
 
         # Calculate the frame position within the entire loop cycle
