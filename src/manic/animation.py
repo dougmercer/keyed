@@ -109,25 +109,22 @@ class Loop(Animation):
         self.n = n
 
     @property
-    def start_frame(self) -> int:
+    def start_frame(self) -> int:  # type: ignore[override]
         return self.animation.start_frame
 
     @property
-    def end_frame(self) -> int:
-        return self.animation.start_frame + len(self.animation) * self.n
+    def end_frame(self) -> int:  # type: ignore[override]
+        return self.animation.start_frame + (len(self.animation) - 1) * self.n
 
     def apply(self, current_frame: int, current_value: float) -> float:
         if current_frame < self.start_frame:
-            print("hello")
             return current_value
         elif current_frame > self.end_frame:
-            print(self.start_frame, self.end_frame, current_frame, "uh oh")
             return self.animation.apply(self.animation.end_frame, current_value)
 
         # Calculate the frame position within the entire loop cycle
         frame_in_cycle = (current_frame - self.animation.start_frame) % len(self.animation)
         effective_frame = self.animation.start_frame + frame_in_cycle
-        print(effective_frame)
         return self.animation.apply(effective_frame, current_value)
 
     def __repr__(self) -> str:
@@ -140,27 +137,30 @@ class PingPong(Animation):
         self.n = n  # Number of full back-and-forth cycles
 
     @property
-    def start_frame(self) -> int:
+    def start_frame(self) -> int:  # type: ignore[override]
         return self.animation.start_frame
 
     @property
-    def end_frame(self) -> int:
+    def end_frame(self) -> int:  # type: ignore[override]
         # Each cycle consists of going forward and coming back
-        return self.animation.start_frame + (2 * len(self.animation) - 2) * self.n
+        return self.animation.start_frame + self.cycle_len * self.n
+
+    @property
+    def cycle_len(self) -> int:
+        return 2*(len(self.animation) - 1)
 
     def apply(self, current_frame: int, current_value: float) -> float:
         if current_frame < self.start_frame or current_frame > self.end_frame:
             return current_value
 
         # Calculate the position within a single forward and backward cycle
-        cycle_length = 2 * len(self.animation) - 2
-        frame_in_cycle = (current_frame - self.start_frame) % cycle_length
+        frame_in_cycle = (current_frame - self.start_frame) % self.cycle_len
 
-        # Determine if the frame is in the first half (forward) or second half (backward) of the cycle
         if frame_in_cycle < len(self.animation):
+            # Frame in first (forward) half of the cycle
             effective_frame = self.animation.start_frame + frame_in_cycle
         else:
-            # Reverse the animation for the backward phase
+            # Frame in second (reverse) half of the cycle
             effective_frame = self.animation.end_frame - (frame_in_cycle - len(self.animation) + 1)
 
         return self.animation.apply(effective_frame, current_value)
