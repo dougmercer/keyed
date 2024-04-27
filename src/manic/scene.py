@@ -26,6 +26,7 @@ class Scene:
         output_dir: Path = Path("media"),
         width: int = 3840,
         height: int = 2160,
+        antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
     ) -> None:
         self.scene_name = scene_name
         self.num_frames = num_frames
@@ -38,6 +39,7 @@ class Scene:
         self.pivot_x = Property(value=0)
         self.pivot_y = Property(value=0)
         self.zoom = Property(value=1)
+        self.antialias = antialias
 
     def __repr__(self) -> str:
         return (
@@ -84,6 +86,7 @@ class Scene:
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
         ctx.set_source_surface(self.surface, 0, 0)
+        ctx.set_antialias(self.antialias)
         ctx.paint()
         return raster
 
