@@ -91,8 +91,11 @@ class Text(BaseText):
         self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
+        self.ctx.save()
         self._prepare_context(frame)
-        return self.ctx.text_extents(self.text)
+        e = self.ctx.text_extents(self.text)
+        self.ctx.restore()
+        return e
 
     def is_whitespace(self) -> bool:
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
@@ -378,17 +381,5 @@ class Selection(BaseText, list[T]):
 
     def emphasize(self, buffer: float = 5) -> Rectangle:
         assert len(self) > 0
-        min_x, min_y, max_x, max_y = self.geom().bounds
-        r = Rectangle(
-            self[0].ctx,
-            x=min_x,
-            y=min_y,
-            width=max_x - min_x + 2 * buffer,
-            height=max_y - min_y + 2 * buffer,
-            alpha=0.1,
-        )
-        x_follower = LambdaFollower(self[0].ctx, lambda frame: self.geom(frame).bounds[0])
-        y_follower = LambdaFollower(self[0].ctx, lambda frame: self.geom(frame).bounds[1])
-        r.x.follow(x_follower).offset(-buffer)
-        r.y.follow(y_follower).offset(-buffer)
-        return r
+        self.ctx = self[0].ctx
+        return super().emphasize(buffer=buffer)

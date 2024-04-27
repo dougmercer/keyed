@@ -36,8 +36,8 @@ class Base(ABC):
         assert isinstance(self.ctx, cairo.Context)
 
         r = Rectangle(self.ctx, color=(1, 1, 1), alpha=0.5)
-        x_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[0])
-        y_follower = LambdaFollower(self.ctx, lambda frame: self.geom(frame).bounds[1])
+        x_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[0])
+        y_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[1])
 
         def get_width(frame: int) -> float:
             min_x, _, max_x, _ = self.geom(frame).bounds
@@ -49,8 +49,8 @@ class Base(ABC):
 
         r.x.follow(x_follower).offset(-buffer)
         r.y.follow(y_follower).offset(-buffer)
-        r.width.follow(LambdaFollower(self.ctx, get_width))
-        r.height.follow(LambdaFollower(self.ctx, get_height))
+        r.width.follow(LambdaFollower(get_width))
+        r.height.follow(LambdaFollower(get_height))
         return r
 
 

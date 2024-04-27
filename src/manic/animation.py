@@ -15,6 +15,7 @@ __all__ = [
     "Property",
     "Loop",
     "PingPong",
+    "LambdaFollower",
 ]
 
 
@@ -202,12 +203,8 @@ class Property:
 
 
 class LambdaFollower:
-    def __init__(self, ctx: cairo.Context, func: Callable[[int], float]) -> None:
-        self.ctx = ctx
+    def __init__(self, func: Callable[[int], float]) -> None:
         self.func = func
 
     def get_value_at_frame(self, frame: int) -> Any:
-        self.ctx.save()
-        out = self.func(frame)
-        self.ctx.restore()
-        return out
+        return self.func(frame)
