@@ -2,7 +2,7 @@ from manic import Animation, AnimationType, Circle, PingPong, Scene, Text, easin
 
 scene = Scene(scene_name="circle", num_frames=90, width=3840, height=2160)
 
-circle = Circle(scene.ctx, 100, 100, radius=20, color=(0.5, 0.5, 0.5))
+circle = Circle(scene.ctx, 100, 100, radius=20)
 
 scene.add(circle)
 
