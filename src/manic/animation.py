@@ -4,8 +4,6 @@ from enum import Enum, auto
 from functools import partial
 from typing import Any, Callable, Protocol, Self, Type
 
-import cairo
-
 from .easing import EasingFunction, LinearInOut
 
 __all__ = [

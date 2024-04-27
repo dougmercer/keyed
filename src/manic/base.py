@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 import cairo
 import shapely
 
-from .animation import Animation, LambdaFollower
+from .animation import Animation, AnimationType, LambdaFollower
+from .easing import CubicEaseInOut, EasingFunction
 
 if TYPE_CHECKING:
     from .code import Selection, Text
@@ -30,12 +31,27 @@ class Base(ABC):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         pass
 
-    def emphasize(self, buffer: float = 5) -> "Rectangle":
+    def emphasize(
+        self,
+        buffer: float = 5,
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[list[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
+    ) -> "Rectangle":
         from .shapes import Rectangle
 
         assert isinstance(self.ctx, cairo.Context)
 
-        r = Rectangle(self.ctx, color=(1, 1, 1), alpha=0.5)
+        r = Rectangle(
+            self.ctx,
+            color=color,
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+        )
         x_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[0])
         y_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[1])
 
@@ -52,6 +68,39 @@ class Base(ABC):
         r.width.follow(LambdaFollower(get_width))
         r.height.follow(LambdaFollower(get_height))
         return r
+
+    def shift(
+        self,
+        delta_x: float,
+        delta_y: float,
+        start_frame: int,
+        end_frame: int,
+        easing: type[EasingFunction] = CubicEaseInOut,
+    ) -> None:
+        if delta_x:
+            self.animate(
+                "x",
+                Animation(
+                    start_frame=start_frame,
+                    end_frame=end_frame,
+                    start_value=0,
+                    end_value=delta_x,
+                    animation_type=AnimationType.ADDITIVE,
+                    easing=easing,
+                ),
+            )
+        if delta_y:
+            self.animate(
+                "y",
+                Animation(
+                    start_frame=start_frame,
+                    end_frame=end_frame,
+                    start_value=0,
+                    end_value=delta_y,
+                    animation_type=AnimationType.ADDITIVE,
+                    easing=easing,
+                ),
+            )
 
 
 class BaseText(Base):

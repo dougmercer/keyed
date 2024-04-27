@@ -1,4 +1,6 @@
-from manic import AnimationType, Code, Rectangle, Scene, lag_animation, tokenize
+import cairo
+
+from manic import Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -9,8 +11,11 @@ code = Code(scene.ctx, styled_tokens, font_size=48, alpha=1)
 
 scene.add(code)
 
-# print(code.lines[0][0].extents())
-r = code.lines[0].emphasize()
+r = code.lines[0].emphasize(
+    operator=cairo.OPERATOR_SCREEN,
+    fill_color=(0.5, 0.1, 0),
+    dash=((10, 2), 0),
+)
 scene.add(r)
 
 # emphs = [c.emphasize() for c in code.chars]

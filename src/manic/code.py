@@ -18,9 +18,8 @@ import cairo
 import shapely
 from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenType
 
-from .animation import Animation, AnimationType, LambdaFollower, Property
+from .animation import Animation, Property
 from .base import BaseText
-from .easing import CubicEaseInOut, EasingFunction
 from .highlight import StyledToken
 from .shapes import Rectangle
 
@@ -311,40 +310,6 @@ class Selection(BaseText, list[T]):
     def chars(self) -> Selection[Text]:
         return Selection(itertools.chain.from_iterable(item.chars for item in self))
 
-    def shift(
-        self,
-        delta_x: float,
-        delta_y: float,
-        start_frame: int,
-        end_frame: int,
-        easing: type[EasingFunction] = CubicEaseInOut,
-    ) -> None:
-        for char in self.chars:
-            if delta_x:
-                char.animate(
-                    "x",
-                    Animation(
-                        start_frame=start_frame,
-                        end_frame=end_frame,
-                        start_value=0,
-                        end_value=delta_x,
-                        animation_type=AnimationType.ADDITIVE,
-                        easing=easing,
-                    ),
-                )
-            if delta_y:
-                char.animate(
-                    "y",
-                    Animation(
-                        start_frame=start_frame,
-                        end_frame=end_frame,
-                        start_value=0,
-                        end_value=delta_y,
-                        animation_type=AnimationType.ADDITIVE,
-                        easing=easing,
-                    ),
-                )
-
     def write_on(
         self,
         property: str,
@@ -379,7 +344,22 @@ class Selection(BaseText, list[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
 
-    def emphasize(self, buffer: float = 5) -> Rectangle:
+    def emphasize(
+        self,
+        buffer: float = 5,
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[list[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
+    ) -> Rectangle:
         assert len(self) > 0
         self.ctx = self[0].ctx
-        return super().emphasize(buffer=buffer)
+        return super().emphasize(
+            buffer=buffer,
+            fill_color=fill_color,
+            color=color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+        )
