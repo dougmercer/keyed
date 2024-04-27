@@ -1,42 +1,42 @@
 import pytest
 
-from manic.easing import *
+from manic import easing
 
 
 @pytest.mark.parametrize(
     "EasingFunc, expected",
     [
-        (LinearInOut, [0, 0.5, 1]),
-        (QuadEaseInOut, [0, 0.5, 1]),
-        (QuadEaseIn, [0, 0.25, 1]),
-        (QuadEaseOut, [0, 0.75, 1]),
-        (CubicEaseIn, [0, 0.125, 1]),
-        (CubicEaseOut, [0, 0.875, 1]),
-        (CubicEaseInOut, [0, 0.5, 1]),
-        (QuarticEaseIn, [0, 0.0625, 1]),
-        (QuarticEaseOut, [0, 0.9375, 1]),
-        (QuarticEaseInOut, [0, 0.5, 1]),
-        (QuinticEaseIn, [0, 0.03125, 1]),
-        (QuinticEaseOut, [0, 0.96875, 1]),
-        (QuinticEaseInOut, [0, 0.5, 1]),
-        (SineEaseIn, [0, 0.29289, 1]),
-        (SineEaseOut, [0, 0.7071067, 1]),
-        (SineEaseInOut, [0, 0.5, 1]),
-        (CircularEaseIn, [0, 0.1339, 1]),
-        (CircularEaseOut, [0, 0.8660, 1]),
-        (CircularEaseInOut, [0, 0.5, 1]),
-        (ExponentialEaseIn, [0, 0.03125, 1]),
-        (ExponentialEaseOut, [0, 0.96875, 1]),
-        (ExponentialEaseInOut, [0, 0.5, 1]),
-        (ElasticEaseIn, [0, -0.022097086912079622, 1]),
-        (ElasticEaseOut, [0, 1.0220970869120796, 1]),
-        (ElasticEaseInOut, [0, 0.5, 1]),
-        (BackEaseIn, [0, -0.375, 1]),
-        (BackEaseOut, [0, 1.375, 1]),
-        (BackEaseInOut, [0, 0.5, 1]),
-        (BounceEaseIn, [0, 0.28125000000000044, 1]),
-        (BounceEaseOut, [0, 0.7187499999999996, 1]),
-        (BounceEaseInOut, [0, 0.5, 1]),
+        (easing.LinearInOut, [0, 0.5, 1]),
+        (easing.QuadEaseInOut, [0, 0.5, 1]),
+        (easing.QuadEaseIn, [0, 0.25, 1]),
+        (easing.QuadEaseOut, [0, 0.75, 1]),
+        (easing.CubicEaseIn, [0, 0.125, 1]),
+        (easing.CubicEaseOut, [0, 0.875, 1]),
+        (easing.CubicEaseInOut, [0, 0.5, 1]),
+        (easing.QuarticEaseIn, [0, 0.0625, 1]),
+        (easing.QuarticEaseOut, [0, 0.9375, 1]),
+        (easing.QuarticEaseInOut, [0, 0.5, 1]),
+        (easing.QuinticEaseIn, [0, 0.03125, 1]),
+        (easing.QuinticEaseOut, [0, 0.96875, 1]),
+        (easing.QuinticEaseInOut, [0, 0.5, 1]),
+        (easing.SineEaseIn, [0, 0.29289, 1]),
+        (easing.SineEaseOut, [0, 0.7071067, 1]),
+        (easing.SineEaseInOut, [0, 0.5, 1]),
+        (easing.CircularEaseIn, [0, 0.1339, 1]),
+        (easing.CircularEaseOut, [0, 0.8660, 1]),
+        (easing.CircularEaseInOut, [0, 0.5, 1]),
+        (easing.ExponentialEaseIn, [0, 0.03125, 1]),
+        (easing.ExponentialEaseOut, [0, 0.96875, 1]),
+        (easing.ExponentialEaseInOut, [0, 0.5, 1]),
+        (easing.ElasticEaseIn, [0, -0.022097086912079622, 1]),
+        (easing.ElasticEaseOut, [0, 1.0220970869120796, 1]),
+        (easing.ElasticEaseInOut, [0, 0.5, 1]),
+        (easing.BackEaseIn, [0, -0.375, 1]),
+        (easing.BackEaseOut, [0, 1.375, 1]),
+        (easing.BackEaseInOut, [0, 0.5, 1]),
+        (easing.BounceEaseIn, [0, 0.28125000000000044, 1]),
+        (easing.BounceEaseOut, [0, 0.7187499999999996, 1]),
+        (easing.BounceEaseInOut, [0, 0.5, 1]),
     ],
 )
 def test_easing_classes(EasingFunc, expected):
@@ -46,4 +46,4 @@ def test_easing_classes(EasingFunc, expected):
 
 
 def test_protocol_implementation():
-    assert isinstance(LinearInOut(), EasingFunction)
+    assert isinstance(easing.LinearInOut(), easing.EasingFunction)
