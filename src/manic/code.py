@@ -344,22 +344,8 @@ class Selection(BaseText, list[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
 
-    def emphasize(
-        self,
-        buffer: float = 5,
-        fill_color: tuple[float, float, float] = (1, 1, 1),
-        color: tuple[float, float, float] = (1, 1, 1),
-        alpha: float = 1,
-        dash: tuple[list[float], float] | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
-    ) -> Rectangle:
-        assert len(self) > 0
-        self.ctx = self[0].ctx
-        return super().emphasize(
-            buffer=buffer,
-            fill_color=fill_color,
-            color=color,
-            alpha=alpha,
-            dash=dash,
-            operator=operator,
-        )
+    @property
+    def ctx(self) -> cairo.Context:  # type: ignore[override]
+        if not self:
+            raise ValueError("Cannot retrieve 'ctx': Selection is empty.")
+        return self[0].ctx
