@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from PIL import Image, ImageTk
 
 if TYPE_CHECKING:
-    from pygments import Scene
+    from keyed import Scene
 
 
 def create_animation_window(scene: "Scene") -> None:
