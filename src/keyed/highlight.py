@@ -8,7 +8,7 @@ from pygments.token import Token, _TokenType  # noqa
 
 from .color import Style, style_to_color_map
 
-DEFAULT_STYLE = "base16-nord"
+DEFAULT_STYLE = "nord"
 
 __all__ = ["tokenize", "KeyedFormatter"]
 
