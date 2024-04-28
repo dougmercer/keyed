@@ -3,12 +3,15 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
-from typing import Any, Generator, Protocol
+from typing import Any, Generator, Iterable, Protocol
 
 import cairo
+from shapely import Point
 from tqdm import tqdm
 
 from .animation import Property
+from .base import Base
+from .code import Composite
 from .previewer import create_animation_window
 
 __all__ = ["Scene"]
@@ -35,7 +38,7 @@ class Scene:
         self.height = height
         self.surface = cairo.SVGSurface(None, self.width, self.height)  # type: ignore[arg-type]
         self.ctx = cairo.Context(self.surface)
-        self.content: list[Drawable] = []
+        self.content: list[Base] = []
         self.pivot_x = Property(value=0)
         self.pivot_y = Property(value=0)
         self.zoom = Property(value=1)
@@ -55,7 +58,7 @@ class Scene:
     def full_output_dir(self) -> Path:
         return self.output_dir / self.scene_name
 
-    def add(self, *content: Drawable) -> None:
+    def add(self, *content: Base) -> None:
         self.content.extend(content)
 
     def clear(self) -> None:
@@ -107,6 +110,45 @@ class Scene:
                 self.ctx.identity_matrix()
         else:
             yield
+
+    def find(self, x: float, y: float, frame: int = 0) -> Base | None:
+        """Find the nearest object on the canvas to the given x, y coordinates.
+
+        For composite objects, this will return the most atomic object possible. Namely, if
+        a user clicks on Code, which itself contains Lines, Tokens, and Chars (Text), this
+        method will return the nearest Text.
+
+        Parameters
+        ----------
+        x: float
+        y: float
+
+        Returns
+        -------
+        Base | None
+        """
+        point = Point(x, y)
+        nearest: Base | None = None
+        min_distance = float("inf")
+
+        def check_objects(objects: Iterable[Base]) -> None:
+            nonlocal nearest, min_distance
+            for obj in objects:
+                if isinstance(obj, Composite):
+                    check_objects(obj.objects)
+                else:
+                    assert hasattr(obj, "alpha")
+                    assert isinstance(obj.alpha, Property)
+                    if obj.alpha.get_value_at_frame(frame) == 0:
+                        continue
+                    geom = obj.geom(frame)
+                    distance = point.distance(geom)
+                    if distance < min_distance:
+                        min_distance = distance
+                        nearest = obj
+
+        check_objects(self.content)
+        return nearest
 
     def preview(self) -> None:
         create_animation_window(self)

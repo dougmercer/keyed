@@ -55,6 +55,9 @@ class Text(BaseText):
         alpha: float = 1,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
+        line_id: int | None = None,
+        token_id: int | None = None,
+        char_id: int | None = None,
     ):
         self.text = text
         self.token_type = token_type
@@ -67,15 +70,22 @@ class Text(BaseText):
         self.x = Property(value=x)
         self.y = Property(value=y)
         self.ctx = ctx
+        self.line_id = line_id
+        self.token_id = token_id
+        self.char_id = char_id
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
         return (
             f"{self.__class__.__name__}(text={self.text!r}, "
-            f"x={self.x.value}, y={self.y.value}, "
+            f"x={self.x.value:2}, y={self.y.value:2}, "
             f"color={color_str}, alpha={self.alpha.value}, "
-            f"slant={self.slant!r}, weight={self.weight!r}, "
-            f"token_type={self.token_type!r})"
+            # f"slant={self.slant!r}, weight={self.weight!r}, "
+            f"token_type={self.token_type!r}, "
+            f"line_id={self.line_id}, "
+            f"token_id={self.token_id}, "
+            f"char_id={self.char_id}"
+            ")"
         )
 
     def _prepare_context(self, frame: int) -> None:
@@ -141,7 +151,11 @@ class Composite(BaseText, Generic[T]):
         return iter(self.objects)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.objects!r})"
+        extra = ""
+        extra += f"line_id={self.line_id}" if hasattr(self, "line_id") else ""
+        extra += f"token_id={self.token_id}" if hasattr(self, "token_id") else ""
+        extra += ", " if extra else ""
+        return f"{self.__class__.__name__}({extra}{self.objects!r})"
 
     def animate(self, property: str, animation: Animation) -> None:
         for obj in self:
@@ -164,10 +178,14 @@ class Token(Composite[Text]):
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
+        line_id: int | None = None,
+        token_id: int | None = None,
     ):
         self.objects: list[Text] = []
+        self.line_id = line_id
+        self.token_id = token_id
         self.ctx = ctx
-        for char in token.text:
+        for char_id, char in enumerate(token.text):
             self.objects.append(
                 Text(
                     ctx,
@@ -178,6 +196,9 @@ class Token(Composite[Text]):
                     size=font_size,
                     font=font,
                     alpha=alpha,
+                    line_id=line_id,
+                    token_id=token_id,
+                    char_id=char_id,
                 )
             )
             extents = self.objects[-1].extents()
@@ -223,12 +244,24 @@ class Line(Composite[Token]):
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
+        line_id: int | None = None,
     ):
         self.objects: list[Token] = []
+        self.line_id = line_id
         self.ctx = ctx
-        for token in tokens:
+        for token_id, token in enumerate(tokens):
             self.objects.append(
-                Token(ctx, token, x=x, y=y, font_size=font_size, font=font, alpha=alpha)
+                Token(
+                    ctx,
+                    token,
+                    x=x,
+                    y=y,
+                    font_size=font_size,
+                    font=font,
+                    alpha=alpha,
+                    line_id=line_id,
+                    token_id=token_id,
+                )
             )
             x += self.objects[-1].extents().x_advance
 
@@ -272,9 +305,18 @@ class Code(Composite[Line]):
             else:
                 line.append(token)
 
-        for line in lines:
+        for idx, line in enumerate(lines):
             self.lines.append(
-                Line(ctx, tokens=line, x=x, y=y, font=font, font_size=font_size, alpha=alpha)
+                Line(
+                    ctx,
+                    tokens=line,
+                    x=x,
+                    y=y,
+                    font=font,
+                    font_size=font_size,
+                    alpha=alpha,
+                    line_id=idx,
+                )
             )
             y += line_height
 

@@ -41,6 +41,10 @@ def create_animation_window(scene: "Scene") -> None:
     frame_counter_label = Label(root, text="Frame: 0", font=monospace_font)
     frame_counter_label.grid(row=1, column=2)
 
+    # Object Info label
+    object_info_label = Label(root, text="", font=monospace_font)
+    object_info_label.grid(row=3, column=0, columnspan=3, sticky="ew")
+
     # Variable to keep track of playback state
     playing = False
     looping = False
@@ -149,6 +153,30 @@ def create_animation_window(scene: "Scene") -> None:
         slider_length = slider.winfo_width()
         frame = round((click_x / slider_length) * (scene.num_frames - 1))
         slider.set(frame)
+
+    def clear_object_info() -> None:
+        object_info_label["text"] = ""
+
+    def on_canvas_click(event: tk.Event) -> None:
+        x, y = event.x, event.y
+        frame = round(slider.get())
+        zoom = scene.zoom.get_value_at_frame(frame)
+        pivot_x = scene.pivot_x.get_value_at_frame(frame)
+        pivot_y = scene.pivot_y.get_value_at_frame(frame)
+        scene_x = (x - pivot_x) / zoom + pivot_x
+        scene_y = (y - pivot_y) / zoom + pivot_y
+
+        nearest_object = scene.find(scene_x, scene_y, frame)
+        if nearest_object:
+            object_info_label["text"] = f"{repr(nearest_object)}"
+
+        root.after(5000, clear_object_info)
+
+    # Bind the mouse click event to the canvas
+    canvas.bind("<Button-1>", on_canvas_click)
+
+    # Bind the mouse click event to the canvas
+    canvas.bind("<Button-1>", on_canvas_click)
 
     # Bind this new function to mouse button clicks on the slider
     slider.bind("<Button-1>", on_slider_click)

@@ -79,7 +79,7 @@ class Rectangle(Shape):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}()"
+            f"{self.__class__.__name__}("
             f"x={self.x}, "
             f"y={self.y}, "
             f"width={self.width}, "
@@ -202,3 +202,12 @@ class Trace(Shape):
 
     def geom(self, frame: int = 0) -> shapely.LineString:
         return shapely.LineString(self.points(frame))
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"objects={self.objects!r}, "
+            f"dash={self.dash}, "
+            f"operator={self.operator}, "
+            ")"
+        )
