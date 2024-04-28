@@ -1,4 +1,4 @@
-from manic import Animation, Code, Scene, tokenize
+from keyed import Animation, Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()

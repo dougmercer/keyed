@@ -1,4 +1,4 @@
-from manic import Animation, AnimationType, Code, Scene, easing, lag_animation, tokenize
+from keyed import Animation, AnimationType, Code, Scene, easing, lag_animation, tokenize
 
 scene = Scene(scene_name="code_replace_complex", num_frames=90, width=3840, height=2160)
 

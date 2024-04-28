@@ -1,5 +1,6 @@
 import cairo
-from manic import Code, Scene, tokenize
+
+from keyed import Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()

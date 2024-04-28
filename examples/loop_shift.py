@@ -1,4 +1,4 @@
-from manic import Animation, AnimationType, Code, Loop, Scene, easing, tokenize
+from keyed import Animation, AnimationType, Code, Loop, Scene, easing, tokenize
 
 styled_tokens = tokenize(r"import this")
 

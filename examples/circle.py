@@ -1,4 +1,4 @@
-from manic import Animation, AnimationType, Circle, PingPong, Scene, Text, easing
+from keyed import Animation, AnimationType, Circle, PingPong, Scene, Text, easing
 
 scene = Scene(scene_name="circle", num_frames=90, width=3840, height=2160)
 

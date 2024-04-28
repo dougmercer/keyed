@@ -1,4 +1,4 @@
-from manic import AnimationType, Code, Scene, lag_animation, tokenize
+from keyed import AnimationType, Code, Scene, lag_animation, tokenize
 
 scene = Scene(scene_name="code_replace", num_frames=60, width=800, height=600)
 

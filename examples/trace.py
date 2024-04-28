@@ -1,4 +1,4 @@
-from manic import Code, Scene, Trace, tokenize
+from keyed import Code, Scene, Trace, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()

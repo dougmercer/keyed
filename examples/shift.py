@@ -1,5 +1,5 @@
-from manic import Animation, AnimationType, Code, Scene, tokenize
-from manic.easing import CubicEaseInOut
+from keyed import Animation, AnimationType, Code, Scene, tokenize
+from keyed.easing import CubicEaseInOut
 
 styled_tokens = tokenize(r"import this")
 
