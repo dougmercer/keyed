@@ -1,7 +1,7 @@
 from keyed import Animation, Loop, Property
 
 
-def test_loop_animation():
+def test_loop_animation() -> None:
     prop = Property(value=0)
     base_anim = Animation(start_frame=0, end_frame=2, start_value=0, end_value=2)
     loop_anim = Loop(animation=base_anim, n=3)

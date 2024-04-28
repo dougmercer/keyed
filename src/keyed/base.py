@@ -38,7 +38,7 @@ class Base(ABC):
         fill_color: tuple[float, float, float] = (1, 1, 1),
         color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
-        dash: tuple[list[float], float] | None = None,
+        dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_SCREEN,
     ) -> "Rectangle":
         from .shapes import Rectangle

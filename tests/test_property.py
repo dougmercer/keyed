@@ -4,14 +4,14 @@ from keyed import Animation, AnimationType, Property
 
 
 @pytest.mark.parametrize("frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)])
-def test_value_with_single_animation(frame, expected_value):
+def test_value_with_single_animation(frame: int, expected_value: tuple[float, float]) -> None:
     prop = Property(value=0)
     anim = Animation(start_frame=0, end_frame=10, start_value=0, end_value=100)
     prop.add_animation(anim)
     assert prop.get_value_at_frame(frame) == expected_value
 
 
-def test_multiple_animations():
+def test_multiple_animations() -> None:
     prop = Property(value=0)
     anim1 = Animation(start_frame=0, end_frame=10, start_value=0, end_value=50)
     anim2 = Animation(start_frame=5, end_frame=15, start_value=50, end_value=100)
@@ -32,7 +32,7 @@ def test_multiple_animations():
         (AnimationType.MULTIPLICATIVE, 10 * 30),
     ],
 )
-def test_animation_types(animation_type, expected_value):
+def test_animation_types(animation_type: AnimationType, expected_value: float) -> None:
     prop = Property(value=10)
     anim = Animation(
         start_frame=0, end_frame=10, start_value=10, end_value=30, animation_type=animation_type
@@ -41,7 +41,7 @@ def test_animation_types(animation_type, expected_value):
     assert prop.get_value_at_frame(10) == expected_value
 
 
-def test_sequential_different_types():
+def test_sequential_different_types() -> None:
     prop = Property(value=10)
     add_anim = Animation(
         start_frame=1,
@@ -88,7 +88,7 @@ def test_sequential_different_types():
     assert prop.get_value_at_frame(33) == 90  # done with second add
 
 
-def test_overlapping_different_types():
+def test_overlapping_different_types() -> None:
     prop = Property(value=10)
     add_anim = Animation(
         start_frame=0,
@@ -131,7 +131,7 @@ def test_overlapping_different_types():
     assert prop.get_value_at_frame(20) == 90  # animations done
 
 
-def test_interwoven_animations():
+def test_interwoven_animations() -> None:
     prop = Property(value=1)
     add_anim = Animation(
         start_frame=0,

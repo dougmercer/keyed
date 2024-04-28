@@ -1,5 +1,6 @@
 import math
 from abc import abstractmethod
+from typing import Sequence
 
 import cairo
 import shapely
@@ -15,7 +16,7 @@ class Shape(Base):
     color: tuple[float, float, float]
     fill_color: tuple[float, float, float]
     alpha: Property
-    dash: tuple[list[float], float] | None
+    dash: tuple[Sequence[float], float] | None
     operator: cairo.Operator = cairo.OPERATOR_OVER
     draw_fill: bool
     draw_stroke: bool
@@ -59,7 +60,7 @@ class Rectangle(Shape):
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
-        dash: tuple[list[float], float] | None = None,
+        dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         draw_fill: bool = True,
         draw_stroke: bool = True,
@@ -113,7 +114,7 @@ class Circle(Shape):
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
-        dash: tuple[list[float], float] | None = None,
+        dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         draw_fill: bool = True,
         draw_stroke: bool = True,
@@ -160,7 +161,7 @@ class Trace(Shape):
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
-        dash: tuple[list[float], float] | None = None,
+        dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         buffer: float = 5,
@@ -193,9 +194,6 @@ class Trace(Shape):
                 self.ctx.line_to(*point)
             x, y = points[-1]
             self.ctx.line_to(x + self.buffer, y)
-        # self.ctx.set_line_width(1)
-        # self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
-        # self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
 
     def points(self, frame: int) -> list[shapely.Point]:
         return [obj.geom(frame).centroid for obj in self.objects]

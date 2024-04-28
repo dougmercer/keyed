@@ -1,7 +1,7 @@
 from keyed import Animation, PingPong, Property
 
 
-def test_pingpong_animation():
+def test_pingpong_animation() -> None:
     prop = Property(value=0)
     base_anim = Animation(start_frame=0, end_frame=2, start_value=0, end_value=2)
     pingpong_anim = PingPong(animation=base_anim, n=2)

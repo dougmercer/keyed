@@ -39,11 +39,11 @@ from keyed import easing
         (easing.BounceEaseInOut, [0, 0.5, 1]),
     ],
 )
-def test_easing_classes(EasingFunc, expected):
+def test_easing_classes(EasingFunc: type[easing.EasingFunction], expected: list[float]) -> None:
     easing = EasingFunc(start=0, end=1, start_frame=0, end_frame=1)
     results = [easing(0), easing(0.5), easing(1)]
     assert pytest.approx(results, abs=1e-4) == expected, (results, expected)
 
 
-def test_protocol_implementation():
+def test_protocol_implementation() -> None:
     assert isinstance(easing.LinearInOut(), easing.EasingFunction)

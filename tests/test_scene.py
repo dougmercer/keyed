@@ -6,7 +6,7 @@ import numpy as np
 from keyed import Scene, Text
 
 
-def test_text_drawing():
+def test_text_drawing() -> None:
 
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=100, height=100)
     text = Text(
@@ -26,11 +26,11 @@ def test_text_drawing():
     # Extract pixel data to verify drawing
     # Raster is [height, width, 4] with channels in b, g, r, a order
     buf = scene.rasterize(0).get_data()
-    arr = np.ndarray(shape=(100, 100, 4), dtype=np.uint8, buffer=buf)
+    arr: np.ndarray = np.ndarray(shape=(100, 100, 4), dtype=np.uint8, buffer=buf)
     assert np.any(arr[:, :, 2] == 255)
 
 
-def test_add_multiple_drawables():
+def test_add_multiple_drawables() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
     text1 = Text(scene.ctx, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)  # Red text
     text2 = Text(scene.ctx, "World", 20, 100, 50, "Sans", (0, 1, 0), alpha=1)  # Green text
@@ -38,7 +38,7 @@ def test_add_multiple_drawables():
     scene.draw_frame(0)
 
     buf = scene.rasterize(0).get_data()
-    arr = np.ndarray(shape=(100, 200, 4), dtype=np.uint8, buffer=buf)
+    arr: np.ndarray = np.ndarray(shape=(100, 200, 4), dtype=np.uint8, buffer=buf)
 
     # Check for red and green pixels
     red_present = ((arr[:, :, 2] == 255) & (arr[:, :, [0, 1]].sum(axis=2) == 0)).any()
@@ -47,7 +47,7 @@ def test_add_multiple_drawables():
     assert green_present, "Green pixels expected but not found"
 
 
-def test_output_directory_creation(tmpdir):
+def test_output_directory_creation(tmpdir: Path) -> None:
     output_dir = Path(tmpdir)
     scene_dir = output_dir / "test_scene"
     scene = Scene("test_scene", num_frames=1, output_dir=output_dir, width=100, height=100)
@@ -62,7 +62,7 @@ def test_output_directory_creation(tmpdir):
     assert len(list(scene_dir.glob("frame*.png"))) == 1, "Didn't draw the one frame"
 
 
-def test_clear_scene():
+def test_clear_scene() -> None:
     width = 100
     height = 100
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=width, height=height)
@@ -80,5 +80,5 @@ def test_clear_scene():
 
     # Check if all pixels are fully transparent (alpha channel)
     buf = raster.get_data()
-    arr = np.ndarray(shape=(100, 100, 4), dtype=np.uint8, buffer=buf)
+    arr: np.ndarray = np.ndarray(shape=(100, 100, 4), dtype=np.uint8, buffer=buf)
     assert np.all(arr[:, :, 3] == 0), "Not all pixels are clear"

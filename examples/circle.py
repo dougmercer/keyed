@@ -22,7 +22,7 @@ circle.animate(
 )
 
 text = Text(
-    scene.ctx, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=[1, 0, 0], token_type=None
+    scene.ctx, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0), token_type=None
 )
 scene.add(text)
 

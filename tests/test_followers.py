@@ -6,7 +6,7 @@ class SimpleFollower:
         return frame * 10
 
 
-def test_property_following():
+def test_property_following() -> None:
     follower = SimpleFollower()
     prop = Property(value=0)
     prop.follow(follower)
@@ -16,7 +16,7 @@ def test_property_following():
         assert prop.get_value_at_frame(frame) == expected_value, f"Failed at frame {frame}"
 
 
-def test_lambda_follower():
+def test_lambda_follower() -> None:
     follower = LambdaFollower(lambda frame: frame * 10)
     prop = Property(value=0)
     prop.follow(follower)
@@ -26,7 +26,7 @@ def test_lambda_follower():
         assert prop.get_value_at_frame(frame) == expected_value, f"Failed at frame {frame}"
 
 
-def test_property_offset():
+def test_property_offset() -> None:
     follower = SimpleFollower()
     prop = Property(value=0)
     prop.follow(follower).offset(5)
