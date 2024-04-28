@@ -1,0 +1,6 @@
+name: keyed
+dependencies:
+  - python
+  - pip
+  - pip:
+    - -e ".[dev]"

@@ -1,5 +1,4 @@
 import cairo
-
 from manic import Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:

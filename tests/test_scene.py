@@ -3,7 +3,7 @@ from pathlib import Path
 import cairo
 import numpy as np
 
-from manic import Scene, Text
+from keyed import Scene, Text
 
 
 def test_text_drawing():

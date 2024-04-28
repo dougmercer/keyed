@@ -1,6 +1,6 @@
 import pytest
 
-from manic import easing
+from keyed import easing
 
 
 @pytest.mark.parametrize(

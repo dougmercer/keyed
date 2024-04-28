@@ -1,4 +1,4 @@
-from manic import LambdaFollower, Property
+from keyed import LambdaFollower, Property
 
 
 class SimpleFollower:

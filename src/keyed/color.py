@@ -1,10 +1,10 @@
 """Common utilities for color."""
 
 from dataclasses import dataclass
+from typing import Self
 
 from pygments.style import StyleMeta
 from pygments.token import _TokenType
-from typing_extensions import Self
 
 __all__ = ["style_to_color_map", "as_rgb"]
 

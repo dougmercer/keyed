@@ -1,4 +1,4 @@
-from manic.animation import Animation, PingPong, Property
+from keyed import Animation, PingPong, Property
 
 
 def test_pingpong_animation():

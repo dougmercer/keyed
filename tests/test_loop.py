@@ -1,4 +1,4 @@
-from manic.animation import Animation, Loop, Property
+from keyed import Animation, Loop, Property
 
 
 def test_loop_animation():

@@ -1,6 +1,6 @@
 import pytest
 
-from manic.animation import Animation, AnimationType, Property
+from keyed import Animation, AnimationType, Property
 
 
 @pytest.mark.parametrize("frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)])

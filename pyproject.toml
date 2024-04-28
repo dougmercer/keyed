@@ -38,5 +38,5 @@ include_trailing_comma = true
 line_length = 100
 multi_line_output=3
 py_version = 310
-src_paths = ["src/manic", "tests"]
+src_paths = ["src/keyed", "tests"]
 skip_glob = [ "**/.ipynb_checkpoints"]
