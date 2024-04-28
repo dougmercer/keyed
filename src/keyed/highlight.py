@@ -10,7 +10,7 @@ from .color import Style, style_to_color_map
 
 DEFAULT_STYLE = "base16-nord"
 
-__all__ = ["tokenize", "ManicFormatter"]
+__all__ = ["tokenize", "KeyedFormatter"]
 
 
 class StyledToken(BaseModel, arbitrary_types_allowed=True):
@@ -64,15 +64,15 @@ def format_code(
     return StyledTokens.dump_json(styled_tokens).decode()
 
 
-class ManicFormatter(Formatter):
+class KeyedFormatter(Formatter):
     """Format syntax highlighted text as JSON with color, slant, and weight metadata."""
 
-    name = "ManicFormatter"
-    aliases = ["manic"]
+    name = "KeyedFormatter"
+    aliases = ["keyed"]
     filenames: list[str] = []
 
     def __init__(self, **options: Any) -> None:
-        super(ManicFormatter, self).__init__(**options)
+        super(KeyedFormatter, self).__init__(**options)
 
     def format_unencoded(self, tokensource, outfile) -> None:  # type: ignore[no-untyped-def]
         formatted_output = format_code(list(tokensource), style=self.style)
@@ -84,7 +84,7 @@ def tokenize(text: str, lexer: Lexer = None, formatter: Formatter = None) -> lis
     from pygments.lexers import PythonLexer
 
     lexer = lexer or PythonLexer()
-    formatter = formatter or ManicFormatter(style=DEFAULT_STYLE)
+    formatter = formatter or KeyedFormatter(style=DEFAULT_STYLE)
     tokens = lex(text, lexer)
     json_str = format(tokens, formatter)
     return StyledTokens.validate_json(json_str)
