@@ -142,7 +142,7 @@ def create_animation_window(scene: "Scene") -> None:
             new_frame = max(0, min(slider["to"], current_frame + delta))
             slider.set(new_frame)
 
-    def on_slider_click(event):
+    def on_slider_click(event: tk.Event) -> None:
         """Handle mouse clicks on the slider to jump to the nearest frame."""
         # Calculate nearest frame to click
         click_x = event.x

@@ -21,7 +21,6 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText
 from .highlight import StyledToken
-from .shapes import Rectangle
 
 __all__ = [
     "Text",
