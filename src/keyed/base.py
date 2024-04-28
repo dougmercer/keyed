@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Sequence
 
 import cairo
 import shapely
 
 from .animation import Animation, AnimationType, LambdaFollower
+from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
 
 if TYPE_CHECKING:
@@ -101,6 +102,52 @@ class Base(ABC):
                     easing=easing,
                 ),
             )
+
+    def get_position_along_dim(
+        self, frame: int = 0, direction: float = 0, dim: Literal[0, 1] = 0
+    ) -> float:
+        assert -1 <= direction[dim] <= 1
+        magnitude = 0.5 * (direction[dim] + 1)  # remap [-1, 1] to [0, 1]
+
+        # Take convex combination along dimension
+        # bounds are min_x, min_y, max_x, max_y.
+        # Indices 0 and 2 are x, indices 1 and 3 are y
+        return (
+            magnitude * self.geom(frame).bounds[dim]
+            + (1 - magnitude) * self.geom(frame).bounds[dim + 2]
+        )
+
+    def get_critical_point(
+        self, frame: int = 0, direction: Direction = ORIGIN
+    ) -> tuple[float, float]:
+        x = self.get_position_along_dim(frame, direction, dim=0)
+        y = self.get_position_along_dim(frame, direction, dim=1)
+        return x, y
+
+    def align_to(
+        self,
+        to: Base,
+        start_frame: int,
+        end_frame: int,
+        from_: Base | None = None,
+        easing: type[EasingFunction] = CubicEaseInOut,
+        direction: Direction = ORIGIN,
+    ) -> None:
+        from_ = from_ if from_ is not None else self
+
+        to_point = to.get_critical_point(end_frame, direction)
+        from_point = from_.get_critical_point(end_frame, direction)
+
+        delta_x = to_point[0] - from_point[0] if direction[0] != 0 else 0
+        delta_y = to_point[1] - from_point[1] if direction[1] != 0 else 0
+
+        self.shift(
+            delta_x=delta_x,
+            delta_y=delta_y,
+            start_frame=start_frame,
+            end_frame=end_frame,
+            easing=easing,
+        )
 
 
 class BaseText(Base):
