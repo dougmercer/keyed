@@ -137,7 +137,7 @@ class Scene:
                 if isinstance(obj, Composite):
                     check_objects(obj.objects)
                 else:
-                    assert hasattr(obj, "alpha")
+                    assert hasattr(obj, "alpha"), obj
                     assert isinstance(obj.alpha, Property)
                     if obj.alpha.get_value_at_frame(frame) == 0:
                         continue
