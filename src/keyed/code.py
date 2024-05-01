@@ -55,9 +55,7 @@ class Text(BaseText):
         alpha: float = 1,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
-        line_id: int | None = None,
-        token_id: int | None = None,
-        char_id: int | None = None,
+        code: Code | None = None,
     ):
         self.text = text
         self.token_type = token_type
@@ -70,21 +68,22 @@ class Text(BaseText):
         self.x = Property(value=x)
         self.y = Property(value=y)
         self.ctx = ctx
-        self.line_id = line_id
-        self.token_id = token_id
-        self.char_id = char_id
+        self.code = code
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
+        line_str = f"line={self.code.find_line(self)}, " if self.code is not None else ""
+        token_str = f"token={self.code.find_token(self)}, " if self.code is not None else ""
+        char_str = f"char={self.code.find_char(self)}" if self.code is not None else ""
         return (
             f"{self.__class__.__name__}(text={self.text!r}, "
             f"x={self.x.value:2}, y={self.y.value:2}, "
             f"color={color_str}, alpha={self.alpha.value}, "
             # f"slant={self.slant!r}, weight={self.weight!r}, "
             f"token_type={self.token_type!r}, "
-            f"line_id={self.line_id}, "
-            f"token_id={self.token_id}, "
-            f"char_id={self.char_id}"
+            f"{line_str}"
+            f"{token_str}"
+            f"{char_str}"
             ")"
         )
 
@@ -167,6 +166,9 @@ class Composite(BaseText, Generic[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
 
+    def contains(self, query: Text) -> bool:
+        return query in self.chars
+
 
 class Token(Composite[Text]):
     def __init__(
@@ -178,13 +180,9 @@ class Token(Composite[Text]):
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
-        line_id: int | None = None,
-        token_id: int | None = None,
-        char_id: int | None = None,
+        code: Code | None = None,
     ):
         self.objects: list[Text] = []
-        self.line_id = line_id
-        self.token_id = token_id
         self.ctx = ctx
         for char in token.text:
             self.objects.append(
@@ -197,15 +195,11 @@ class Token(Composite[Text]):
                     size=font_size,
                     font=font,
                     alpha=alpha,
-                    line_id=line_id,
-                    token_id=token_id,
-                    char_id=char_id,
+                    code=code,
                 )
             )
             extents = self.objects[-1].extents()
             x += extents.x_advance
-            if isinstance(char_id, int):
-                char_id += 1
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
         _extents = [char.extents(frame=frame) for char in self.objects]
@@ -247,13 +241,11 @@ class Line(Composite[Token]):
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
-        line_id: int | None = None,
-        char_id: int | None = None,
+        code: Code | None = None,
     ):
         self.objects: list[Token] = []
-        self.line_id = line_id
         self.ctx = ctx
-        for token_id, token in enumerate(tokens):
+        for token in tokens:
             self.objects.append(
                 Token(
                     ctx,
@@ -263,14 +255,10 @@ class Line(Composite[Token]):
                     font_size=font_size,
                     font=font,
                     alpha=alpha,
-                    line_id=line_id,
-                    token_id=token_id,
-                    char_id=char_id,
+                    code=code,
                 )
             )
             x += self.objects[-1].extents().x_advance
-            if isinstance(char_id, int):
-                char_id += len(self.objects[-1].chars)
 
     @property
     def chars(self) -> Selection[Text]:
@@ -312,8 +300,7 @@ class Code(Composite[Line]):
             else:
                 line.append(token)
 
-        char_id = 0
-        for idx, line in enumerate(lines):
+        for line in lines:
             self.lines.append(
                 Line(
                     ctx,
@@ -323,12 +310,10 @@ class Code(Composite[Line]):
                     font=font,
                     font_size=font_size,
                     alpha=alpha,
-                    line_id=idx,
-                    char_id=char_id,
+                    code=self,
                 )
             )
             y += line_height
-            char_id += len(self.objects[-1].chars)
 
     def set_default_font(self) -> None:
         self.ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
@@ -345,6 +330,27 @@ class Code(Composite[Line]):
     @property
     def lines(self) -> Selection[Line]:
         return self.objects
+
+    def find_line(self, query: Text) -> int:
+        """Find the line index of a given character."""
+        for idx, line in enumerate(self.lines):
+            if line.contains(query):
+                return idx
+        return -1
+
+    def find_token(self, query: Text) -> int:
+        """Find the token index of a given character."""
+        for index, token in enumerate(self.tokens):
+            if token.contains(query):
+                return index
+        return -1
+
+    def find_char(self, query: Text) -> int:
+        """Find the charecter index of a given character."""
+        for index, char in enumerate(self.chars):
+            if char == query:
+                return index
+        return -1
 
 
 class Selection(BaseText, list[T]):
