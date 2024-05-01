@@ -9,7 +9,15 @@ code = Code(scene.ctx, styled_tokens, font_size=48, alpha=1, x=100, y=100)
 
 scene.add(code)
 
-t = Trace(scene.ctx, code.lines[0:4].chars, alpha=0.5, line_width=50, buffer=10, simplify=True)
+t = Trace(
+    scene.ctx,
+    code.lines[0:4].chars,
+    alpha=0.5,
+    line_width=50,
+    buffer=10,
+    simplify=True,
+    tension=0.3,
+)
 
 scene.add(t)
 
