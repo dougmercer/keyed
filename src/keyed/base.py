@@ -104,7 +104,7 @@ class Base(ABC):
             )
 
     def get_position_along_dim(
-        self, frame: int = 0, direction: float = 0, dim: Literal[0, 1] = 0
+        self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
     ) -> float:
         assert -1 <= direction[dim] <= 1
         magnitude = 0.5 * (direction[dim] + 1)  # remap [-1, 1] to [0, 1]

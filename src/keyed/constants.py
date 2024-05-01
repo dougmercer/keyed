@@ -6,7 +6,7 @@ import numpy.typing as npt
 __all__ = ["Direction", "ORIGIN", "LEFT", "RIGHT", "DOWN", "UP", "DL", "DR", "UL", "UR"]
 
 
-Direction: TypeAlias = npt.NDArray[np.float64] | tuple[float, float]
+Direction: TypeAlias = npt.NDArray[np.float64]
 
 ORIGIN: Direction = np.array([0.0, 0.0])
 LEFT: Direction = np.array([-1.0, 0.0])
