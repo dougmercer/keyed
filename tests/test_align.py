@@ -22,11 +22,13 @@ def test_align_to() -> None:
         code1.chars[-1], from_=code2.chars[-1], start_frame=48, end_frame=54, direction=DL
     )
 
-    c1 = code1.chars[0]
-    c2 = code2.chars[0]
-    assert c1.x.get_value_at_frame(6) == c2.x.get_value_at_frame(6)
-    assert c1.y.get_value_at_frame(6) != c2.y.get_value_at_frame(6)
-    assert c1.y.get_value_at_frame(18) == c2.y.get_value_at_frame(18)
-
-    assert code1.chars[-1].x.get_value_at_frame(54) == code2.chars[-1].x.get_value_at_frame(54)
-    assert code1.chars[-1].y.get_value_at_frame(54) == code2.chars[-1].y.get_value_at_frame(54)
+    c1_0 = code1.chars[0]
+    c1_minus1 = code1.chars[-1]
+    c2_0 = code2.chars[0]
+    c2_minus1 = code2.chars[-1]
+    assert c1_0.left(6) == c2_0.left(6)
+    assert c1_0.down(6) != c2_0.down(6)
+    assert c1_0.down(18) == c2_0.down(18)
+    assert c1_minus1.right(30) == c2_minus1.right(30)
+    assert c1_minus1.left(54) == c2_minus1.left(54)
+    assert c1_minus1.down(54) == c2_minus1.down(54)

@@ -149,6 +149,18 @@ class Base(ABC):
             easing=easing,
         )
 
+    def left(self, frame: int = 0) -> float:
+        return self.geom(frame).bounds[0]
+
+    def right(self, frame: int = 0) -> float:
+        return self.geom(frame).bounds[2]
+
+    def down(self, frame: int = 0) -> float:
+        return self.geom(frame).bounds[1]
+
+    def up(self, frame: int = 0) -> float:
+        return self.geom(frame).bounds[3]
+
 
 class BaseText(Base):
     @property
