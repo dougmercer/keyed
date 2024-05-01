@@ -180,12 +180,13 @@ class Token(Composite[Text]):
         alpha: float = 1,
         line_id: int | None = None,
         token_id: int | None = None,
+        char_id: int | None = None,
     ):
         self.objects: list[Text] = []
         self.line_id = line_id
         self.token_id = token_id
         self.ctx = ctx
-        for char_id, char in enumerate(token.text):
+        for char in token.text:
             self.objects.append(
                 Text(
                     ctx,
@@ -203,6 +204,8 @@ class Token(Composite[Text]):
             )
             extents = self.objects[-1].extents()
             x += extents.x_advance
+            if isinstance(char_id, int):
+                char_id += 1
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
         _extents = [char.extents(frame=frame) for char in self.objects]
@@ -245,6 +248,7 @@ class Line(Composite[Token]):
         font_size: int = 24,
         alpha: float = 1,
         line_id: int | None = None,
+        char_id: int | None = None,
     ):
         self.objects: list[Token] = []
         self.line_id = line_id
@@ -261,9 +265,12 @@ class Line(Composite[Token]):
                     alpha=alpha,
                     line_id=line_id,
                     token_id=token_id,
+                    char_id=char_id,
                 )
             )
             x += self.objects[-1].extents().x_advance
+            if isinstance(char_id, int):
+                char_id += len(self.objects[-1].chars)
 
     @property
     def chars(self) -> Selection[Text]:
@@ -305,6 +312,7 @@ class Code(Composite[Line]):
             else:
                 line.append(token)
 
+        char_id = 0
         for idx, line in enumerate(lines):
             self.lines.append(
                 Line(
@@ -316,9 +324,11 @@ class Code(Composite[Line]):
                     font_size=font_size,
                     alpha=alpha,
                     line_id=idx,
+                    char_id=char_id,
                 )
             )
             y += line_height
+            char_id += len(self.objects[-1].chars)
 
     def set_default_font(self) -> None:
         self.ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
