@@ -90,6 +90,9 @@ class Rectangle(Shape):
         )
 
     def _draw_shape(self, frame: int) -> None:
+        self.ctx.set_line_width(2)
+        self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
+        self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         x = self.x.get_value_at_frame(frame)
         y = self.y.get_value_at_frame(frame)
         width = self.width.get_value_at_frame(frame)
@@ -135,6 +138,9 @@ class Circle(Shape):
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"
 
     def _draw_shape(self, frame: int = 0) -> None:
+        self.ctx.set_line_width(2)
+        self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
+        self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         self.ctx.arc(
             self.x.get_value_at_frame(frame),
             self.y.get_value_at_frame(frame),
