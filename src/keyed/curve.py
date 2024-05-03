@@ -1,14 +1,63 @@
+from functools import partial
 from typing import Sequence
 
 import cairo
 import numpy as np
 import shapely
+from scipy.integrate import quad
 
 from .animation import Property
 from .base import Base
 from .shapes import Shape
 
 __all__ = ["Curve", "Trace"]
+
+
+# Derivative of the cubic Bézier curve
+def bezier_derivative(
+    t: float, p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> np.ndarray:
+    return 3 * (1 - t) ** 2 * (p1 - p0) + 6 * (1 - t) * t * (p2 - p1) + 3 * t**2 * (p3 - p2)
+
+
+# Function to integrate
+def integrand(
+    t: float, p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> np.float64:
+    return np.linalg.norm(bezier_derivative(t, p0, p1, p2, p3))
+
+
+# Function to calculate the point on a Bezier curve for a given t
+def bezier_point(
+    t: float, p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> np.ndarray:
+    """Calculate the point on the Bezier curve at parameter t."""
+    return (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t**2 * p2 + t**3 * p3
+
+
+def bezier_length(p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
+    _integrand = partial(integrand, p0=p0, p1=p1, p2=p2, p3=p3)
+    arclength, _ = quad(_integrand, 0, 1)
+    return arclength
+
+
+def de_casteljau(
+    t: float, p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Find new control points for the Bezier curve segment from 0 to t."""
+    # First level interpolation
+    a = (1 - t) * p0 + t * p1
+    b = (1 - t) * p1 + t * p2
+    c = (1 - t) * p2 + t * p3
+
+    # Second level interpolation
+    d = (1 - t) * a + t * b
+    e = (1 - t) * b + t * c
+
+    # Third level interpolation (new endpoint at t)
+    f = (1 - t) * d + t * e
+
+    return p0, a, d, f
 
 
 def calculate_control_points(
@@ -39,7 +88,6 @@ def calculate_control_points(
     # Calculate control points
     cp1 = p[:-1] + tangents[:-1] / 3
     cp2 = p[1:] - tangents[1:] / 3
-
     return cp1, cp2
 
 
@@ -73,6 +121,7 @@ class Curve(Shape):
         self.line_width = line_width
         self.buffer = buffer
         self.tension = Property(tension)
+        self.t = Property(1)
 
     def control_points(self, frame: int = 0) -> tuple[np.ndarray, np.ndarray]:
         return calculate_control_points(
@@ -81,20 +130,44 @@ class Curve(Shape):
         )
 
     def _draw_shape(self, frame: int = 0) -> None:
-        cp1, cp2 = self.control_points(frame)
+        t = self.t.get_value_at_frame(frame)
+        if t < 0 or t > 1:
+            raise ValueError("Parameter t must be between 0 and 1.")
 
         points = self.points
+        cp1, cp2 = self.control_points(frame)
+
+        # Compute lengths of each segment and their cumulative sum
+        segment_lengths = np.array(
+            [bezier_length(p1, c1, c2, p2) for p1, c1, c2, p2 in zip(points, cp1, cp2, points[1:])]
+        )
+        total_length = np.sum(segment_lengths)
+        cumulative_lengths = np.cumsum(segment_lengths)
+
+        # Find the segment where the parameter t falls
+        target_length = t * total_length
+        idx = np.searchsorted(cumulative_lengths, target_length)
+        if idx == 0:
+            t_seg = target_length / segment_lengths[0]
+        else:
+            segment_progress = target_length - cumulative_lengths[idx - 1]
+            t_seg = segment_progress / segment_lengths[idx]
 
         # Move to the first point
         self.ctx.move_to(*points[0])
-
         self.ctx.set_line_width(self.line_width)
         self.ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         self.ctx.set_line_join(cairo.LINE_JOIN_ROUND)
 
-        # Draw bezier curves
-        for point, cp1_, cp2_ in zip(points[1:], cp1, cp2):
-            self.ctx.curve_to(*cp1_, *cp2_, *point)
+        # Draw full segments up to the idx
+        for i in range(idx):
+            self.ctx.curve_to(*cp1[i], *cp2[i], *points[i + 1])
+
+        # Draw the partial segment up to t_seg
+        if idx < len(points) - 1:
+            p0, p1, p2, p3 = points[idx], cp1[idx], cp2[idx], points[idx + 1]
+            _, p1_new, p2_new, p3_new = de_casteljau(t_seg, p0, p1, p2, p3)
+            self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
 
     def geom(self, frame: int = 0) -> shapely.LineString:
         return shapely.LineString(self.points)
@@ -112,7 +185,7 @@ class Trace(Shape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         buffer: float = 5,
-        simplify: bool = False,
+        simplify: float | None = None,
         tension: float = 1,
     ):
         if len(objects) < 2:
@@ -130,28 +203,60 @@ class Trace(Shape):
         self.buffer = buffer
         self.simplify = simplify
         self.tension = Property(tension)
+        self.t = Property(1)
 
     def _draw_shape(self, frame: int) -> None:
-        line = self.geom(frame).simplify(20) if self.simplify else self.geom(frame)
+        t = self.t.get_value_at_frame(frame)
+        if t < 0 or t > 1:
+            raise ValueError("Parameter t must be between 0 and 1.")
+
+        line = (
+            self.geom(frame).simplify(self.simplify)
+            if self.simplify is not None
+            else self.geom(frame)
+        )
         points = [point for point in line.coords]
+
+        x, y = points[0]
+        points[0] = np.array([x - self.buffer, y])
+        x, y = points[-1]
+        points[-1] = np.array([x + self.buffer, y])
 
         cp1, cp2 = calculate_control_points(self.tension.get_value_at_frame(frame), points)
 
-        x, y = points[0]
+        # Compute lengths of each segment and their cumulative sum
+        segment_lengths = np.array(
+            [bezier_length(p1, c1, c2, p2) for p1, c1, c2, p2 in zip(points, cp1, cp2, points[1:])]
+        )
+        total_length = np.sum(segment_lengths)
+        cumulative_lengths = np.cumsum(segment_lengths)
+
+        # Find the segment where the parameter t falls
+        target_length = t * total_length
+        idx = np.searchsorted(cumulative_lengths, target_length)
+        if idx == 0:
+            t_seg = target_length / segment_lengths[0]
+        else:
+            segment_progress = target_length - cumulative_lengths[idx - 1]
+            t_seg = segment_progress / segment_lengths[idx]
 
         # Move to the first point
-        self.ctx.move_to(x - self.buffer, y)
+        self.ctx.move_to(*points[0])
         self.ctx.set_line_width(self.line_width)
         self.ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         self.ctx.set_line_join(cairo.LINE_JOIN_ROUND)
 
         # Draw bezier curves
-        for point, cp1_, cp2_ in zip(points[1:-1], cp1[:-1], cp2[:-1]):
-            self.ctx.curve_to(*cp1_, *cp2_, *point)
+        for i in range(idx):
+            self.ctx.curve_to(*cp1[i], *cp2[i], *points[i + 1])
 
-        x, y = points[-1]
-        self.ctx.curve_to(*cp1[-1], *cp2[-1], x + self.buffer, y)  # type: ignore[call-arg]
-        self.ctx.line_to(x + self.buffer, y)
+        # Draw the partial segment up to t_seg
+        if idx < len(points) - 1:
+            p0, p1, p2, p3 = points[idx], cp1[idx], cp2[idx], points[idx + 1]
+            _, p1_new, p2_new, p3_new = de_casteljau(
+                t_seg, np.array(p0), np.array(p1), np.array(p2), np.array(p3)
+            )
+            self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
 
     def points(self, frame: int) -> list[shapely.Point]:
         return [obj.geom(frame).centroid for obj in self.objects]
