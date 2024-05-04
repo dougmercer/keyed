@@ -16,7 +16,7 @@ trace = Trace(
     line_width=50,
     buffer=0,
     simplify=None,
-    tension=0,
+    tension=1,
 )
 
 scene.add(trace)

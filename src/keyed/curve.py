@@ -82,14 +82,14 @@ def de_casteljau(
 
 
 def calculate_control_points(
-    k: float, points: list[tuple[float, float]] | Vector
+    tension: float, points: list[tuple[float, float]] | Vector
 ) -> tuple[Vector, Vector]:
     """Calculate control points given a list of key points.
 
     Parameters
     ----------
-    k: float
-        Tension
+    tension: float
+        Tension. Value of 1 implies linear line between points.
     points: list[tuple[float, float]]
         Key points the curve must pass through
 
@@ -101,10 +101,11 @@ def calculate_control_points(
     p = np.array(points)
 
     # Calculate tangent vectors at key points
+    slack = tension - 1
     tangents = np.zeros_like(p)
-    tangents[1:-1] = k * (p[2:] - p[:-2])
-    tangents[0] = k * (p[1] - p[0])
-    tangents[-1] = k * (p[-1] - p[-2])
+    tangents[1:-1] = slack * (p[2:] - p[:-2])
+    tangents[0] = slack * (p[1] - p[0])
+    tangents[-1] = slack * (p[-1] - p[-2])
 
     # Calculate control points
     cp1 = p[:-1] + tangents[:-1] / 3
@@ -194,7 +195,7 @@ class Curve(BezierShape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         buffer: float = 5,
-        tension: float = 1,
+        tension: float = 0,
         simplify: float | None = None,
     ):
         self.ctx = ctx
@@ -242,7 +243,7 @@ class Trace(BezierShape):
         line_width: float = 1,
         buffer: float = 5,
         simplify: float | None = None,
-        tension: float = 1,
+        tension: float = 0,
     ):
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
