@@ -137,7 +137,6 @@ class BezierShape(Shape, Protocol):
         )
 
     def geom(self, frame: int = 0) -> shapely.LineString:
-        print(self.points(frame))
         return shapely.LineString(self.points(frame))
 
     def _draw_shape(self, frame: int = 0) -> None:
