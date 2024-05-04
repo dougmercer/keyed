@@ -1,3 +1,5 @@
+"""Draw lines and curves."""
+
 from abc import abstractmethod
 from functools import partial
 from typing import Sequence
@@ -14,27 +16,43 @@ from .shapes import Shape
 
 __all__ = ["Curve", "Trace"]
 
-Vector = npt.NDArray[np.float64]
-VecArray = Vector
+Vector = npt.NDArray[np.float64]  # Intended to to be of shape (2,)
+VecArray = npt.NDArray[np.float64]  # Intended to to be of shape (n, 2)
 
 
 # Derivative of the cubic Bézier curve
 def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
+    assert p0.shape == (2,)
+    assert p1.shape == (2,)
+    assert p2.shape == (2,)
+    assert p3.shape == (2,)
     return 3 * (1 - t) ** 2 * (p1 - p0) + 6 * (1 - t) * t * (p2 - p1) + 3 * t**2 * (p3 - p2)
 
 
 # Function to integrate
 def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.float64:
+    assert p0.shape == (2,)
+    assert p1.shape == (2,)
+    assert p2.shape == (2,)
+    assert p3.shape == (2,)
     return np.linalg.norm(bezier_derivative(t, p0, p1, p2, p3))
 
 
 # Function to calculate the point on a Bezier curve for a given t
 def bezier_point(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     """Calculate the point on the Bezier curve at parameter t."""
+    assert p0.shape == (2,)
+    assert p1.shape == (2,)
+    assert p2.shape == (2,)
+    assert p3.shape == (2,)
     return (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t**2 * p2 + t**3 * p3
 
 
 def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
+    assert p0.shape == (2,)
+    assert p1.shape == (2,)
+    assert p2.shape == (2,)
+    assert p3.shape == (2,)
     _integrand = partial(integrand, p0=p0, p1=p1, p2=p2, p3=p3)
     arclength, _ = quad(_integrand, 0, 1)
     return arclength
@@ -44,6 +62,11 @@ def de_casteljau(
     t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector
 ) -> tuple[Vector, Vector, Vector, Vector]:
     """Find new control points for the Bezier curve segment from 0 to t."""
+    assert p0.shape == (2,)
+    assert p1.shape == (2,)
+    assert p2.shape == (2,)
+    assert p3.shape == (2,)
+
     # First level interpolation
     a = (1 - t) * p0 + t * p1
     b = (1 - t) * p1 + t * p2
