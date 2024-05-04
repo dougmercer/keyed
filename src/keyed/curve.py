@@ -128,9 +128,7 @@ class BezierShape(Shape, Protocol):
             if self.simplify is not None
             else self.geom(frame)
         )
-        coords = list(line.coords)
-        print("Coords:", coords)  # Debug output to inspect the coordinates
-        return np.array(coords)
+        return np.array(list(line.coords))
 
     def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
         return calculate_control_points(
