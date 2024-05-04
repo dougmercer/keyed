@@ -37,22 +37,10 @@ def trace(scene: Scene, test_points: Sequence[tuple[float, float]]) -> Trace:
     )
 
 
-def test_curve_control_points(curve: Curve) -> None:
-    cp1, cp2 = curve.control_points(curve.points(frame=0), 0)
-    assert cp1.shape == (2, 2)
-    assert cp2.shape == (2, 2)
-
-
 def test_curve_points(curve: Curve, test_points: list[tuple[float, float]]) -> None:
     points = curve.points(0)
     for p, tp in zip(points, test_points):
         assert tuple(p) == tp, (p, tp)
-
-
-def test_trace_control_points(trace: Trace) -> None:
-    cp1, cp2 = trace.control_points(trace.points(0), 0)
-    assert cp1.shape == (2, 2)
-    assert cp2.shape == (2, 2)
 
 
 def test_one_point_is_invalid(scene: Scene) -> None:
@@ -62,6 +50,39 @@ def test_one_point_is_invalid(scene: Scene) -> None:
 
 def test_two_points_are_valid_points(scene: Scene) -> None:
     Curve(ctx=scene.ctx, points=np.array([[1, 1], [2, 2]]), tension=1)
+
+
+# Have a bunch of dumb tests cause numpy still doesn't support size type hints.
+def test_curve_control_points(curve: Curve) -> None:
+    cp1, cp2 = curve.control_points(curve.points(frame=0), 0)
+    assert cp1.shape == (2, 2)
+    assert cp2.shape == (2, 2)
+
+
+def test_trace_control_points(trace: Trace) -> None:
+    cp1, cp2 = trace.control_points(trace.points(0), 0)
+    assert cp1.shape == (2, 2)
+    assert cp2.shape == (2, 2)
+
+
+def test_curve_simplified_points(curve: Curve) -> None:
+    points = curve.simplified_points(0)
+    assert points.shape == (3, 2)
+
+def test_trace_control_points(trace: Trace) -> None:
+    cp1, cp2 = trace.control_points(trace.points(0), 0)
+    assert cp1.shape == (2, 2)
+    assert cp2.shape == (2, 2)
+
+
+def test_curve_points(curve: Curve) -> None:
+    points = curve.points(0)
+    assert points.shape == (3, 2)
+
+
+def test_trace_points(trace: Trace) -> None:
+    points = trace.points(0)
+    assert points.shape == (3, 2)
 
 
 # @pytest.mark.parametrize("t", [0, 0.5, 1])
