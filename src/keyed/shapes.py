@@ -111,9 +111,9 @@ class Circle(Shape):
     def __init__(
         self,
         ctx: cairo.Context,
-        x: float,
-        y: float,
-        radius: float,
+        x: float = 10,
+        y: float = 10,
+        radius: float = 1,
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
