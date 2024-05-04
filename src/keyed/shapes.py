@@ -1,6 +1,5 @@
 import math
-from abc import abstractmethod
-from typing import Sequence
+from typing import Protocol, Sequence
 
 import cairo
 import shapely
@@ -11,7 +10,7 @@ from .base import Base
 __all__ = ["Circle", "Rectangle"]
 
 
-class Shape(Base):
+class Shape(Base, Protocol):
     ctx: cairo.Context
     color: tuple[float, float, float]
     fill_color: tuple[float, float, float]
@@ -21,7 +20,6 @@ class Shape(Base):
     draw_fill: bool
     draw_stroke: bool
 
-    @abstractmethod
     def _draw_shape(self, frame: int) -> None:
         pass
 

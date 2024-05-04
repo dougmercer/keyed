@@ -59,8 +59,9 @@ def test_one_point_is_invalid(scene: Scene) -> None:
     with pytest.raises(ValueError):
         Curve(ctx=scene.ctx, points=np.array([[1, 1]]), tension=1)
 
+
 def test_two_points_are_valid_points(scene: Scene) -> None:
-    Curve(ctx=scene.ctx, points=np.array([[1, 1]]), tension=1)
+    Curve(ctx=scene.ctx, points=np.array([[1, 1], [2, 2]]), tension=1)
 
 
 # @pytest.mark.parametrize("t", [0, 0.5, 1])

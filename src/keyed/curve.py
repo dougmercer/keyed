@@ -1,8 +1,7 @@
 """Draw lines and curves."""
 
-from abc import abstractmethod
 from functools import partial
-from typing import Sequence
+from typing import Protocol, Sequence
 
 import cairo
 import numpy as np
@@ -113,13 +112,12 @@ def calculate_control_points(
     return cp1, cp2
 
 
-class BezierShape(Shape):
+class BezierShape(Shape, Protocol):
     tension: Property
     t: Property
     line_width: float
     simplify: float | None
 
-    @abstractmethod
     def points(self, frame: int = 0) -> VecArray:
         pass
 
@@ -235,7 +233,7 @@ class Trace(BezierShape):
     def __init__(
         self,
         ctx: cairo.Context,
-        objects: list[Base],
+        objects: Sequence[Base],
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Literal, Sequence
+from typing import TYPE_CHECKING, Literal, Protocol, Sequence
 
 import cairo
 import shapely
@@ -17,18 +16,15 @@ if TYPE_CHECKING:
 __all__ = ["Base", "BaseText"]
 
 
-class Base(ABC):
+class Base(Protocol):
     ctx: cairo.Context
 
-    @abstractmethod
     def draw(self, frame: int) -> None:
         pass
 
-    @abstractmethod
     def animate(self, property: str, animation: Animation) -> None:
         pass
 
-    @abstractmethod
     def geom(self, frame: int = 0) -> shapely.Polygon:
         pass
 
@@ -162,8 +158,6 @@ class Base(ABC):
         return self.geom(frame).bounds[3]
 
 
-class BaseText(Base):
+class BaseText(Base, Protocol):
     @property
-    @abstractmethod
-    def chars(self) -> Selection[Text]:
-        pass
+    def chars(self) -> Selection[Text]: ...
