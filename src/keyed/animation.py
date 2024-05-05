@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from enum import Enum, auto
 from functools import partial
 from typing import Any, Callable, Protocol, Self, Type
@@ -9,6 +10,7 @@ from .easing import EasingFunction, LinearInOut
 __all__ = [
     "AnimationType",
     "Animation",
+    "SinusoidalAnimation",
     "lag_animation",
     "Property",
     "Loop",
@@ -76,6 +78,42 @@ class Animation:
 
     def __len__(self) -> int:
         return self.end_frame - self.start_frame + 1
+
+
+class SinusoidalAnimation(Animation):
+    def __init__(
+        self,
+        start_frame: int,
+        period: int,
+        magnitude: float,
+        center: float = 0,
+        phase: float = 0,
+    ) -> None:
+        assert period > 0
+        assert phase >= 0
+        self.period = period
+        self.phase = phase
+        self.magnitude = magnitude
+        self.center = center
+        super().__init__(start_frame, start_frame + period, 0, 0)
+
+    def apply(self, current_frame: float, current_value: float | None) -> float:
+        if current_frame < self.start_frame:
+            current_frame = self.start_frame
+        elif self.start_frame < current_frame < self.end_frame:
+            pass
+        else:
+            current_frame = self.end_frame
+        return self.center + self.magnitude * math.sin(
+            2 * math.pi * (current_frame - self.start_frame + self.phase) / self.period
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(start_frame={self.start_frame}, "
+            f"period={self.period}, phase={self.phase}, magnitude={self.magnitude}, "
+            f"center={self.center})"
+        )
 
 
 class Loop(Animation):
