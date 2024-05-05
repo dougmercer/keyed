@@ -3,6 +3,7 @@ from . import easing  # noqa
 from . import highlight  # noqa
 from . import previewer  # noqa
 from .animation import *  # noqa
+from .base import *  # noqa
 from .code import *  # noqa
 from .constants import *  # noqa
 from .curve import *  # noqa
