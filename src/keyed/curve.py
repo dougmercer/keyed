@@ -11,7 +11,7 @@ from scipy.integrate import quad
 
 from .animation import Animation, Property
 from .base import Base
-from .shapes import Shape
+from .shapes import Circle, Shape
 
 __all__ = ["Curve", "Trace"]
 
@@ -254,6 +254,34 @@ class Trace(BezierShape):
         self.simplify = simplify
         self.tension = Property(tension)
         self.t = Property(1)
+
+    @classmethod
+    def from_points(
+        cls,
+        ctx: cairo.Context,
+        points: Sequence[tuple[float, float]] | VecArray,
+        color: tuple[float, float, float] = (1, 1, 1),
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+        line_width: float = 1,
+        simplify: float | None = None,
+        tension: float = 0,
+    ):
+        objects = [Circle(ctx, x, y, alpha=0) for (x, y) in points]
+        return cls(
+            ctx=ctx,
+            objects=objects,
+            color=color,
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            line_width=line_width,
+            simplify=simplify,
+            tension=tension,
+        )
 
     def points(self, frame: int = 0) -> VecArray:
         return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
