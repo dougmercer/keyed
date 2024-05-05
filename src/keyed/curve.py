@@ -1,7 +1,7 @@
 """Draw lines and curves."""
 
 from functools import partial
-from typing import Protocol, Sequence
+from typing import Protocol, Self, Sequence
 
 import cairo
 import numpy as np
@@ -266,3 +266,27 @@ class Trace(BezierShape):
             f"operator={self.operator}, "
             ")"
         )
+
+    def animate(self, property: str, animation: Animation) -> None:
+        for obj in self.objects:
+            obj.animate(property, animation)
+
+    # def follow(self, property: str, animation: Animation) -> None:
+    #     for obj in self.objects:
+    #         obj.follow(property, animation)
+
+    def copy(self) -> Self:
+        new_trace = type(self)(
+            ctx=self.ctx,
+            objects=[obj.copy() for obj in self.objects],
+            color=self.color,
+            fill_color=self.fill_color,
+            dash=self.dash,
+            operator=self.operator,
+            simplify=self.simplify,
+        )
+        new_trace.alpha.follow(self.alpha)
+        new_trace.tension.follow(self.tension)
+        new_trace.t.follow(self.t)
+        new_trace.line_width.follow(self.line_width)
+        return new_trace

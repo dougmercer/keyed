@@ -169,3 +169,33 @@ class BaseText(Base, Protocol):
 
     def is_whitespace(self) -> bool:
         pass
+
+    def highlight(
+        self,
+        buffer: float = 5,
+        line_width: float = 10,
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
+        simplify: float | None = None,
+        tension: float = 0,
+    ) -> "Trace":
+        from .curve import Trace
+
+        assert isinstance(self.ctx, cairo.Context)
+
+        trace = Trace(
+            self.ctx,
+            objects=[c.copy() for c in self.chars],
+            color=color,
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            line_width=line_width,
+            simplify=simplify,
+            tension=tension,
+        )
+        return trace

@@ -188,10 +188,6 @@ class Composite(BaseText, Generic[T]):
     def contains(self, query: Text) -> bool:
         return query in self.chars
 
-    def copy(self) -> Self:
-        copied_objects = [obj.copy() for obj in self.objects]
-        return type(self)(ctx=self.ctx, objects=copied_objects)
-
 
 class Token(Composite[Text]):
     def __init__(
@@ -206,6 +202,7 @@ class Token(Composite[Text]):
         code: Code | None = None,
     ):
         self.objects: list[Text] = []
+        self._token = token
         self.ctx = ctx
         for char in token.text:
             self.objects.append(
@@ -253,6 +250,11 @@ class Token(Composite[Text]):
     def characters(self) -> list[Text]:
         return self.objects
 
+    def copy(self) -> Self:
+        new_token = type(self)(ctx=self.ctx, token=self._token, x=0, y=0)
+        new_token.objects = [obj.copy() for obj in self.objects]
+        return new_token
+
 
 class Line(Composite[Token]):
     def __init__(
@@ -267,6 +269,7 @@ class Line(Composite[Token]):
         code: Code | None = None,
     ):
         self.objects: list[Token] = []
+        self._tokens = tokens
         self.ctx = ctx
         for token in tokens:
             self.objects.append(
@@ -290,6 +293,11 @@ class Line(Composite[Token]):
     @property
     def tokens(self) -> list[Token]:
         return self.objects
+
+    def copy(self) -> Self:
+        new_token = type(self)(ctx=self.ctx, tokens=self._tokens, x=0, y=0)
+        new_token.objects = [obj.copy() for obj in self.objects]
+        return new_token
 
 
 class Code(Composite[Line]):
