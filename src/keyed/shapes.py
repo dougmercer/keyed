@@ -23,7 +23,7 @@ class Shape(Base, Protocol):
     def _draw_shape(self, frame: int) -> None:
         pass
 
-    def draw(self, frame: int) -> None:
+    def draw(self, frame: int = 0) -> None:
         if self.dash:
             self.ctx.set_dash(*self.dash)
         if self.operator is not cairo.OPERATOR_OVER:

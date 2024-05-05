@@ -93,7 +93,7 @@ class Text(BaseText):
         self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
         self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
 
-    def draw(self, frame: int) -> None:
+    def draw(self, frame: int = 0) -> None:
         self._prepare_context(frame)
         self.ctx.show_text(self.text)
 
@@ -155,7 +155,7 @@ class Composite(BaseText, Generic[T]):
     def chars(self) -> Selection[Text]:
         pass
 
-    def draw(self, frame: int) -> None:
+    def draw(self, frame: int = 0) -> None:
         for obj in self.objects:
             obj.draw(frame)
 
@@ -382,7 +382,7 @@ class Selection(BaseText, list[T]):
         for item in self:
             item.animate(property, animation)
 
-    def draw(self, frame: int) -> None:
+    def draw(self, frame: int = 0) -> None:
         for object in self:
             object.draw(frame)
 

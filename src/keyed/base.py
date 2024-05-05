@@ -21,7 +21,7 @@ __all__ = ["Base", "BaseText"]
 class Base(Protocol):
     ctx: cairo.Context
 
-    def draw(self, frame: int) -> None:
+    def draw(self, frame: int = 0) -> None:
         pass
 
     def animate(self, property: str, animation: Animation) -> None:
