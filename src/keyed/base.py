@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Protocol, Sequence
+from typing import TYPE_CHECKING, Literal, Protocol, Self, Sequence
 
 import cairo
 import shapely
@@ -12,6 +12,7 @@ from .easing import CubicEaseInOut, EasingFunction
 if TYPE_CHECKING:
     from .code import Selection, Text
     from .shapes import Rectangle
+
 
 __all__ = ["Base", "BaseText"]
 
@@ -26,6 +27,9 @@ class Base(Protocol):
         pass
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
+        pass
+
+    def copy(self) -> Self:
         pass
 
     def emphasize(
@@ -161,3 +165,6 @@ class Base(Protocol):
 class BaseText(Base, Protocol):
     @property
     def chars(self) -> Selection[Text]: ...
+
+    def is_whitespace(self) -> bool:
+        pass

@@ -69,6 +69,7 @@ def test_curve_simplified_points(curve: Curve) -> None:
     points = curve.simplified_points(0)
     assert points.shape == (3, 2)
 
+
 def test_trace_control_points(trace: Trace) -> None:
     cp1, cp2 = trace.control_points(trace.points(0), 0)
     assert cp1.shape == (2, 2)

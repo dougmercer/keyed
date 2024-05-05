@@ -122,8 +122,27 @@ class Text(BaseText):
         y = self.y.get_value_at_frame(frame) + e.y_bearing
         return shapely.box(x, y, x + e.width, y + e.height)
 
+    def copy(self) -> Self:
+        new_copy = type(self)(
+            ctx=self.ctx,
+            x=self.x.value,
+            y=self.y.value,
+            text=self.text,
+            size=self.size,
+            font=self.font,
+            color=self.color,
+            token_type=self.token_type,
+            slant=self.slant,
+            weight=self.weight,
+            code=self.code,
+        )
+        new_copy.x.follow(self.x)
+        new_copy.y.follow(self.y)
+        new_copy.alpha.follow(self.alpha)
+        return new_copy
 
-T = TypeVar("T", bound=Animatable)
+
+T = TypeVar("T", bound=BaseText)
 
 
 class Composite(BaseText, Generic[T]):
@@ -168,6 +187,10 @@ class Composite(BaseText, Generic[T]):
 
     def contains(self, query: Text) -> bool:
         return query in self.chars
+
+    def copy(self) -> Self:
+        copied_objects = [obj.copy() for obj in self.objects]
+        return type(self)(ctx=self.ctx, objects=copied_objects)
 
 
 class Token(Composite[Text]):
@@ -406,3 +429,9 @@ class Selection(BaseText, list[T]):
         if not self:
             raise ValueError("Cannot retrieve 'ctx': Selection is empty.")
         return self[0].ctx
+
+    def copy(self) -> Self:
+        return type(self)(list(self))
+
+    def is_whitespace(self) -> bool:
+        return all(obj.is_whitespace() for obj in self)

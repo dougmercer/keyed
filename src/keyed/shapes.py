@@ -1,5 +1,5 @@
 import math
-from typing import Protocol, Sequence
+from typing import Protocol, Self, Sequence
 
 import cairo
 import shapely
@@ -45,6 +45,9 @@ class Shape(Base, Protocol):
 
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
+
+    def follow(self, property: str, animation: Animation) -> None:
+        getattr(self, property).add_follower(animation)
 
 
 class Rectangle(Shape):
@@ -104,6 +107,24 @@ class Rectangle(Shape):
         height = self.height.get_value_at_frame(frame)
         return shapely.box(x, y, x + width, y + height)
 
+    def copy(self) -> Self:
+        new_copy = type(self)(
+            ctx=self.ctx,
+            color=self.color,
+            fill_color=self.fill_color,
+            dash=self.dash,
+            operator=self.operator,
+            draw_fill=self.draw_fill,
+            draw_stroke=self.draw_stroke,
+        )
+        # Follow original
+        new_copy.alpha.follow(self.alpha)
+        new_copy.x.follow(self.x)
+        new_copy.y.follow(self.y)
+        new_copy.width.follow(self.width)
+        new_copy.height.follow(self.height)
+        return new_copy
+
 
 class Circle(Shape):
     def __init__(
@@ -155,3 +176,19 @@ class Circle(Shape):
         y = self.y.get_value_at_frame(frame)
         radius = self.radius.get_value_at_frame(frame)
         return shapely.Point(x, y).buffer(radius)
+
+    def copy(self) -> Self:
+        new_copy = type(self)(
+            ctx=self.ctx,
+            color=self.color,
+            fill_color=self.fill_color,
+            dash=self.dash,
+            operator=self.operator,
+            draw_fill=self.draw_fill,
+            draw_stroke=self.draw_stroke,
+        )
+        new_copy.alpha.follow(self.alpha)
+        new_copy.x.follow(self.x)
+        new_copy.y.follow(self.y)
+        new_copy.radius.follow(self.radius)
+        return new_copy

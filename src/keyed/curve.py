@@ -9,7 +9,7 @@ import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
 
-from .animation import Property
+from .animation import Animation, Property
 from .base import Base
 from .shapes import Shape
 
@@ -245,7 +245,7 @@ class Trace(BezierShape):
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
         self.ctx = ctx
-        self.objects = objects
+        self.objects = [obj.copy() for obj in objects]
         self.color = color
         self.fill_color = fill_color
         self.alpha = Property(alpha)
