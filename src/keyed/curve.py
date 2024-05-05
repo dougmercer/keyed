@@ -224,6 +224,22 @@ class Curve(BezierShape):
             ")"
         )
 
+    def copy(self) -> Self:
+        new_curve = type(self)(
+            ctx=self.ctx,
+            points=self._points.copy(),
+            color=self.color,
+            fill_color=self.fill_color,
+            dash=self.dash,
+            operator=self.operator,
+            simplify=self.simplify,
+        )
+        new_curve.alpha.follow(self.alpha)
+        new_curve.tension.follow(self.tension)
+        new_curve.t.follow(self.t)
+        new_curve.line_width.follow(self.line_width)
+        return new_curve
+
 
 class Trace(BezierShape):
     def __init__(
@@ -298,10 +314,6 @@ class Trace(BezierShape):
     def animate(self, property: str, animation: Animation) -> None:
         for obj in self.objects:
             obj.animate(property, animation)
-
-    # def follow(self, property: str, animation: Animation) -> None:
-    #     for obj in self.objects:
-    #         obj.follow(property, animation)
 
     def copy(self) -> Self:
         new_trace = type(self)(

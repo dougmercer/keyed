@@ -44,8 +44,6 @@ class Base(Protocol):
     ) -> "Rectangle":
         from .shapes import Rectangle
 
-        assert isinstance(self.ctx, cairo.Context)
-
         r = Rectangle(
             self.ctx,
             color=color,
@@ -184,9 +182,7 @@ class BaseText(Base, Protocol):
     ) -> "Trace":
         from .curve import Trace
 
-        assert isinstance(self.ctx, cairo.Context)
-
-        trace = Trace(
+        return Trace(
             self.ctx,
             objects=[c.copy() for c in self.chars],
             color=color,
@@ -198,4 +194,3 @@ class BaseText(Base, Protocol):
             simplify=simplify,
             tension=tension,
         )
-        return trace

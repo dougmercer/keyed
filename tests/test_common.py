@@ -29,18 +29,12 @@ METHODS = [
 ]
 
 
-@pytest.fixture
-def scene() -> keyed.Scene:
-    return keyed.Scene()
-
-
 @pytest.mark.parametrize("drawable_args", DRAWABLES, ids=lambda x: repr(x[0]))
 @pytest.mark.parametrize("method", METHODS, ids=lambda x: repr(x))
 def test_common_methods_dont_fail(
-    scene: keyed.Scene,
     drawable_args: tuple[type[keyed.base.Base], dict[str, Any]],
     method: Callable,
 ) -> None:
     drawable, kwargs = drawable_args
-    obj = drawable(scene.ctx, **kwargs)
+    obj = drawable(scene.ctx, **kwargs)  # type: ignore[call-arg]
     method(obj)

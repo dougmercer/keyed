@@ -312,6 +312,7 @@ class Code(Composite[Line]):
         alpha: float = 1,
     ) -> None:
         self.objects: Selection[Line] = Selection()
+        self._tokens = tokens
         self.font = font
         self.font_size = font_size
         self.ctx = ctx
@@ -382,6 +383,11 @@ class Code(Composite[Line]):
             if char == query:
                 return index
         return -1
+
+    def copy(self) -> Self:
+        new_token = type(self)(ctx=self.ctx, tokens=self._tokens, x=0, y=0)
+        new_token.objects = Selection([obj.copy() for obj in self.objects])
+        return new_token
 
 
 class Selection(BaseText, list[T]):
