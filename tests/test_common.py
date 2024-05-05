@@ -4,6 +4,7 @@ import pytest
 
 import keyed
 from keyed import Base
+
 scene = keyed.Scene()
 
 
@@ -12,7 +13,7 @@ DRAWABLES = [
     (keyed.Circle, {}),
     (keyed.Curve, {"points": [(1, 1), (2, 2)]}),
     (keyed.Trace, {"objects": [keyed.Circle(scene.ctx), keyed.Circle(scene.ctx)]}),
-    (keyed.Code, {"tokens": keyed.tokenize("import this")}), 
+    (keyed.Code, {"tokens": keyed.tokenize("import this")}),
 ]
 
 METHODS = [
