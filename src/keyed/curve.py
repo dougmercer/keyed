@@ -268,7 +268,7 @@ class Trace(BezierShape):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 0,
-    ):
+    ) -> Self:
         objects = [Circle(ctx, x, y, alpha=0) for (x, y) in points]
         return cls(
             ctx=ctx,
