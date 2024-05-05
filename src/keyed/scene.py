@@ -24,7 +24,7 @@ class Drawable(Protocol):
 class Scene:
     def __init__(
         self,
-        scene_name: str,
+        scene_name: str | None = None,
         num_frames: int = 60,
         output_dir: Path = Path("media"),
         width: int = 3840,
@@ -56,6 +56,7 @@ class Scene:
 
     @property
     def full_output_dir(self) -> Path:
+        assert self.scene_name is not None
         return self.output_dir / self.scene_name
 
     def add(self, *content: Base) -> None:
@@ -68,6 +69,8 @@ class Scene:
         self.ctx.set_operator(cairo.OPERATOR_OVER)
 
     def draw(self) -> None:
+        if self.scene_name is None:
+            raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
         for file in self.full_output_dir.glob("frame*.png"):
             file.unlink()
