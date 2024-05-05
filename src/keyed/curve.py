@@ -159,7 +159,7 @@ class BezierShape(Shape, Protocol):
         idx = np.searchsorted(cumulative_lengths, target_length)
         if idx == 0:
             t_seg = target_length / segment_lengths[0]
-        else:
+        elif idx < len(points) - 1:
             segment_progress = target_length - cumulative_lengths[idx - 1]
             t_seg = segment_progress / segment_lengths[idx]
 
