@@ -14,7 +14,6 @@ trace = Trace(
     code.lines[0:4].chars,
     alpha=0.5,
     line_width=50,
-    buffer=0,
     simplify=None,
     tension=1,
 )

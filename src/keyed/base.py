@@ -11,6 +11,7 @@ from .easing import CubicEaseInOut, EasingFunction
 
 if TYPE_CHECKING:
     from .code import Selection, Text
+    from .curve import Trace
     from .shapes import Rectangle
 
 

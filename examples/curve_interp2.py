@@ -14,7 +14,7 @@ scene.add(code)
 
 points = np.array([np.array(c.geom().centroid.coords).flatten() for c in code.lines[0:4].chars])
 
-curve = Curve(scene.ctx, points, alpha=0.5, line_width=50, buffer=10)
+curve = Curve(scene.ctx, points, alpha=0.5, line_width=50)
 
 for point in points:
     scene.add(Circle(scene.ctx, *point, radius=5, color=(1, 0, 0)))

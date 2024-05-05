@@ -116,7 +116,7 @@ def calculate_control_points(
 class BezierShape(Shape, Protocol):
     tension: Property
     t: Property
-    line_width: float
+    line_width: Property
     simplify: float | None
 
     def points(self, frame: int = 0) -> VecArray:
@@ -165,7 +165,7 @@ class BezierShape(Shape, Protocol):
 
         # Move to the first point
         self.ctx.move_to(*points[0])
-        self.ctx.set_line_width(self.line_width)
+        self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
         self.ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         self.ctx.set_line_join(cairo.LINE_JOIN_ROUND)
 
@@ -191,7 +191,6 @@ class Curve(BezierShape):
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
-        buffer: float = 5,
         tension: float = 0,
         simplify: float | None = None,
     ):
@@ -208,8 +207,7 @@ class Curve(BezierShape):
         self.operator = operator
         self.draw_fill = False
         self.draw_stroke = True
-        self.line_width = line_width
-        self.buffer = buffer
+        self.line_width = Property(line_width)
         self.tension = Property(tension)
         self.t = Property(1)
         self.simplify = simplify
@@ -238,7 +236,6 @@ class Trace(BezierShape):
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
-        buffer: float = 5,
         simplify: float | None = None,
         tension: float = 0,
     ):
@@ -253,8 +250,7 @@ class Trace(BezierShape):
         self.operator = operator
         self.draw_fill = False
         self.draw_stroke = True
-        self.line_width = line_width
-        self.buffer = buffer
+        self.line_width = Property(line_width)
         self.simplify = simplify
         self.tension = Property(tension)
         self.t = Property(1)
