@@ -45,10 +45,9 @@ class Shape(Base, Protocol):
     def style(self, frame: int) -> Generator[None, None, None]:
         try:
             self.ctx.save()
-            if self.dash:
+            if self.dash is not None:
                 self.ctx.set_dash(*self.dash)
-            if self.operator is not cairo.OPERATOR_OVER:
-                self.ctx.set_operator(self.operator)
+            self.ctx.set_operator(self.operator)
             self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
             self.ctx.set_line_cap(self.line_cap)
             self.ctx.set_line_join(self.line_join)
@@ -71,10 +70,14 @@ class Shape(Base, Protocol):
                     self.ctx.stroke()
 
     def animate(self, property: str, animation: Animation) -> None:
-        getattr(self, property).add_animation(animation)
+        p = getattr(self, property)
+        assert isinstance(p, Property)
+        p.add_animation(animation)
 
-    def follow(self, property: str, animation: Animation) -> None:
-        getattr(self, property).add_follower(animation)
+    # def follow(self, property: str, animation: Animation) -> None:
+    #     p = getattr(self, property)
+    #     assert isinstance(p, Property)
+    #     p.add_follower(animation)
 
 
 class Rectangle(Shape):
