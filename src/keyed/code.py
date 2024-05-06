@@ -22,6 +22,7 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
+from .transformation import Transformation
 
 __all__ = [
     "Text",
@@ -71,6 +72,7 @@ class Text(BaseText):
         self.ctx = ctx
         self.code = code
         self.rotation = Property(0)
+        self.transformations: list[Transformation] = []
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
@@ -101,7 +103,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with self.rotate(frame):
+        with self.apply_transformations(frame):
             with self.style(frame):
                 self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
                 self.ctx.show_text(self.text)
@@ -158,11 +160,11 @@ class Composite(BaseText, Generic[TextT]):
         self.ctx = ctx
         self.objects = list(objects)
         self.rotation = Property(0)
+        self.transformations: list[Transformation] = []
 
     def draw(self, frame: int = 0) -> None:
-        with self.rotate(frame):
-            for obj in self.objects:
-                obj.draw(frame)
+        for obj in self.objects:
+            obj.draw(frame)
 
     def __getitem__(self, key: SupportsIndex) -> TextT:
         return self.objects[key]
@@ -193,6 +195,10 @@ class Composite(BaseText, Generic[TextT]):
     def contains(self, query: Text) -> bool:
         return query in self.chars
 
+    def add_transformation(self, transformation: Transformation) -> None:
+        for item in self:
+            item.add_transformation(transformation)
+
 
 class Token(Composite[Text]):
     def __init__(
@@ -210,6 +216,8 @@ class Token(Composite[Text]):
         self._token = token
         self.ctx = ctx
         self.rotation = Property(0)
+        self.transformations: list[Transformation] = []
+
         for char in token.text:
             self.objects.append(
                 Text(
@@ -426,3 +434,7 @@ class TextSelection(BaseText, Selection[TextT]):
 
     def copy(self) -> Self:
         return type(self)(list(self))
+
+    def add_transformation(self, transformation: Transformation) -> None:
+        for char in self.chars:
+            char.add_transformation(transformation)

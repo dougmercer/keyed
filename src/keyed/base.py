@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import math
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from typing import (
     TYPE_CHECKING,
     Callable,
+    ContextManager,
     Generator,
     Iterable,
     Literal,
@@ -22,6 +22,7 @@ import shapely
 from .animation import Animation, AnimationType, LambdaFollower, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
+from .transformation import Transformation
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -35,6 +36,7 @@ __all__ = ["Base", "BaseText", "Selection"]
 class Base(Protocol):
     ctx: cairo.Context
     rotation: Property
+    transformations: list[Transformation]
 
     def draw(self, frame: int = 0) -> None:
         pass
@@ -48,20 +50,46 @@ class Base(Protocol):
     def copy(self) -> Self:
         pass
 
-    @contextmanager
-    def rotate(self, frame: int) -> Generator[None, None, None]:
-        try:
-            self.ctx.save()
-            coords = self.geom(frame).centroid.coords
-            if len(coords) > 0:
-                # Empty object. Doesn't matter if we rotate it or not.
-                cx, cy = coords[0]
-                self.ctx.translate(cx, cy)
-                self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
-                self.ctx.translate(-cx, -cy)
-            yield
-        finally:
-            self.ctx.restore()
+    def add_transformation(self, transformation: Transformation) -> None:
+        self.transformations.append(transformation)
+
+    def apply_transformations(self, frame: int = 0) -> ContextManager[None]:
+        """Context manager that applies all transformations sequentially."""
+
+        @contextmanager
+        def apply_all() -> Generator[None, None, None]:
+            with ExitStack() as stack:
+                for mgr in self.transformations:
+                    stack.enter_context(mgr.apply(frame))
+                yield
+
+        # @contextmanager
+        # def apply_all() -> Generator[None, None, None]:
+        #     try:
+        #         if self.transformations:
+        #             for transformation in self.transformations:
+        #                 with transformation.apply(frame):
+        #                     yield
+        #         else:
+        #             yield
+        #     finally:
+        #         pass
+
+        return apply_all()
+
+    # @contextmanager
+    # def rotate(self, frame: int) -> Generator[None, None, None]:
+    #     try:
+    #         self.ctx.save()
+    #         coords = self.geom(frame).centroid.coords
+    #         if len(coords) > 0:
+    #             cx, cy = coords[0]
+    #             self.ctx.translate(cx, cy)
+    #             self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
+    #             self.ctx.translate(-cx, -cy)
+    #         yield
+    #     finally:
+    #         self.ctx.restore()
 
     def emphasize(
         self,
@@ -233,6 +261,7 @@ class Selection(Base, list[T]):
     def __init__(self, *args: Iterable[T], rotation: float = 0) -> None:
         list.__init__(self, *args)
         self.rotation = Property(rotation)
+        self.transformations: list[Transformation] = []
 
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""
@@ -240,9 +269,8 @@ class Selection(Base, list[T]):
             item.animate(property, animation)
 
     def draw(self, frame: int = 0) -> None:
-        with self.rotate(frame):
-            for object in self:
-                object.draw(frame)
+        for object in self:
+            object.draw(frame)
 
     def write_on(
         self,

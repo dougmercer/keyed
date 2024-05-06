@@ -1,6 +1,6 @@
 # from matplotlib import pyplot as plt
 
-from keyed import Animation, Circle, PingPong, Rectangle, Scene, Text, Trace, easing
+from keyed import Animation, Circle, PingPong, Rectangle, Rotation, Scene, Text, Trace, easing
 
 scene = Scene(num_frames=24 * 8)
 s = 600
@@ -26,7 +26,15 @@ scene.add(rr)
 c = Circle(scene.ctx, x=offset, y=offset, radius=s / 2)
 
 scene.add(c)
-c.animate("rotation", PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8))
+c.add_transformation(
+    Rotation(
+        scene.ctx,
+        c.rotation,
+        c.geom,
+        PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8),
+    )
+)
+# c.animate("rotation", PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8))
 
 
 t2 = Text(
@@ -40,8 +48,22 @@ t2 = Text(
 )
 scene.add(t2)
 
-r.animate("rotation", PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8))
-rr.animate("rotation", PingPong(Animation(0, 12, -45, -90 - 45, easing=easing.CubicEaseInOut), n=8))
+r.add_transformation(
+    Rotation(
+        scene.ctx,
+        r.rotation,
+        r.geom,
+        PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8),
+    )
+)
+r.add_transformation(
+    Rotation(
+        scene.ctx,
+        rr.rotation,
+        rr.geom,
+        PingPong(Animation(0, 12, -45, -90 - 45, easing=easing.CubicEaseInOut), n=8),
+    )
+)
 
 trace = Trace.from_points(
     scene.ctx,
@@ -51,7 +73,14 @@ trace = Trace.from_points(
     tension=1,
     line_width=30,
 )
-trace.animate("rotation", PingPong(Animation(0, 12, 0, 90, easing=easing.CubicEaseInOut), n=8))
+trace.add_transformation(
+    Rotation(
+        scene.ctx,
+        trace.rotation,
+        trace.geom,
+        PingPong(Animation(0, 12, 0, 90, easing=easing.CubicEaseInOut), n=8),
+    ),
+)
 trace.animate("alpha", PingPong(Animation(0, 12, 1, 0.5, easing=easing.CubicEaseInOut), n=8))
 scene.add(trace)
 # fig, ax = plt.subplots()

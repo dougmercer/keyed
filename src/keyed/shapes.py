@@ -8,6 +8,7 @@ import shapely.ops
 
 from .animation import Animation, Property
 from .base import Base
+from .transformation import Transformation
 
 __all__ = ["Circle", "Rectangle"]
 
@@ -25,6 +26,7 @@ class Shape(Base, Protocol):
     rotation: Property
     line_cap: cairo.LineCap
     line_join: cairo.LineJoin
+    transformations: list[Transformation]
 
     def _draw_shape(self, frame: int) -> None:
         pass
@@ -47,13 +49,12 @@ class Shape(Base, Protocol):
         with self.style(frame):
             if self.draw_fill:
                 self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
-                with self.rotate(frame):
+                with self.apply_transformations(frame):
                     self._draw_shape(frame)
                     self.ctx.fill()
             if self.draw_stroke:
                 self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-                with self.rotate(frame):
-                    self.rotate(frame)
+                with self.apply_transformations(frame):
                     self._draw_shape(frame)
                     self.ctx.stroke()
 
@@ -104,6 +105,7 @@ class Rectangle(Shape):
         self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
+        self.transformations: list[Transformation] = []
 
     def __repr__(self) -> str:
         return (
@@ -223,6 +225,7 @@ class Circle(Shape):
         self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_BUTT
         self.line_join = cairo.LINE_JOIN_MITER
+        self.transformations: list[Transformation] = []
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"

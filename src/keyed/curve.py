@@ -12,6 +12,7 @@ from scipy.integrate import quad
 from .animation import Animation, Property
 from .base import Base
 from .shapes import Circle, Shape
+from .transformation import Transformation
 
 __all__ = ["Curve", "Trace"]
 
@@ -119,6 +120,7 @@ class BezierShape(Shape, Protocol):
     line_width: Property
     simplify: float | None
     rotation: Property
+    transformations: list[Transformation]
 
     def points(self, frame: int = 0) -> VecArray:
         pass
@@ -213,6 +215,7 @@ class Curve(BezierShape):
         self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
+        self.transformations: list[Transformation] = []
 
     def points(self, frame: int = 0) -> VecArray:
         return self._points
@@ -276,6 +279,7 @@ class Trace(BezierShape):
         self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
+        self.transformations: list[Transformation] = []
 
     @classmethod
     def from_points(

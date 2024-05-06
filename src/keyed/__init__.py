@@ -10,5 +10,6 @@ from .curve import *  # noqa
 from .highlight import *  # noqa
 from .scene import *  # noqa
 from .shapes import *  # noqa
+from .transformation import *  # noqa
 
 __version__ = "0.0.1"
