@@ -241,9 +241,11 @@ class Circle(Shape):
         )
 
     def animate(self, property: str, animation: Animation) -> None:
-        getattr(self, property).add_animation(animation)
+        p = getattr(self, property)
+        assert isinstance(p, Property)
+        p.add_animation(animation)
 
-    def geom(self, frame: int = 0) -> shapely.Geometry:
+    def geom(self, frame: int = 0) -> shapely.Polygon:
         x = self.x.get_value_at_frame(frame)
         y = self.y.get_value_at_frame(frame)
         radius = self.radius.get_value_at_frame(frame)
