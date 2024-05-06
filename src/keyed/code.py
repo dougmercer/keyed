@@ -114,7 +114,9 @@ class Text(BaseText):
         )
 
     def animate(self, property: str, animation: Animation) -> None:
-        getattr(self, property).add_animation(animation)
+        p = getattr(self, property)
+        assert isinstance(p, Property)
+        p.add_animation(animation)
 
     @property
     def chars(self) -> Selection[Self]:
