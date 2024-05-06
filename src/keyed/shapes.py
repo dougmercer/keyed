@@ -4,6 +4,7 @@ from typing import Generator, Protocol, Self, Sequence
 
 import cairo
 import shapely
+import shapely.ops
 
 from .animation import Animation, Property
 from .base import Base
@@ -80,6 +81,7 @@ class Rectangle(Shape):
         height: float = 10,
         x: float = 10,
         y: float = 10,
+        radius: float = 0,
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
@@ -95,6 +97,7 @@ class Rectangle(Shape):
         self.y = Property(y)
         self.width = Property(width)
         self.height = Property(height)
+        self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color
         self.fill_color = fill_color
@@ -112,6 +115,7 @@ class Rectangle(Shape):
             f"y={self.y}, "
             f"width={self.width}, "
             f"height={self.height}, "
+            f"radius={self.radius}, "
             f"dash={self.dash}, "
             f"rotation={self.rotation}, "
             ")"
@@ -122,16 +126,52 @@ class Rectangle(Shape):
         self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         x = self.x.get_value_at_frame(frame)
         y = self.y.get_value_at_frame(frame)
-        width = self.width.get_value_at_frame(frame)
-        height = self.height.get_value_at_frame(frame)
-        self.ctx.rectangle(x, y, width, height)
+        w = self.width.get_value_at_frame(frame)
+        h = self.height.get_value_at_frame(frame)
+        r = self.radius.get_value_at_frame(frame)
+
+        self.ctx.new_sub_path()
+        self.ctx.arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
+        self.ctx.arc(x + w - r, y + r, r, 3 * math.pi / 2, 0)
+        self.ctx.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
+        self.ctx.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+        self.ctx.close_path()
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
+        """Return the geometry of the rounded rectangle as a Shapely polygon."""
         x = self.x.get_value_at_frame(frame)
         y = self.y.get_value_at_frame(frame)
         width = self.width.get_value_at_frame(frame)
         height = self.height.get_value_at_frame(frame)
-        return shapely.box(x, y, x + width, y + height)
+        radius = self.radius.get_value_at_frame(frame)
+
+        if radius == 0:
+            return shapely.box(x, y, x + width, y + height)
+
+        # Create the four corners using buffers
+        tl = shapely.Point(x + radius, y + radius).buffer(radius, resolution=16)
+        tr = shapely.Point(x + width - radius, y + radius).buffer(radius, resolution=16)
+        br = shapely.Point(x + width - radius, y + height - radius).buffer(radius, resolution=16)
+        bl = shapely.Point(x + radius, y + height - radius).buffer(radius, resolution=16)
+
+        # Create the straight edges as rectangles
+        top = shapely.box(x + radius, y, x + width - radius, y + radius)
+        bottom = shapely.box(x + radius, y + height - radius, x + width - radius, y + height)
+        left = shapely.box(x, y + radius, x + radius, y + height - radius)
+        right = shapely.box(x + width - radius, y + radius, x + width, y + height - radius)
+
+        # Combine all parts into a single polygon
+        return shapely.ops.unary_union([tl, tr, br, bl, top, bottom, left, right])
+
+    @staticmethod
+    def _arc_points(
+        cx: float, cy: float, r: float, start_angle: float, end_angle: float
+    ) -> list[tuple[float, float]]:
+        """Generate points along a circular arc."""
+        return [
+            (cx + r * math.cos(angle), cy + r * math.sin(angle))
+            for angle in [start_angle + (end_angle - start_angle) * i / 20 for i in range(21)]
+        ]
 
     def copy(self) -> Self:
         new_copy = type(self)(
@@ -142,6 +182,7 @@ class Rectangle(Shape):
             operator=self.operator,
             draw_fill=self.draw_fill,
             draw_stroke=self.draw_stroke,
+            radius=self.radius.get_value_at_frame(0),
         )
         # Follow original
         new_copy.alpha.follow(self.alpha)
@@ -149,6 +190,7 @@ class Rectangle(Shape):
         new_copy.y.follow(self.y)
         new_copy.width.follow(self.width)
         new_copy.height.follow(self.height)
+        new_copy.radius.follow(self.radius)
         return new_copy
 
 
