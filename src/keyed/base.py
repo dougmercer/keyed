@@ -19,7 +19,7 @@ from typing import (
 import cairo
 import shapely
 
-from .animation import Animation, AnimationType, LambdaFollower
+from .animation import Animation, AnimationType, LambdaFollower, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
 
@@ -34,6 +34,7 @@ __all__ = ["Base", "BaseText", "Selection"]
 
 class Base(Protocol):
     ctx: cairo.Context
+    rotation: Property
 
     def draw(self, frame: int = 0) -> None:
         pass
@@ -46,6 +47,21 @@ class Base(Protocol):
 
     def copy(self) -> Self:
         pass
+
+    @contextmanager
+    def rotate(self, frame: int) -> Generator[None, None, None]:
+        try:
+            self.ctx.save()
+            coords = self.geom(frame).centroid.coords
+            if len(coords) > 0:
+                # Empty object. Doesn't matter if we rotate it or not.
+                cx, cy = coords[0]
+                self.ctx.translate(cx, cy)
+                self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
+                self.ctx.translate(-cx, -cy)
+            yield
+        finally:
+            self.ctx.restore()
 
     def emphasize(
         self,
@@ -214,8 +230,8 @@ T = TypeVar("T", bound=Base)
 
 
 class Selection(Base, list[T]):
-    def __init__(self, iterable: Iterable = (), rotation: float = 0) -> None:
-        super().__init__(iterable)
+    def __init__(self, *args: Iterable[T], rotation: float = 0) -> None:
+        list.__init__(self, *args)
         self.rotation = Property(rotation)
 
     def animate(self, property: str, animation: Animation) -> None:
@@ -224,8 +240,9 @@ class Selection(Base, list[T]):
             item.animate(property, animation)
 
     def draw(self, frame: int = 0) -> None:
-        for object in self:
-            object.draw(frame)
+        with self.rotate(frame):
+            for object in self:
+                object.draw(frame)
 
     def write_on(
         self,

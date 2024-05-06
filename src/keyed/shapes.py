@@ -26,18 +26,6 @@ class Shape(Base, Protocol):
     line_cap: cairo.LineCap
     line_join: cairo.LineJoin
 
-    @contextmanager
-    def rotate(self, frame: int) -> Generator[None, None, None]:
-        try:
-            self.ctx.save()
-            cx, cy = self.geom(frame).centroid.coords[0]
-            self.ctx.translate(cx, cy)
-            self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
-            self.ctx.translate(-cx, -cy)
-            yield
-        finally:
-            self.ctx.restore()
-
     def _draw_shape(self, frame: int) -> None:
         pass
 

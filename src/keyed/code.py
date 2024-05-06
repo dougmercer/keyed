@@ -70,6 +70,7 @@ class Text(BaseText):
         self.y = Property(value=y)
         self.ctx = ctx
         self.code = code
+        self.rotation = Property(0)
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
@@ -100,9 +101,10 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with self.style(frame):
-            self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
-            self.ctx.show_text(self.text)
+        with self.rotate(frame):
+            with self.style(frame):
+                self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+                self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
         with self.style(frame):
@@ -155,10 +157,12 @@ class Composite(BaseText, Generic[TextT]):
     def __init__(self, ctx: cairo.Context, objects: Iterable[TextT]) -> None:
         self.ctx = ctx
         self.objects = list(objects)
+        self.rotation = Property(0)
 
     def draw(self, frame: int = 0) -> None:
-        for obj in self.objects:
-            obj.draw(frame)
+        with self.rotate(frame):
+            for obj in self.objects:
+                obj.draw(frame)
 
     def __getitem__(self, key: SupportsIndex) -> TextT:
         return self.objects[key]
@@ -205,6 +209,7 @@ class Token(Composite[Text]):
         self.objects: list[Text] = []
         self._token = token
         self.ctx = ctx
+        self.rotation = Property(0)
         for char in token.text:
             self.objects.append(
                 Text(
@@ -272,6 +277,8 @@ class Line(Composite[Token]):
         self.objects: list[Token] = []
         self._tokens = tokens
         self.ctx = ctx
+        self.rotation = Property(0)
+
         for token in tokens:
             self.objects.append(
                 Token(
@@ -317,6 +324,7 @@ class Code(Composite[Line]):
         self.font = font
         self.font_size = font_size
         self.ctx = ctx
+        self.rotation = Property(0)
 
         self.set_default_font()
 
