@@ -22,7 +22,7 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
-from .transformation import Transformation
+from .transformation import MultiContext, Transformation
 
 __all__ = [
     "Text",
@@ -103,7 +103,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with self.apply_transformations(frame):
+        with MultiContext([t.at(frame) for t in self.transformations]):
             with self.style(frame):
                 self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
                 self.ctx.show_text(self.text)

@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from contextlib import ExitStack, contextmanager
 from typing import (
     TYPE_CHECKING,
     Callable,
-    ContextManager,
-    Generator,
     Iterable,
     Literal,
     Protocol,
@@ -22,7 +19,7 @@ import shapely
 from .animation import Animation, AnimationType, LambdaFollower, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import Transformation
+from .transformation import Rotation, Transformation
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -53,29 +50,13 @@ class Base(Protocol):
     def add_transformation(self, transformation: Transformation) -> None:
         self.transformations.append(transformation)
 
-    def apply_transformations(self, frame: int = 0) -> ContextManager[None]:
-        """Context manager that applies all transformations sequentially."""
+    def rotate(self, animation: Animation) -> None:
+        self.add_transformation(Rotation(self.ctx, self, animation))
 
-        @contextmanager
-        def apply_all() -> Generator[None, None, None]:
-            with ExitStack() as stack:
-                for mgr in self.transformations:
-                    stack.enter_context(mgr.apply(frame))
-                yield
+    # def apply_transformations(self, frame: int = 0) -> ContextManager[None]:
+    #     """Context manager that applies all transformations sequentially."""
 
-        # @contextmanager
-        # def apply_all() -> Generator[None, None, None]:
-        #     try:
-        #         if self.transformations:
-        #             for transformation in self.transformations:
-        #                 with transformation.apply(frame):
-        #                     yield
-        #         else:
-        #             yield
-        #     finally:
-        #         pass
-
-        return apply_all()
+    #     return apply_all()
 
     # @contextmanager
     # def rotate(self, frame: int) -> Generator[None, None, None]:

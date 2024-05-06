@@ -1,57 +1,61 @@
+from __future__ import annotations
+
 import math
-from contextlib import contextmanager
-from typing import Callable, Generator
+from contextlib import ExitStack, contextmanager
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, ContextManager, Generator, Protocol, Self
 
 import cairo
-import shapely
 
-from .animation import Animation, Property
+if TYPE_CHECKING:
+    from .animation import Animation
+    from .base import Base
 
-__all__ = ["Transformation", "Rotation"]
+__all__ = ["Transformation", "Rotation", "MultiContext"]
 
 
-class Transformation:
-    def __init__(self, ctx: cairo.Context, frame_function: Callable[[int], None]) -> None:
+class Transformation(Protocol):
+    @contextmanager
+    def at(self, frame: int = 0) -> Generator[None, Any, None]:
+        pass
+
+
+class Rotation:
+    def __init__(self, ctx: cairo.Context, reference: Base, animation: Animation):
         self.ctx = ctx
-        self.frame_function = frame_function
+        self.reference = reference
+        self.reference.rotation.add_animation(animation)
 
     @contextmanager
-    def apply(self, frame: int = 0) -> Generator[None, None, None]:
+    def at(self, frame: int = 0) -> Generator[None, Any, None]:
         try:
             self.ctx.save()
-            self.frame_function(frame)
+            coords = self.reference.geom(frame).centroid.coords
+            if len(coords) > 0:
+                cx, cy = coords[0]
+                self.ctx.translate(cx, cy)
+                self.ctx.rotate(math.radians(self.reference.rotation.get_value_at_frame(frame)))
+                self.ctx.translate(-cx, -cy)
             yield
         finally:
             self.ctx.restore()
 
 
-class Rotation(Transformation):
-    def __init__(
+class MultiContext:
+    def __init__(self, context_managers: list[ContextManager]):
+        self.context_managers = context_managers
+        self.stack = ExitStack()
+
+    def __enter__(self) -> Self:
+        for cm in self.context_managers:
+            self.stack.enter_context(cm)
+        return self
+
+    def __exit__(
         self,
-        ctx: cairo.Context,
-        rotation_property: Property,
-        geom_function: Callable[[int], shapely.Polygon],
-        animation: Animation,
-    ) -> None:
-        super().__init__(ctx, lambda frame: self._rotate(frame))
-        self.rotation_property = rotation_property
-        self.rotation_property.add_animation(animation)
-        self.geom_function = geom_function
-
-    def _rotate(self, frame: int = 0) -> None:
-        coords = self.geom_function(frame).centroid.coords
-        if len(coords) > 0:
-            cx, cy = coords[0]
-            self.ctx.translate(cx, cy)
-            self.ctx.rotate(math.radians(self.rotation_property.get_value_at_frame(frame)))
-            self.ctx.translate(-cx, -cy)
-
-
-# class ScaleTransformation(Transformation):
-#     def __init__(self, ctx: cairo.Context, scale_property: Property) -> None:
-#         super().__init__(ctx, lambda frame: self._scale(frame))
-#         self.scale_property = scale_property
-
-#     def _scale(self, frame: int = 0) -> None:
-#         scale = self.scale_property.get_value_at_frame(frame)
-#         self.ctx.scale(scale, scale)
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        self.stack.close()
+        return None

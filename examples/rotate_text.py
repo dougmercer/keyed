@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Code, Rotation, Scene, tokenize
+from keyed import Animation, AnimationType, Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -9,33 +9,11 @@ code = Code(scene.ctx, styled_tokens, font_size=48, alpha=1)
 s = code.lines[3:]
 scene.add(code)
 
-s.add_transformation(
-    Rotation(
-        scene.ctx,
-        code.lines[0].rotation,
-        code.lines[0].geom,
-        Animation(0, 12, 0, -180, animation_type=AnimationType.ABSOLUTE),
-    )
-)
+# These should basically cancel out, slightly rotating counter clockwise
+code.lines[3:].rotate(Animation(0, 12, 0, -180, animation_type=AnimationType.ADDITIVE))
+code.lines[3:].rotate(Animation(0, 12, 0, 170, animation_type=AnimationType.ADDITIVE))
 
-code.lines[0].add_transformation(
-    Rotation(
-        scene.ctx,
-        code.lines[0].rotation,
-        code.lines[0].geom,
-        Animation(0, 12, 0, 180, animation_type=AnimationType.ABSOLUTE),
-    )
-)
-
-s.add_transformation(
-    Rotation(
-        scene.ctx,
-        s.rotation,
-        s.geom,
-        Animation(0, 12, 0, -180, animation_type=AnimationType.ABSOLUTE),
-    )
-)
-# NOTE: This only works if I add `s`` to the scene explictly. Since I use `draw` to rotate, I'm
-#       not binding the animation to the underlying objects. This sucks.
+# This one rotates normally
+code.lines[0].rotate(Animation(0, 12, 0, 180, animation_type=AnimationType.ABSOLUTE))
 
 scene.preview()

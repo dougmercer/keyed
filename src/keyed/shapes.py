@@ -8,7 +8,7 @@ import shapely.ops
 
 from .animation import Animation, Property
 from .base import Base
-from .transformation import Transformation
+from .transformation import MultiContext, Transformation
 
 __all__ = ["Circle", "Rectangle"]
 
@@ -49,12 +49,12 @@ class Shape(Base, Protocol):
         with self.style(frame):
             if self.draw_fill:
                 self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
-                with self.apply_transformations(frame):
+                with MultiContext([t.at(frame) for t in self.transformations]):
                     self._draw_shape(frame)
                     self.ctx.fill()
             if self.draw_stroke:
                 self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-                with self.apply_transformations(frame):
+                with MultiContext([t.at(frame) for t in self.transformations]):
                     self._draw_shape(frame)
                     self.ctx.stroke()
 
