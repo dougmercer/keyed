@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import itertools
-from abc import abstractmethod
+from contextlib import contextmanager
 from typing import (
     Callable,
+    Generator,
     Generic,
     Iterable,
     Iterator,
@@ -87,22 +88,25 @@ class Text(BaseText):
             ")"
         )
 
-    def _prepare_context(self, frame: int) -> None:
-        self.ctx.select_font_face(self.font, self.slant, self.weight)
-        self.ctx.set_font_size(self.size)
-        self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-        self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+    @contextmanager
+    def style(self, frame: int) -> Generator[None, None, None]:
+        try:
+            self.ctx.save()
+            self.ctx.select_font_face(self.font, self.slant, self.weight)
+            self.ctx.set_font_size(self.size)
+            self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+            yield None
+        finally:
+            self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        self._prepare_context(frame)
-        self.ctx.show_text(self.text)
+        with self.style(frame):
+            self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+            self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
-        self.ctx.save()
-        self._prepare_context(frame)
-        e = self.ctx.text_extents(self.text)
-        self.ctx.restore()
-        return e
+        with self.style(frame):
+            return self.ctx.text_extents(self.text)
 
     def is_whitespace(self) -> bool:
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
@@ -149,11 +153,6 @@ class Composite(BaseText, Generic[T]):
     def __init__(self, ctx: cairo.Context, objects: Iterable[T]) -> None:
         self.ctx = ctx
         self.objects = list(objects)
-
-    @property
-    @abstractmethod
-    def chars(self) -> Selection[Text]:
-        pass
 
     def draw(self, frame: int = 0) -> None:
         for obj in self.objects:
