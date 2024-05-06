@@ -198,7 +198,7 @@ def lag_animation(
 
 
 class Property:
-    def __init__(self, value: Any) -> None:
+    def __init__(self, value: float) -> None:
         self.value = value
         self.animations: list[Animation] = []
         self.following: None | Followable = None
@@ -209,7 +209,7 @@ class Property:
     def add_animation(self, animation: Animation) -> None:
         self.animations.append(animation)
 
-    def get_value_at_frame(self, frame: int) -> Any:
+    def get_value_at_frame(self, frame: int) -> float:
         current_value = self.following.get_value_at_frame(frame) if self.following else self.value
 
         for animation in self.animations:
