@@ -1,6 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Protocol, Self, Sequence
+import math
+from contextlib import contextmanager
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Generator,
+    Iterable,
+    Literal,
+    Protocol,
+    Self,
+    Sequence,
+    SupportsIndex,
+    TypeVar,
+    overload,
+)
 
 import cairo
 import shapely
@@ -10,12 +24,12 @@ from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
 
 if TYPE_CHECKING:
-    from .code import Selection, Text
+    from .code import Text, TextSelection
     from .curve import Trace
     from .shapes import Rectangle
 
 
-__all__ = ["Base", "BaseText"]
+__all__ = ["Base", "BaseText", "Selection"]
 
 
 class Base(Protocol):
@@ -163,7 +177,7 @@ class Base(Protocol):
 
 class BaseText(Base, Protocol):
     @property
-    def chars(self) -> Selection[Text]: ...
+    def chars(self) -> TextSelection[Text]: ...
 
     def is_whitespace(self) -> bool:
         pass
@@ -194,3 +208,61 @@ class BaseText(Base, Protocol):
             simplify=simplify,
             tension=tension,
         )
+
+
+T = TypeVar("T", bound=Base)
+
+
+class Selection(Base, list[T]):
+    def __init__(self, iterable: Iterable = (), rotation: float = 0) -> None:
+        super().__init__(iterable)
+        self.rotation = Property(rotation)
+
+    def animate(self, property: str, animation: Animation) -> None:
+        """Apply an animation to all characters in the selection."""
+        for item in self:
+            item.animate(property, animation)
+
+    def draw(self, frame: int = 0) -> None:
+        for object in self:
+            object.draw(frame)
+
+    def write_on(
+        self,
+        property: str,
+        lagged_animation: Callable,
+        start_frame: int,
+        delay: int,
+        duration: int,
+    ) -> None:
+        frame = start_frame
+        for item in self:
+            animation = lagged_animation(start_frame=frame, end_frame=frame + duration)
+            item.animate(property, animation)
+            frame += delay
+
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> T:
+        pass
+
+    @overload
+    def __getitem__(self, key: slice) -> Self:
+        pass
+
+    def __getitem__(self, key: SupportsIndex | slice) -> T | Self:
+        if isinstance(key, slice):
+            return type(self)(super().__getitem__(key))
+        else:
+            return super().__getitem__(key)
+
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return shapely.GeometryCollection([obj.geom(frame) for obj in self])
+
+    @property
+    def ctx(self) -> cairo.Context:  # type: ignore[override]
+        if not self:
+            raise ValueError("Cannot retrieve 'ctx': Selection is empty.")
+        return self[0].ctx
+
+    def copy(self) -> Self:
+        return type(self)(list(self))

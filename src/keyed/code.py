@@ -12,15 +12,15 @@ from typing import (
     Self,
     SupportsIndex,
     TypeVar,
-    overload,
 )
 
 import cairo
 import shapely
+import shapely.ops
 from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenType
 
 from .animation import Animation, Property
-from .base import BaseText
+from .base import BaseText, Selection
 from .highlight import StyledToken
 
 __all__ = [
@@ -28,7 +28,7 @@ __all__ = [
     "Token",
     "Line",
     "Code",
-    "Selection",
+    "TextSelection",
 ]
 
 
@@ -119,8 +119,8 @@ class Text(BaseText):
         p.add_animation(animation)
 
     @property
-    def chars(self) -> Selection[Self]:
-        return Selection([self])
+    def chars(self) -> TextSelection[Self]:
+        return TextSelection([self])
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
@@ -148,11 +148,11 @@ class Text(BaseText):
         return new_copy
 
 
-T = TypeVar("T", bound=BaseText)
+TextT = TypeVar("TextT", bound=BaseText)
 
 
-class Composite(BaseText, Generic[T]):
-    def __init__(self, ctx: cairo.Context, objects: Iterable[T]) -> None:
+class Composite(BaseText, Generic[TextT]):
+    def __init__(self, ctx: cairo.Context, objects: Iterable[TextT]) -> None:
         self.ctx = ctx
         self.objects = list(objects)
 
@@ -160,13 +160,13 @@ class Composite(BaseText, Generic[T]):
         for obj in self.objects:
             obj.draw(frame)
 
-    def __getitem__(self, key: SupportsIndex) -> T:
+    def __getitem__(self, key: SupportsIndex) -> TextT:
         return self.objects[key]
 
     def __len__(self) -> int:
         return len(self.objects)
 
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterator[TextT]:
         return iter(self.objects)
 
     def __repr__(self) -> str:
@@ -244,8 +244,8 @@ class Token(Composite[Text]):
         )
 
     @property
-    def chars(self) -> Selection[Text]:
-        return Selection(self.objects)
+    def chars(self) -> TextSelection[Text]:
+        return TextSelection(self.objects)
 
     @property
     def characters(self) -> list[Text]:
@@ -288,8 +288,8 @@ class Line(Composite[Token]):
             x += self.objects[-1].extents().x_advance
 
     @property
-    def chars(self) -> Selection[Text]:
-        return Selection(list(itertools.chain(*self.objects)))
+    def chars(self) -> TextSelection[Text]:
+        return TextSelection(list(itertools.chain(*self.objects)))
 
     @property
     def tokens(self) -> list[Token]:
@@ -312,7 +312,7 @@ class Code(Composite[Line]):
         y: float = 10,
         alpha: float = 1,
     ) -> None:
-        self.objects: Selection[Line] = Selection()
+        self.objects: TextSelection[Line] = TextSelection()
         self._tokens = tokens
         self.font = font
         self.font_size = font_size
@@ -353,15 +353,15 @@ class Code(Composite[Line]):
         self.ctx.set_font_size(self.font_size)
 
     @property
-    def chars(self) -> Selection[Text]:
-        return Selection(itertools.chain(*itertools.chain(*self.lines)))
+    def chars(self) -> TextSelection[Text]:
+        return TextSelection(itertools.chain(*itertools.chain(*self.lines)))
 
     @property
-    def tokens(self) -> Selection[Token]:
-        return Selection(itertools.chain(*self.lines))
+    def tokens(self) -> TextSelection[Token]:
+        return TextSelection(itertools.chain(*self.lines))
 
     @property
-    def lines(self) -> Selection[Line]:
+    def lines(self) -> TextSelection[Line]:
         return self.objects
 
     def find_line(self, query: Text) -> int:
@@ -387,23 +387,14 @@ class Code(Composite[Line]):
 
     def copy(self) -> Self:
         new_token = type(self)(ctx=self.ctx, tokens=self._tokens, x=0, y=0)
-        new_token.objects = Selection([obj.copy() for obj in self.objects])
+        new_token.objects = TextSelection([obj.copy() for obj in self.objects])
         return new_token
 
 
-class Selection(BaseText, list[T]):
-    def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to all characters in the selection."""
-        for item in self:
-            item.animate(property, animation)
-
-    def draw(self, frame: int = 0) -> None:
-        for object in self:
-            object.draw(frame)
-
+class TextSelection(BaseText, Selection[TextT]):
     @property
-    def chars(self) -> Selection[Text]:
-        return Selection(itertools.chain.from_iterable(item.chars for item in self))
+    def chars(self) -> TextSelection[Text]:
+        return TextSelection(itertools.chain.from_iterable(item.chars for item in self))
 
     def write_on(
         self,
@@ -422,31 +413,8 @@ class Selection(BaseText, list[T]):
             item.animate(property, animation)
             frame += delay
 
-    @overload
-    def __getitem__(self, key: SupportsIndex) -> T:
-        pass
-
-    @overload
-    def __getitem__(self, key: slice) -> Selection[T]:
-        pass
-
-    def __getitem__(self, key: SupportsIndex | slice) -> T | Selection[T]:
-        if isinstance(key, slice):
-            return Selection(super().__getitem__(key))
-        else:
-            return super().__getitem__(key)
-
-    def geom(self, frame: int = 0) -> shapely.Polygon:
-        return shapely.GeometryCollection([char.geom(frame) for char in self.chars])
-
-    @property
-    def ctx(self) -> cairo.Context:  # type: ignore[override]
-        if not self:
-            raise ValueError("Cannot retrieve 'ctx': Selection is empty.")
-        return self[0].ctx
+    def is_whitespace(self) -> bool:
+        return all(obj.is_whitespace() for obj in self)
 
     def copy(self) -> Self:
         return type(self)(list(self))
-
-    def is_whitespace(self) -> bool:
-        return all(obj.is_whitespace() for obj in self)
