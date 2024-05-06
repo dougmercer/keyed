@@ -23,6 +23,8 @@ class Shape(Base, Protocol):
     draw_stroke: bool
     line_width: Property
     rotation: Property
+    line_cap: cairo.LineCap
+    line_join: cairo.LineJoin
 
     @contextmanager
     def rotate(self, frame: int) -> Generator[None, None, None]:
@@ -48,6 +50,8 @@ class Shape(Base, Protocol):
             if self.operator is not cairo.OPERATOR_OVER:
                 self.ctx.set_operator(self.operator)
             self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
+            self.ctx.set_line_cap(self.line_cap)
+            self.ctx.set_line_join(self.line_join)
             yield
         finally:
             self.ctx.restore()
@@ -107,6 +111,8 @@ class Rectangle(Shape):
         self.draw_stroke = draw_stroke
         self.line_width = Property(line_width)
         self.rotation = Property(rotation)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
 
     def __repr__(self) -> str:
         return (
@@ -224,14 +230,13 @@ class Circle(Shape):
         self.draw_stroke = draw_stroke
         self.line_width = Property(line_width)
         self.rotation = Property(rotation)
+        self.line_cap = cairo.LINE_CAP_BUTT
+        self.line_join = cairo.LINE_JOIN_MITER
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"
 
     def _draw_shape(self, frame: int = 0) -> None:
-        self.ctx.set_line_width(2)
-        self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
-        self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         self.ctx.arc(
             self.x.get_value_at_frame(frame),
             self.y.get_value_at_frame(frame),

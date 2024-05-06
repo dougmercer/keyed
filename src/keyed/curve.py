@@ -166,9 +166,6 @@ class BezierShape(Shape, Protocol):
 
         # Move to the first point
         self.ctx.move_to(*points[0])
-        self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
-        self.ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-        self.ctx.set_line_join(cairo.LINE_JOIN_ROUND)
 
         # Draw full segments up to the idx
         for i in range(idx):
@@ -214,6 +211,8 @@ class Curve(BezierShape):
         self.t = Property(1)
         self.simplify = simplify
         self.rotation = Property(rotation)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
 
     def points(self, frame: int = 0) -> VecArray:
         return self._points
@@ -275,6 +274,8 @@ class Trace(BezierShape):
         self.tension = Property(tension)
         self.t = Property(1)
         self.rotation = Property(rotation)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
 
     @classmethod
     def from_points(
