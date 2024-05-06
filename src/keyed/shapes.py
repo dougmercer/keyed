@@ -1,5 +1,6 @@
 import math
-from typing import Protocol, Self, Sequence
+from contextlib import contextmanager
+from typing import Generator, Protocol, Self, Sequence
 
 import cairo
 import shapely
@@ -19,29 +20,50 @@ class Shape(Base, Protocol):
     operator: cairo.Operator = cairo.OPERATOR_OVER
     draw_fill: bool
     draw_stroke: bool
+    line_width: Property
+    rotation: Property
+
+    @contextmanager
+    def rotate(self, frame: int) -> Generator[None, None, None]:
+        try:
+            self.ctx.save()
+            cx, cy = self.geom(frame).centroid.coords[0]
+            self.ctx.translate(cx, cy)
+            self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
+            self.ctx.translate(-cx, -cy)
+            yield
+        finally:
+            self.ctx.restore()
 
     def _draw_shape(self, frame: int) -> None:
         pass
 
+    @contextmanager
+    def style(self, frame: int) -> Generator[None, None, None]:
+        try:
+            self.ctx.save()
+            if self.dash:
+                self.ctx.set_dash(*self.dash)
+            if self.operator is not cairo.OPERATOR_OVER:
+                self.ctx.set_operator(self.operator)
+            self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
+            yield
+        finally:
+            self.ctx.restore()
+
     def draw(self, frame: int = 0) -> None:
-        if self.dash:
-            self.ctx.set_dash(*self.dash)
-        if self.operator is not cairo.OPERATOR_OVER:
-            self.ctx.set_operator(self.operator)
-
-        if self.draw_fill:
-            self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
-            self._draw_shape(frame)
-            self.ctx.fill()
-        if self.draw_stroke:
-            self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-            self._draw_shape(frame)
-            self.ctx.stroke()
-
-        if self.dash:
-            self.ctx.set_dash([])
-        if self.operator is not cairo.OPERATOR_OVER:
-            self.ctx.set_operator(cairo.OPERATOR_OVER)
+        with self.style(frame):
+            if self.draw_fill:
+                self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
+                with self.rotate(frame):
+                    self._draw_shape(frame)
+                    self.ctx.fill()
+            if self.draw_stroke:
+                self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+                with self.rotate(frame):
+                    self.rotate(frame)
+                    self._draw_shape(frame)
+                    self.ctx.stroke()
 
     def animate(self, property: str, animation: Animation) -> None:
         getattr(self, property).add_animation(animation)
@@ -65,6 +87,8 @@ class Rectangle(Shape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         draw_fill: bool = True,
         draw_stroke: bool = True,
+        line_width: float = 2,
+        rotation: float = 0,
     ) -> None:
         self.ctx = ctx
         self.x = Property(x)
@@ -78,6 +102,8 @@ class Rectangle(Shape):
         self.operator = operator
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
+        self.line_width = Property(line_width)
+        self.rotation = Property(rotation)
 
     def __repr__(self) -> str:
         return (
@@ -87,11 +113,11 @@ class Rectangle(Shape):
             f"width={self.width}, "
             f"height={self.height}, "
             f"dash={self.dash}, "
+            f"rotation={self.rotation}, "
             ")"
         )
 
     def _draw_shape(self, frame: int) -> None:
-        self.ctx.set_line_width(2)
         self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
         self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         x = self.x.get_value_at_frame(frame)
@@ -140,6 +166,8 @@ class Circle(Shape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         draw_fill: bool = True,
         draw_stroke: bool = True,
+        line_width: float = 2,
+        rotation: float = 0,
     ) -> None:
         self.ctx = ctx
         self.x = Property(x)
@@ -152,6 +180,8 @@ class Circle(Shape):
         self.operator = operator
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
+        self.line_width = Property(line_width)
+        self.rotation = Property(rotation)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"

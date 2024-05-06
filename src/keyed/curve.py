@@ -118,6 +118,7 @@ class BezierShape(Shape, Protocol):
     t: Property
     line_width: Property
     simplify: float | None
+    rotation: Property
 
     def points(self, frame: int = 0) -> VecArray:
         pass
@@ -193,6 +194,7 @@ class Curve(BezierShape):
         line_width: float = 1,
         tension: float = 0,
         simplify: float | None = None,
+        rotation: float = 0,
     ):
         self.ctx = ctx
         self._points = np.array(points)
@@ -211,6 +213,7 @@ class Curve(BezierShape):
         self.tension = Property(tension)
         self.t = Property(1)
         self.simplify = simplify
+        self.rotation = Property(rotation)
 
     def points(self, frame: int = 0) -> VecArray:
         return self._points
@@ -254,6 +257,7 @@ class Trace(BezierShape):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 0,
+        rotation: float = 0,
     ):
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
@@ -270,6 +274,7 @@ class Trace(BezierShape):
         self.simplify = simplify
         self.tension = Property(tension)
         self.t = Property(1)
+        self.rotation = Property(rotation)
 
     @classmethod
     def from_points(
@@ -284,6 +289,7 @@ class Trace(BezierShape):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 0,
+        rotation: float = 0,
     ) -> Self:
         objects = [Circle(ctx, x, y, alpha=0) for (x, y) in points]
         return cls(
@@ -297,6 +303,7 @@ class Trace(BezierShape):
             line_width=line_width,
             simplify=simplify,
             tension=tension,
+            rotation=rotation,
         )
 
     def points(self, frame: int = 0) -> VecArray:
@@ -312,8 +319,11 @@ class Trace(BezierShape):
         )
 
     def animate(self, property: str, animation: Animation) -> None:
-        for obj in self.objects:
-            obj.animate(property, animation)
+        if property in ["x", "y"]:
+            for obj in self.objects:
+                obj.animate(property, animation)
+        else:
+            getattr(self, property).add_animation(animation)
 
     def copy(self) -> Self:
         new_trace = type(self)(
