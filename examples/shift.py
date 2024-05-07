@@ -4,7 +4,7 @@ from keyed.easing import CubicEaseInOut
 styled_tokens = tokenize(r"import this")
 
 scene = Scene(scene_name="shift", num_frames=24, width=800, height=600)
-code = Code(scene.ctx, styled_tokens, font_size=48)
+code = Code(scene, styled_tokens, font_size=48)
 
 scene.add(code.lines[0])
 

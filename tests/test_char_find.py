@@ -12,7 +12,7 @@ def code() -> Code:
     a = 1 + 2"""
     styled_tokens = tokenize(code_str)
     scene = Scene(scene_name="abc", num_frames=24, width=1920, height=1080)
-    return Code(scene.ctx, styled_tokens, font_size=48, alpha=0)
+    return Code(scene, styled_tokens, font_size=48, alpha=0)
 
 
 def test_find_line(code: Code) -> None:

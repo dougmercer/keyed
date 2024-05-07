@@ -5,12 +5,12 @@ from keyed import Animation, Circle, PingPong, Rectangle, Scene, Text, Trace, ea
 scene = Scene(num_frames=24 * 8)
 s = 600
 offset = 200
-t = Text(scene.ctx, "Hello", 48, x=s / 2, y=offset + 10, font="Anonymous Pro", color=(1, 0, 1))
+t = Text(scene, "Hello", 48, x=s / 2, y=offset + 10, font="Anonymous Pro", color=(1, 0, 1))
 scene.add(t)
-r = Rectangle(scene.ctx, x=offset, y=offset, width=s, height=s, rotation=45, alpha=1)
+r = Rectangle(scene, x=offset, y=offset, width=s, height=s, rotation=45, alpha=1)
 scene.add(r)
 rr = Rectangle(
-    scene.ctx,
+    scene,
     x=offset,
     y=offset,
     width=s,
@@ -23,13 +23,13 @@ rr = Rectangle(
 )
 scene.add(rr)
 
-c = Circle(scene.ctx, x=offset, y=offset, radius=s / 2)
+c = Circle(scene, x=offset, y=offset, radius=s / 2)
 
 scene.add(c)
 c.rotate(PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8))
 
 t2 = Text(
-    scene.ctx,
+    scene,
     "World",
     48,
     x=offset + s / 2,
@@ -43,7 +43,7 @@ r.rotate(PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n
 rr.rotate(PingPong(Animation(0, 12, -45, -90 - 45, easing=easing.CubicEaseInOut), n=8))
 
 trace = Trace.from_points(
-    scene.ctx,
+    scene,
     points=[(offset, offset), (offset, s), (s, offset), (s, s)],
     color=(0, 0, 1),
     alpha=1,

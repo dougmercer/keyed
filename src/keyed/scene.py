@@ -3,16 +3,19 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
-from typing import Any, Generator, Iterable, Protocol
+from typing import TYPE_CHECKING, Any, Generator, Iterable, Protocol
 
 import cairo
 from shapely import Point
 from tqdm import tqdm
 
 from .animation import Property
-from .base import Base
 from .code import Composite
 from .previewer import create_animation_window
+
+if TYPE_CHECKING:
+    from .base import Base
+
 
 __all__ = ["Scene"]
 
@@ -87,30 +90,30 @@ class Scene:
 
     @cache
     def rasterize(self, frame: int) -> cairo.ImageSurface:
-        with self.transform(frame):
-            self.draw_frame(frame)
+        self.draw_frame(frame)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
-        ctx.set_source_surface(self.surface, 0, 0)
         ctx.set_antialias(self.antialias)
-        ctx.paint()
+        with self.transform(ctx, frame):
+            ctx.set_source_surface(self.surface, 0, 0)
+            ctx.paint()
         return raster
 
     @contextmanager
-    def transform(self, frame: int) -> Generator[None, Any, Any]:
+    def transform(self, ctx: cairo.Context, frame: int) -> Generator[None, Any, Any]:
         """Context manager to handle transformations."""
         if self.zoom.is_animated:
             pivot_x = self.pivot_x.get_value_at_frame(frame)
             pivot_y = self.pivot_y.get_value_at_frame(frame)
             zoom = self.zoom.get_value_at_frame(frame)
-            self.ctx.translate(pivot_x, pivot_y)
-            self.ctx.scale(zoom, zoom)
-            self.ctx.translate(-pivot_x, -pivot_y)
+            ctx.translate(pivot_x, pivot_y)
+            ctx.scale(zoom, zoom)
+            ctx.translate(-pivot_x, -pivot_y)
 
             try:
                 yield
             finally:
-                self.ctx.identity_matrix()
+                ctx.identity_matrix()
         else:
             yield
 
@@ -155,3 +158,6 @@ class Scene:
 
     def preview(self) -> None:
         create_animation_window(self)
+
+    def get_context(self) -> cairo.Context:
+        return cairo.Context(self.surface)

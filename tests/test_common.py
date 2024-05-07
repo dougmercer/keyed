@@ -12,7 +12,7 @@ DRAWABLES = [
     (keyed.Rectangle, {}),
     (keyed.Circle, {}),
     (keyed.Curve, {"points": [(1, 1), (2, 2)]}),
-    (keyed.Trace, {"objects": [keyed.Circle(scene.ctx), keyed.Circle(scene.ctx)]}),
+    (keyed.Trace, {"objects": [keyed.Circle(scene), keyed.Circle(scene)]}),
     (keyed.Code, {"tokens": keyed.tokenize("import this")}),
 ]
 
@@ -36,5 +36,5 @@ def test_common_methods_dont_fail(
     method: Callable,
 ) -> None:
     drawable, kwargs = drawable_args
-    obj = drawable(scene.ctx, **kwargs)  # type: ignore[call-arg]
+    obj = drawable(scene, **kwargs)  # type: ignore[call-arg]
     method(obj)

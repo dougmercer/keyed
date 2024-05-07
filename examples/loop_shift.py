@@ -3,7 +3,7 @@ from keyed import Animation, AnimationType, Code, Loop, Scene, easing, tokenize
 styled_tokens = tokenize(r"import this")
 
 scene = Scene(scene_name="loop_shift", num_frames=48, width=800, height=600)
-code = Code(scene.ctx, styled_tokens, font_size=48, y=110)
+code = Code(scene, styled_tokens, font_size=48, y=110)
 
 scene.add(code.lines[0])
 

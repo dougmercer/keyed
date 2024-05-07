@@ -10,7 +10,7 @@ def test_text_drawing() -> None:
 
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=100, height=100)
     text = Text(
-        scene.ctx,
+        scene,
         text="Hello",
         size=20,
         x=10,
@@ -32,8 +32,8 @@ def test_text_drawing() -> None:
 
 def test_add_multiple_drawables() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
-    text1 = Text(scene.ctx, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)  # Red text
-    text2 = Text(scene.ctx, "World", 20, 100, 50, "Sans", (0, 1, 0), alpha=1)  # Green text
+    text1 = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)  # Red text
+    text2 = Text(scene, "World", 20, 100, 50, "Sans", (0, 1, 0), alpha=1)  # Green text
     scene.add(text1, text2)
     scene.draw_frame(0)
 
@@ -66,7 +66,7 @@ def test_clear_scene() -> None:
     width = 100
     height = 100
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=width, height=height)
-    text = Text(scene.ctx, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)
+    text = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)
     scene.add(text)
     scene.draw_frame(frame=0)
     scene.clear()

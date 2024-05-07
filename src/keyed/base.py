@@ -24,6 +24,7 @@ from .transformation import Rotation, Scale, Transformation
 if TYPE_CHECKING:
     from .code import Text, TextSelection
     from .curve import Trace
+    from .scene import Scene
     from .shapes import Rectangle
 
 
@@ -31,6 +32,7 @@ __all__ = ["Base", "BaseText", "Selection"]
 
 
 class Base(Protocol):
+    scene: Scene
     ctx: cairo.Context
     rotation: Property
     _scale: Property
@@ -52,10 +54,10 @@ class Base(Protocol):
         self.transformations.append(transformation)
 
     def rotate(self, animation: Animation) -> None:
-        self.add_transformation(Rotation(self.ctx, self, animation))
+        self.add_transformation(Rotation(self, animation))
 
     def scale(self, animation: Animation) -> None:
-        self.add_transformation(Scale(self.ctx, self, animation))
+        self.add_transformation(Scale(self, animation))
 
     def emphasize(
         self,
@@ -69,7 +71,7 @@ class Base(Protocol):
         from .shapes import Rectangle
 
         r = Rectangle(
-            self.ctx,
+            self.scene,
             color=color,
             fill_color=fill_color,
             alpha=alpha,
@@ -207,7 +209,7 @@ class BaseText(Base, Protocol):
         from .curve import Trace
 
         return Trace(
-            self.ctx,
+            self.scene,
             objects=[c.copy() for c in self.chars],
             color=color,
             fill_color=fill_color,
@@ -271,10 +273,14 @@ class Selection(Base, list[T]):
         return shapely.GeometryCollection([obj.geom(frame) for obj in self])
 
     @property
-    def ctx(self) -> cairo.Context:  # type: ignore[override]
+    def scene(self) -> Scene:  # type: ignore[override]
         if not self:
-            raise ValueError("Cannot retrieve 'ctx': Selection is empty.")
-        return self[0].ctx
+            raise ValueError("Cannot retrieve 'scene': Selection is empty.")
+        return self[0].scene
+
+    @property
+    def ctx(self) -> cairo.Context:  # type: ignore[override]
+        return self.scene.get_context()
 
     def copy(self) -> Self:
         return type(self)(list(self))

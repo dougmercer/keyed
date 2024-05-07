@@ -5,7 +5,7 @@ with open("examples/example.py", "r") as f:
 styled_tokens = tokenize(content)
 
 scene = Scene(scene_name="write_on_chars", num_frames=24, width=1920, height=1080)
-code = Code(scene.ctx, styled_tokens, font_size=48, alpha=0)
+code = Code(scene, styled_tokens, font_size=48, alpha=0)
 
 scene.add(code)
 

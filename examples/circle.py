@@ -2,7 +2,7 @@ from keyed import Animation, AnimationType, Circle, PingPong, Scene, Text, easin
 
 scene = Scene(scene_name="circle", num_frames=90, width=3840, height=2160)
 
-circle = Circle(scene.ctx, 100, 100, radius=20)
+circle = Circle(scene, 100, 100, radius=20)
 
 scene.add(circle)
 
@@ -21,9 +21,7 @@ circle.animate(
     ),
 )
 
-text = Text(
-    scene.ctx, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0), token_type=None
-)
+text = Text(scene, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0), token_type=None)
 scene.add(text)
 
 c2 = text.emphasize()

@@ -16,51 +16,49 @@ __all__ = ["Transformation", "Rotation", "MultiContext"]
 
 class Transformation(Protocol):
     @contextmanager
-    def at(self, frame: int = 0) -> Generator[None, Any, None]:
+    def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         pass
 
 
 class Rotation:
-    def __init__(self, ctx: cairo.Context, reference: Base, animation: Animation):
-        self.ctx = ctx
+    def __init__(self, reference: Base, animation: Animation):
         self.reference = reference
         self.reference.rotation.add_animation(animation)
 
     @contextmanager
-    def at(self, frame: int = 0) -> Generator[None, Any, None]:
+    def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
-            self.ctx.save()
+            ctx.save()
             coords = self.reference.geom(frame).centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
-                self.ctx.translate(cx, cy)
-                self.ctx.rotate(math.radians(self.reference.rotation.get_value_at_frame(frame)))
-                self.ctx.translate(-cx, -cy)
+                ctx.translate(cx, cy)
+                ctx.rotate(math.radians(self.reference.rotation.get_value_at_frame(frame)))
+                ctx.translate(-cx, -cy)
             yield
         finally:
-            self.ctx.restore()
+            ctx.restore()
 
 
 class Scale:
-    def __init__(self, ctx: cairo.Context, reference: Base, animation: Animation):
-        self.ctx = ctx
+    def __init__(self, reference: Base, animation: Animation):
         self.reference = reference
         self.reference._scale.add_animation(animation)
 
     @contextmanager
-    def at(self, frame: int = 0) -> Generator[None, Any, None]:
+    def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
-            self.ctx.save()
+            ctx.save()
             coords = self.reference.geom(frame).centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
-                self.ctx.translate(cx, cy)
+                ctx.translate(cx, cy)
                 s = self.reference._scale.get_value_at_frame(frame)
-                self.ctx.scale(s, s)
-                self.ctx.translate(-cx, -cy)
+                ctx.scale(s, s)
+                ctx.translate(-cx, -cy)
             yield
         finally:
-            self.ctx.restore()
+            ctx.restore()
 
 
 class MultiContext:

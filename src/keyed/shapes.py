@@ -8,12 +8,14 @@ import shapely.ops
 
 from .animation import Animation, Property
 from .base import Base
+from .scene import Scene
 from .transformation import MultiContext, Transformation
 
 __all__ = ["Circle", "Rectangle"]
 
 
 class Shape(Base, Protocol):
+    scene: Scene
     ctx: cairo.Context
     color: tuple[float, float, float]
     fill_color: tuple[float, float, float]
@@ -50,12 +52,12 @@ class Shape(Base, Protocol):
         with self.style(frame):
             if self.draw_fill:
                 self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
-                with MultiContext([t.at(frame) for t in self.transformations]):
+                with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
                     self._draw_shape(frame)
                     self.ctx.fill()
             if self.draw_stroke:
                 self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-                with MultiContext([t.at(frame) for t in self.transformations]):
+                with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
                     self._draw_shape(frame)
                     self.ctx.stroke()
 
@@ -73,7 +75,7 @@ class Shape(Base, Protocol):
 class Rectangle(Shape):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         width: float = 10,
         height: float = 10,
         x: float = 10,
@@ -89,7 +91,8 @@ class Rectangle(Shape):
         line_width: float = 2,
         rotation: float = 0,
     ) -> None:
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.x = Property(x)
         self.y = Property(y)
         self.width = Property(width)
@@ -176,7 +179,7 @@ class Rectangle(Shape):
 
     def copy(self) -> Self:
         new_copy = type(self)(
-            ctx=self.ctx,
+            scene=self.scene,
             color=self.color,
             fill_color=self.fill_color,
             dash=self.dash,
@@ -198,7 +201,7 @@ class Rectangle(Shape):
 class Circle(Shape):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         x: float = 10,
         y: float = 10,
         radius: float = 1,
@@ -212,7 +215,8 @@ class Circle(Shape):
         line_width: float = 2,
         rotation: float = 0,
     ) -> None:
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.x = Property(x)
         self.y = Property(y)
         self.radius = Property(radius)
@@ -255,7 +259,7 @@ class Circle(Shape):
 
     def copy(self) -> Self:
         new_copy = type(self)(
-            ctx=self.ctx,
+            scene=self.scene,
             color=self.color,
             fill_color=self.fill_color,
             dash=self.dash,

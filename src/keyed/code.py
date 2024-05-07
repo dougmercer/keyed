@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Generator,
     Generic,
@@ -23,6 +24,10 @@ from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
 from .transformation import MultiContext, Transformation
+
+if TYPE_CHECKING:
+    from .scene import Scene
+
 
 __all__ = [
     "Text",
@@ -46,7 +51,7 @@ class Animatable(Protocol):
 class Text(BaseText):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         text: str,
         size: int,
         x: float,
@@ -69,7 +74,8 @@ class Text(BaseText):
         self.size = size
         self.x = Property(value=x)
         self.y = Property(value=y)
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.code = code
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
@@ -104,7 +110,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with MultiContext([t.at(frame) for t in self.transformations]):
+        with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
             with self.style(frame):
                 self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
                 self.ctx.show_text(self.text)
@@ -135,7 +141,7 @@ class Text(BaseText):
 
     def copy(self) -> Self:
         new_copy = type(self)(
-            ctx=self.ctx,
+            scene=self.scene,
             x=self.x.value,
             y=self.y.value,
             text=self.text,
@@ -157,8 +163,8 @@ TextT = TypeVar("TextT", bound=BaseText)
 
 
 class Composite(BaseText, Generic[TextT]):
-    def __init__(self, ctx: cairo.Context, objects: Iterable[TextT]) -> None:
-        self.ctx = ctx
+    def __init__(self, scene: Scene, objects: Iterable[TextT]) -> None:
+        self.ctx = scene.get_context()
         self.objects = list(objects)
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
@@ -205,7 +211,7 @@ class Composite(BaseText, Generic[TextT]):
 class Token(Composite[Text]):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         token: StyledToken,
         x: float,
         y: float,
@@ -216,7 +222,8 @@ class Token(Composite[Text]):
     ):
         self.objects: list[Text] = []
         self._token = token
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
         self._scale = Property(1)
@@ -224,7 +231,7 @@ class Token(Composite[Text]):
         for char in token.text:
             self.objects.append(
                 Text(
-                    ctx,
+                    scene,
                     char,
                     **token.to_cairo(),
                     x=x,
@@ -268,7 +275,7 @@ class Token(Composite[Text]):
         return self.objects
 
     def copy(self) -> Self:
-        new_token = type(self)(ctx=self.ctx, token=self._token, x=0, y=0)
+        new_token = type(self)(scene=self.scene, token=self._token, x=0, y=0)
         new_token.objects = [obj.copy() for obj in self.objects]
         return new_token
 
@@ -276,7 +283,7 @@ class Token(Composite[Text]):
 class Line(Composite[Token]):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         tokens: list[StyledToken],
         x: float,
         y: float,
@@ -287,14 +294,15 @@ class Line(Composite[Token]):
     ):
         self.objects: list[Token] = []
         self._tokens = tokens
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.rotation = Property(0)
         self._scale = Property(1)
 
         for token in tokens:
             self.objects.append(
                 Token(
-                    ctx,
+                    scene,
                     token,
                     x=x,
                     y=y,
@@ -315,7 +323,7 @@ class Line(Composite[Token]):
         return self.objects
 
     def copy(self) -> Self:
-        new_token = type(self)(ctx=self.ctx, tokens=self._tokens, x=0, y=0)
+        new_token = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
         new_token.objects = [obj.copy() for obj in self.objects]
         return new_token
 
@@ -323,7 +331,7 @@ class Line(Composite[Token]):
 class Code(Composite[Line]):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         tokens: list[StyledToken],
         font: str = "Anonymous Pro",
         font_size: int = 24,
@@ -335,13 +343,14 @@ class Code(Composite[Line]):
         self._tokens = tokens
         self.font = font
         self.font_size = font_size
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.rotation = Property(0)
         self._scale = Property(1)
 
         self.set_default_font()
 
-        ascent, _, height, *_ = ctx.font_extents()
+        ascent, _, height, *_ = self.ctx.font_extents()
         y += ascent
         line_height = 1.2 * height
 
@@ -357,7 +366,7 @@ class Code(Composite[Line]):
         for line in lines:
             self.lines.append(
                 Line(
-                    ctx,
+                    scene,
                     tokens=line,
                     x=x,
                     y=y,
@@ -407,7 +416,7 @@ class Code(Composite[Line]):
         return -1
 
     def copy(self) -> Self:
-        new_token = type(self)(ctx=self.ctx, tokens=self._tokens, x=0, y=0)
+        new_token = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
         new_token.objects = TextSelection([obj.copy() for obj in self.objects])
         return new_token
 

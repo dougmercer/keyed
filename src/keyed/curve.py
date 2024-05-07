@@ -11,6 +11,7 @@ from scipy.integrate import quad
 
 from .animation import Animation, Property
 from .base import Base
+from .scene import Scene
 from .shapes import Circle, Shape
 from .transformation import Transformation
 
@@ -184,7 +185,7 @@ class BezierShape(Shape, Protocol):
 class Curve(BezierShape):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         points: Sequence[tuple[float, float]] | VecArray,
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
@@ -196,7 +197,8 @@ class Curve(BezierShape):
         simplify: float | None = None,
         rotation: float = 0,
     ):
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self._points = np.array(points)
         if self._points.shape[0] < 2:
             raise ValueError("Need at least two points.")
@@ -233,7 +235,7 @@ class Curve(BezierShape):
 
     def copy(self) -> Self:
         new_curve = type(self)(
-            ctx=self.ctx,
+            self.scene,
             points=self._points.copy(),
             color=self.color,
             fill_color=self.fill_color,
@@ -251,7 +253,7 @@ class Curve(BezierShape):
 class Trace(BezierShape):
     def __init__(
         self,
-        ctx: cairo.Context,
+        scene: Scene,
         objects: Sequence[Base],
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
@@ -265,7 +267,8 @@ class Trace(BezierShape):
     ):
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
-        self.ctx = ctx
+        self.scene = scene
+        self.ctx = scene.get_context()
         self.objects = [obj.copy() for obj in objects]
         self.color = color
         self.fill_color = fill_color
@@ -287,7 +290,7 @@ class Trace(BezierShape):
     @classmethod
     def from_points(
         cls,
-        ctx: cairo.Context,
+        scene: Scene,
         points: Sequence[tuple[float, float]] | VecArray,
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] = (1, 1, 1),
@@ -299,9 +302,9 @@ class Trace(BezierShape):
         tension: float = 0,
         rotation: float = 0,
     ) -> Self:
-        objects = [Circle(ctx, x, y, alpha=0) for (x, y) in points]
+        objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
-            ctx=ctx,
+            scene=scene,
             objects=objects,
             color=color,
             fill_color=fill_color,
@@ -337,7 +340,7 @@ class Trace(BezierShape):
 
     def copy(self) -> Self:
         new_trace = type(self)(
-            ctx=self.ctx,
+            scene=self.scene,
             objects=[obj.copy() for obj in self.objects],
             color=self.color,
             fill_color=self.fill_color,

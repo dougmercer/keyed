@@ -5,10 +5,10 @@ def test_align_to() -> None:
     scene = Scene(scene_name="code_replace_complex", num_frames=48, width=3840, height=2160)
 
     styled_tokens1 = tokenize(r"x = 1 + 2 + 3")
-    code1 = Code(scene.ctx, styled_tokens1, font_size=36, x=200, y=200)
+    code1 = Code(scene, styled_tokens1, font_size=36, x=200, y=200)
 
     styled_tokens2 = tokenize(r"x = 1 + get_two() + 3")
-    code2 = Code(scene.ctx, styled_tokens2, font_size=36, x=400, y=600)
+    code2 = Code(scene, styled_tokens2, font_size=36, x=400, y=600)
 
     code2.align_to(code1.chars[0], from_=code2.chars[0], start_frame=0, end_frame=6, direction=LEFT)
     code2.align_to(
