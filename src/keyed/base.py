@@ -224,9 +224,9 @@ T = TypeVar("T", bound=Base)
 
 
 class Selection(Base, list[T]):
-    def __init__(self, *args: Iterable[T], rotation: float = 0) -> None:
+    def __init__(self, *args: Iterable[T]) -> None:
         list.__init__(self, *args)
-        self.rotation = Property(rotation)
+        self.rotation = Property(0)
         self.transformations: list[Transformation] = []
         self._scale = Property(1)
 
