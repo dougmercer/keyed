@@ -278,3 +278,7 @@ class Selection(Base, list[T]):
 
     def copy(self) -> Self:
         return type(self)(list(self))
+
+    def add_transformation(self, transformation: Transformation) -> None:
+        for obj in self:
+            obj.add_transformation(transformation)
