@@ -73,6 +73,7 @@ class Text(BaseText):
         self.code = code
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
@@ -161,6 +162,7 @@ class Composite(BaseText, Generic[TextT]):
         self.objects = list(objects)
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def draw(self, frame: int = 0) -> None:
         for obj in self.objects:
@@ -217,6 +219,7 @@ class Token(Composite[Text]):
         self.ctx = ctx
         self.rotation = Property(0)
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
         for char in token.text:
             self.objects.append(
@@ -286,6 +289,7 @@ class Line(Composite[Token]):
         self._tokens = tokens
         self.ctx = ctx
         self.rotation = Property(0)
+        self._scale = Property(1)
 
         for token in tokens:
             self.objects.append(
@@ -333,6 +337,7 @@ class Code(Composite[Line]):
         self.font_size = font_size
         self.ctx = ctx
         self.rotation = Property(0)
+        self._scale = Property(1)
 
         self.set_default_font()
 

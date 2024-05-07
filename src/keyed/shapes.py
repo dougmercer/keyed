@@ -27,6 +27,7 @@ class Shape(Base, Protocol):
     line_cap: cairo.LineCap
     line_join: cairo.LineJoin
     transformations: list[Transformation]
+    _scale: Property
 
     def _draw_shape(self, frame: int) -> None:
         pass
@@ -106,6 +107,7 @@ class Rectangle(Shape):
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def __repr__(self) -> str:
         return (
@@ -226,6 +228,7 @@ class Circle(Shape):
         self.line_cap = cairo.LINE_CAP_BUTT
         self.line_join = cairo.LINE_JOIN_MITER
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"

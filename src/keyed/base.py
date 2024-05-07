@@ -19,7 +19,7 @@ import shapely
 from .animation import Animation, AnimationType, LambdaFollower, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import Rotation, Transformation
+from .transformation import Rotation, Scale, Transformation
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -33,6 +33,7 @@ __all__ = ["Base", "BaseText", "Selection"]
 class Base(Protocol):
     ctx: cairo.Context
     rotation: Property
+    _scale: Property
     transformations: list[Transformation]
 
     def draw(self, frame: int = 0) -> None:
@@ -53,24 +54,8 @@ class Base(Protocol):
     def rotate(self, animation: Animation) -> None:
         self.add_transformation(Rotation(self.ctx, self, animation))
 
-    # def apply_transformations(self, frame: int = 0) -> ContextManager[None]:
-    #     """Context manager that applies all transformations sequentially."""
-
-    #     return apply_all()
-
-    # @contextmanager
-    # def rotate(self, frame: int) -> Generator[None, None, None]:
-    #     try:
-    #         self.ctx.save()
-    #         coords = self.geom(frame).centroid.coords
-    #         if len(coords) > 0:
-    #             cx, cy = coords[0]
-    #             self.ctx.translate(cx, cy)
-    #             self.ctx.rotate(math.radians(self.rotation.get_value_at_frame(frame)))
-    #             self.ctx.translate(-cx, -cy)
-    #         yield
-    #     finally:
-    #         self.ctx.restore()
+    def scale(self, animation: Animation) -> None:
+        self.add_transformation(Scale(self.ctx, self, animation))
 
     def emphasize(
         self,
@@ -243,6 +228,7 @@ class Selection(Base, list[T]):
         list.__init__(self, *args)
         self.rotation = Property(rotation)
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""

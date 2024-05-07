@@ -41,6 +41,28 @@ class Rotation:
             self.ctx.restore()
 
 
+class Scale:
+    def __init__(self, ctx: cairo.Context, reference: Base, animation: Animation):
+        self.ctx = ctx
+        self.reference = reference
+        self.reference._scale.add_animation(animation)
+
+    @contextmanager
+    def at(self, frame: int = 0) -> Generator[None, Any, None]:
+        try:
+            self.ctx.save()
+            coords = self.reference.geom(frame).centroid.coords
+            if len(coords) > 0:
+                cx, cy = coords[0]
+                self.ctx.translate(cx, cy)
+                s = self.reference._scale.get_value_at_frame(frame)
+                self.ctx.scale(s, s)
+                self.ctx.translate(-cx, -cy)
+            yield
+        finally:
+            self.ctx.restore()
+
+
 class MultiContext:
     def __init__(self, context_managers: list[ContextManager]):
         self.context_managers = context_managers

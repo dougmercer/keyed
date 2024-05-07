@@ -121,6 +121,7 @@ class BezierShape(Shape, Protocol):
     simplify: float | None
     rotation: Property
     transformations: list[Transformation]
+    _scale: Property
 
     def points(self, frame: int = 0) -> VecArray:
         pass
@@ -216,6 +217,7 @@ class Curve(BezierShape):
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     def points(self, frame: int = 0) -> VecArray:
         return self._points
@@ -280,6 +282,7 @@ class Trace(BezierShape):
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.transformations: list[Transformation] = []
+        self._scale = Property(1)
 
     @classmethod
     def from_points(
