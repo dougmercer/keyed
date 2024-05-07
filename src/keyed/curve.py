@@ -331,7 +331,9 @@ class Trace(BezierShape):
             for obj in self.objects:
                 obj.animate(property, animation)
         else:
-            getattr(self, property).add_animation(animation)
+            p = getattr(self, property)
+            assert isinstance(p, Property)
+            p.add_animation(animation)
 
     def copy(self) -> Self:
         new_trace = type(self)(
