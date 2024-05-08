@@ -20,6 +20,6 @@ trace = Trace(
 
 scene.add(trace)
 
-trace.t.add_animation(Animation(0, 24, 0, 1, easing.CubicEaseInOut))
+trace.end.add_animation(Animation(0, 24, 0, 1, easing.CubicEaseInOut))
 
 scene.preview()

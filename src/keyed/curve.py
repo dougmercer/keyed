@@ -90,7 +90,7 @@ def calculate_control_points(
     Parameters
     ----------
     tension: float
-        Tension. Value of 1 implies linear line between points.
+        Tension. Value of 0 implies linear line between points.
     points: list[tuple[float, float]]
         Key points the curve must pass through
 
@@ -102,11 +102,10 @@ def calculate_control_points(
     p = np.array(points)
 
     # Calculate tangent vectors at key points
-    slack = tension - 1
     tangents = np.zeros_like(p)
-    tangents[1:-1] = slack * (p[2:] - p[:-2])
-    tangents[0] = slack * (p[1] - p[0])
-    tangents[-1] = slack * (p[-1] - p[-2])
+    tangents[1:-1] = tension * (p[2:] - p[:-2]) / 2
+    tangents[0] = tension * (p[1] - p[0]) / 2
+    tangents[-1] = tension * (p[-1] - p[-2]) / 2
 
     # Calculate control points
     cp1 = p[:-1] + tangents[:-1] / 3
@@ -116,12 +115,15 @@ def calculate_control_points(
 
 class BezierShape(Shape, Protocol):
     tension: Property
-    t: Property
     line_width: Property
+    start: Property
+    end: Property
     simplify: float | None
 
     def __init__(self) -> None:
         Shape.__init__(self)
+        self.start = Property(0)
+        self.end = Property(1)
 
     def points(self, frame: int = 0) -> VecArray:
         pass
@@ -144,10 +146,9 @@ class BezierShape(Shape, Protocol):
         return shapely.LineString(self.points(frame))
 
     def _draw_shape(self, frame: int = 0) -> None:
-        t = self.t.at(frame)
+        t = self.end.at(frame)
         if t < 0 or t > 1:
             raise ValueError("Parameter t must be between 0 and 1.")
-
         points = self.simplified_points(frame)
         cp1, cp2 = self.control_points(points, frame)
 
@@ -212,7 +213,6 @@ class Curve(BezierShape):
         self.draw_stroke = True
         self.line_width = Property(line_width)
         self.tension = Property(tension)
-        self.t = Property(1)
         self.simplify = simplify
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
@@ -241,7 +241,8 @@ class Curve(BezierShape):
         )
         new_curve.alpha.follow(self.alpha)
         new_curve.tension.follow(self.tension)
-        new_curve.t.follow(self.t)
+        new_curve.start.follow(self.start)
+        new_curve.end.follow(self.end)
         new_curve.line_width.follow(self.line_width)
         return new_curve
 
@@ -258,7 +259,7 @@ class Trace(BezierShape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         simplify: float | None = None,
-        tension: float = 0,
+        tension: float = 1,
     ):
         super().__init__()
         if len(objects) < 2:
@@ -276,7 +277,6 @@ class Trace(BezierShape):
         self.line_width = Property(line_width)
         self.simplify = simplify
         self.tension = Property(tension)
-        self.t = Property(1)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
 
@@ -292,7 +292,7 @@ class Trace(BezierShape):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         simplify: float | None = None,
-        tension: float = 0,
+        tension: float = 1,
     ) -> Self:
         objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
@@ -341,6 +341,7 @@ class Trace(BezierShape):
         )
         new_trace.alpha.follow(self.alpha)
         new_trace.tension.follow(self.tension)
-        new_trace.t.follow(self.t)
+        new_trace.start.follow(self.start)
+        new_trace.end.follow(self.end)
         new_trace.line_width.follow(self.line_width)
         return new_trace

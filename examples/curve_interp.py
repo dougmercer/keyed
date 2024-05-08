@@ -23,6 +23,6 @@ for x, y in points:
 
 scene.add(curve)
 
-curve.t.add_animation(Animation(0, 24, 0, 1, easing.CubicEaseInOut))
+curve.end.add_animation(Animation(0, 24, 0, 1, easing.CubicEaseInOut))
 
 scene.preview()
