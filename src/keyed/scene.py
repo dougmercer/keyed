@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Iterable, Protocol
+from typing import TYPE_CHECKING, Iterable, Protocol
 
 import cairo
 from shapely import Point
@@ -12,6 +11,7 @@ from tqdm import tqdm
 from .animation import Property
 from .code import Composite
 from .previewer import create_animation_window
+from .transformation import PivotZoom, TransformControls
 
 if TYPE_CHECKING:
     from .base import Base
@@ -42,10 +42,9 @@ class Scene:
         self.surface = cairo.SVGSurface(None, self.width, self.height)  # type: ignore[arg-type]
         self.ctx = cairo.Context(self.surface)
         self.content: list[Base] = []
-        self.pivot_x = Property(value=0)
-        self.pivot_y = Property(value=0)
-        self.zoom = Property(value=1)
         self.antialias = antialias
+        self.controls = TransformControls()
+        self.final = False
 
     def __repr__(self) -> str:
         return (
@@ -63,6 +62,8 @@ class Scene:
         return self.output_dir / self.scene_name
 
     def add(self, *content: Base) -> None:
+        if self.final:
+            raise ValueError("Scene is already finalized.")
         self.content.extend(content)
 
     def clear(self) -> None:
@@ -72,6 +73,7 @@ class Scene:
         self.ctx.set_operator(cairo.OPERATOR_OVER)
 
     def draw(self) -> None:
+        self.finalize()
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
@@ -84,38 +86,21 @@ class Scene:
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
     def draw_frame(self, frame: int) -> None:
+        self.finalize()
         self.clear()
         for content in self.content:
             content.draw(frame)
 
     @cache
     def rasterize(self, frame: int) -> cairo.ImageSurface:
+        self.finalize()
         self.draw_frame(frame)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
         ctx.set_antialias(self.antialias)
-        with self.transform(ctx, frame):
-            ctx.set_source_surface(self.surface, 0, 0)
-            ctx.paint()
+        ctx.set_source_surface(self.surface, 0, 0)
+        ctx.paint()
         return raster
-
-    @contextmanager
-    def transform(self, ctx: cairo.Context, frame: int) -> Generator[None, Any, Any]:
-        """Context manager to handle transformations."""
-        if self.zoom.is_animated:
-            pivot_x = self.pivot_x.get_value_at_frame(frame)
-            pivot_y = self.pivot_y.get_value_at_frame(frame)
-            zoom = self.zoom.get_value_at_frame(frame)
-            ctx.translate(pivot_x, pivot_y)
-            ctx.scale(zoom, zoom)
-            ctx.translate(-pivot_x, -pivot_y)
-
-            try:
-                yield
-            finally:
-                ctx.identity_matrix()
-        else:
-            yield
 
     def find(self, x: float, y: float, frame: int = 0) -> Base | None:
         """Find the nearest object on the canvas to the given x, y coordinates.
@@ -157,7 +142,16 @@ class Scene:
         return nearest
 
     def preview(self) -> None:
+        self.finalize()
         create_animation_window(self)
 
     def get_context(self) -> cairo.Context:
         return cairo.Context(self.surface)
+
+    def finalize(self) -> None:
+        if not self.final:
+            for c in self.content:
+                c.add_transform(
+                    PivotZoom(self.controls.pivot_x, self.controls.pivot_y, self.controls.scale)
+                )
+            self.final = True

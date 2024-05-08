@@ -9,6 +9,6 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1)
 
 scene.add(code)
 
-code.rotation.add_animation(Animation(0, 6, 0, -90, animation_type=AnimationType.ABSOLUTE))
+code.rotate(Animation(0, 6, 0, -90, animation_type=AnimationType.ABSOLUTE))
 
 scene.preview()

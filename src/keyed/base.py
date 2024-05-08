@@ -16,10 +16,10 @@ from typing import (
 import cairo
 import shapely
 
-from .animation import Animation, AnimationType, LambdaFollower, Property
+from .animation import Animation, AnimationType, LambdaFollower
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import Rotation, Scale, Transformation
+from .transformation import Rotation, Scale, Transform, TransformControls, Translate
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -32,11 +32,12 @@ __all__ = ["Base", "BaseText", "Selection"]
 
 
 class Base(Protocol):
+    controls: TransformControls
     scene: Scene
     ctx: cairo.Context
-    rotation: Property
-    _scale: Property
-    transformations: list[Transformation]
+
+    def __init__(self) -> None:
+        self.controls = TransformControls()
 
     def draw(self, frame: int = 0) -> None:
         pass
@@ -50,14 +51,47 @@ class Base(Protocol):
     def copy(self) -> Self:
         pass
 
-    def add_transformation(self, transformation: Transformation) -> None:
-        self.transformations.append(transformation)
+    def add_transform(self, transform: Transform) -> None:
+        self.controls.add(transform)
 
     def rotate(self, animation: Animation) -> None:
-        self.add_transformation(Rotation(self, animation))
+        self.add_transform(Rotation(self, animation))
 
     def scale(self, animation: Animation) -> None:
-        self.add_transformation(Scale(self, animation))
+        self.add_transform(Scale(self, animation))
+
+    def translate(
+        self,
+        delta_x: float,
+        delta_y: float,
+        start_frame: int,
+        end_frame: int,
+        easing: type[EasingFunction] = CubicEaseInOut,
+    ) -> Self:
+        if delta_x:
+            x = Animation(
+                start_frame=start_frame,
+                end_frame=end_frame,
+                start_value=0,
+                end_value=delta_x,
+                animation_type=AnimationType.ADDITIVE,
+                easing=easing,
+            )
+        else:
+            x = None
+        if delta_y:
+            y = Animation(
+                start_frame=start_frame,
+                end_frame=end_frame,
+                start_value=0,
+                end_value=delta_y,
+                animation_type=AnimationType.ADDITIVE,
+                easing=easing,
+            )
+        else:
+            y = None
+        self.add_transform(Translate(self, x, y))
+        return self
 
     def emphasize(
         self,
@@ -227,10 +261,8 @@ T = TypeVar("T", bound=Base)
 
 class Selection(Base, list[T]):
     def __init__(self, *args: Iterable[T]) -> None:
+        Base.__init__(self)
         list.__init__(self, *args)
-        self.rotation = Property(0)
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""
@@ -285,6 +317,6 @@ class Selection(Base, list[T]):
     def copy(self) -> Self:
         return type(self)(list(self))
 
-    def add_transformation(self, transformation: Transformation) -> None:
+    def add_transform(self, transform: Transform) -> None:
         for obj in self:
-            obj.add_transformation(transformation)
+            obj.add_transform(transform)

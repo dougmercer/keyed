@@ -23,7 +23,7 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
-from .transformation import MultiContext, Transformation
+from .transformation import MultiContext, Transform
 
 if TYPE_CHECKING:
     from .scene import Scene
@@ -64,6 +64,7 @@ class Text(BaseText):
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
         code: Code | None = None,
     ):
+        super().__init__()
         self.text = text
         self.token_type = token_type
         self.font = font
@@ -77,9 +78,6 @@ class Text(BaseText):
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
-        self.rotation = Property(0)
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
@@ -110,7 +108,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
+        with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
             with self.style(frame):
                 self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
                 self.ctx.show_text(self.text)
@@ -163,12 +161,7 @@ TextT = TypeVar("TextT", bound=BaseText)
 
 
 class Composite(BaseText, Generic[TextT]):
-    def __init__(self, scene: Scene, objects: Iterable[TextT]) -> None:
-        self.ctx = scene.get_context()
-        self.objects = list(objects)
-        self.rotation = Property(0)
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
+    objects: list[TextT]
 
     def draw(self, frame: int = 0) -> None:
         for obj in self.objects:
@@ -203,9 +196,9 @@ class Composite(BaseText, Generic[TextT]):
     def contains(self, query: Text) -> bool:
         return query in self.chars
 
-    def add_transformation(self, transformation: Transformation) -> None:
+    def add_transform(self, transform: Transform) -> None:
         for item in self:
-            item.add_transformation(transformation)
+            item.add_transform(transform)
 
 
 class Token(Composite[Text]):
@@ -220,13 +213,11 @@ class Token(Composite[Text]):
         alpha: float = 1,
         code: Code | None = None,
     ):
+        super().__init__()
         self.objects: list[Text] = []
         self._token = token
         self.scene = scene
         self.ctx = scene.get_context()
-        self.rotation = Property(0)
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
         for char in token.text:
             self.objects.append(
@@ -292,12 +283,11 @@ class Line(Composite[Token]):
         alpha: float = 1,
         code: Code | None = None,
     ):
+        super().__init__()
         self.objects: list[Token] = []
         self._tokens = tokens
         self.scene = scene
         self.ctx = scene.get_context()
-        self.rotation = Property(0)
-        self._scale = Property(1)
 
         for token in tokens:
             self.objects.append(
@@ -339,14 +329,13 @@ class Code(Composite[Line]):
         y: float = 10,
         alpha: float = 1,
     ) -> None:
+        super().__init__()
         self.objects: TextSelection[Line] = TextSelection()
         self._tokens = tokens
         self.font = font
         self.font_size = font_size
         self.scene = scene
         self.ctx = scene.get_context()
-        self.rotation = Property(0)
-        self._scale = Property(1)
 
         self.set_default_font()
 
@@ -449,6 +438,6 @@ class TextSelection(BaseText, Selection[TextT]):
     def copy(self) -> Self:
         return type(self)(list(self))
 
-    def add_transformation(self, transformation: Transformation) -> None:
+    def add_transformation(self, transform: Transform) -> None:
         for char in self.chars:
-            char.add_transformation(transformation)
+            char.add_transform(transform)

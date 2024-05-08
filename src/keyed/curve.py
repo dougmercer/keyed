@@ -13,7 +13,6 @@ from .animation import Animation, Property
 from .base import Base
 from .scene import Scene
 from .shapes import Circle, Shape
-from .transformation import Transformation
 
 __all__ = ["Curve", "Trace"]
 
@@ -120,9 +119,9 @@ class BezierShape(Shape, Protocol):
     t: Property
     line_width: Property
     simplify: float | None
-    rotation: Property
-    transformations: list[Transformation]
-    _scale: Property
+
+    def __init__(self) -> None:
+        Shape.__init__(self)
 
     def points(self, frame: int = 0) -> VecArray:
         pass
@@ -195,8 +194,8 @@ class Curve(BezierShape):
         line_width: float = 1,
         tension: float = 0,
         simplify: float | None = None,
-        rotation: float = 0,
     ):
+        super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
         self._points = np.array(points)
@@ -215,11 +214,8 @@ class Curve(BezierShape):
         self.tension = Property(tension)
         self.t = Property(1)
         self.simplify = simplify
-        self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
     def points(self, frame: int = 0) -> VecArray:
         return self._points
@@ -263,8 +259,8 @@ class Trace(BezierShape):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 0,
-        rotation: float = 0,
     ):
+        super().__init__()
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
         self.scene = scene
@@ -281,11 +277,8 @@ class Trace(BezierShape):
         self.simplify = simplify
         self.tension = Property(tension)
         self.t = Property(1)
-        self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
     @classmethod
     def from_points(
@@ -300,7 +293,6 @@ class Trace(BezierShape):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 0,
-        rotation: float = 0,
     ) -> Self:
         objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
@@ -314,7 +306,6 @@ class Trace(BezierShape):
             line_width=line_width,
             simplify=simplify,
             tension=tension,
-            rotation=rotation,
         )
 
     def points(self, frame: int = 0) -> VecArray:

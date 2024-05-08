@@ -9,7 +9,7 @@ import shapely.ops
 from .animation import Animation, Property
 from .base import Base
 from .scene import Scene
-from .transformation import MultiContext, Transformation
+from .transformation import MultiContext
 
 __all__ = ["Circle", "Rectangle"]
 
@@ -25,11 +25,11 @@ class Shape(Base, Protocol):
     draw_fill: bool
     draw_stroke: bool
     line_width: Property
-    rotation: Property
     line_cap: cairo.LineCap
     line_join: cairo.LineJoin
-    transformations: list[Transformation]
-    _scale: Property
+
+    def __init__(self) -> None:
+        super().__init__()
 
     def _draw_shape(self, frame: int) -> None:
         pass
@@ -52,12 +52,16 @@ class Shape(Base, Protocol):
         with self.style(frame):
             if self.draw_fill:
                 self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
-                with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
+                with MultiContext(
+                    [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
+                ):
                     self._draw_shape(frame)
                     self.ctx.fill()
             if self.draw_stroke:
                 self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
-                with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.transformations]):
+                with MultiContext(
+                    [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
+                ):
                     self._draw_shape(frame)
                     self.ctx.stroke()
 
@@ -91,6 +95,7 @@ class Rectangle(Shape):
         line_width: float = 2,
         rotation: float = 0,
     ) -> None:
+        super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
         self.x = Property(x)
@@ -106,11 +111,9 @@ class Rectangle(Shape):
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
         self.line_width = Property(line_width)
-        self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
+        self.controls.rotation.value = rotation
 
     def __repr__(self) -> str:
         return (
@@ -121,7 +124,7 @@ class Rectangle(Shape):
             f"height={self.height}, "
             f"radius={self.radius}, "
             f"dash={self.dash}, "
-            f"rotation={self.rotation}, "
+            f"rotation={self.controls.rotation}, "
             ")"
         )
 
@@ -213,8 +216,8 @@ class Circle(Shape):
         draw_fill: bool = True,
         draw_stroke: bool = True,
         line_width: float = 2,
-        rotation: float = 0,
     ) -> None:
+        super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
         self.x = Property(x)
@@ -228,11 +231,8 @@ class Circle(Shape):
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
         self.line_width = Property(line_width)
-        self.rotation = Property(rotation)
         self.line_cap = cairo.LINE_CAP_BUTT
         self.line_join = cairo.LINE_JOIN_MITER
-        self.transformations: list[Transformation] = []
-        self._scale = Property(1)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"

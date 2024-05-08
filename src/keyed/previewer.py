@@ -160,11 +160,11 @@ def create_animation_window(scene: "Scene") -> None:
     def on_canvas_click(event: tk.Event) -> None:
         x, y = event.x, event.y
         frame = round(slider.get())
-        zoom = scene.zoom.get_value_at_frame(frame)
-        pivot_x = scene.pivot_x.get_value_at_frame(frame)
-        pivot_y = scene.pivot_y.get_value_at_frame(frame)
-        scene_x = (x - pivot_x) / zoom + pivot_x
-        scene_y = (y - pivot_y) / zoom + pivot_y
+        scale = scene.controls.scale.get_value_at_frame(frame)
+        pivot_x = scene.controls.pivot_x.get_value_at_frame(frame)
+        pivot_y = scene.controls.pivot_y.get_value_at_frame(frame)
+        scene_x = (x - pivot_x) / scale + pivot_x
+        scene_y = (y - pivot_y) / scale + pivot_y
 
         nearest_object = scene.find(scene_x, scene_y, frame)
         if nearest_object:
