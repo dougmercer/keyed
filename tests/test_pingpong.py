@@ -7,13 +7,13 @@ def test_pingpong_animation() -> None:
     pingpong_anim = PingPong(animation=base_anim, n=2)
     prop.add_animation(pingpong_anim)
 
-    assert prop.get_value_at_frame(0) == 0
-    assert prop.get_value_at_frame(1) == 1
-    assert prop.get_value_at_frame(2) == 2
-    assert prop.get_value_at_frame(3) == 1
-    assert prop.get_value_at_frame(4) == 0
-    assert prop.get_value_at_frame(5) == 1
-    assert prop.get_value_at_frame(6) == 2
-    assert prop.get_value_at_frame(7) == 1
-    assert prop.get_value_at_frame(8) == 0
-    assert prop.get_value_at_frame(9) == 0
+    assert prop.at(0) == 0
+    assert prop.at(1) == 1
+    assert prop.at(2) == 2
+    assert prop.at(3) == 1
+    assert prop.at(4) == 0
+    assert prop.at(5) == 1
+    assert prop.at(6) == 2
+    assert prop.at(7) == 1
+    assert prop.at(8) == 0
+    assert prop.at(9) == 0

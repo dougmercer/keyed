@@ -7,13 +7,13 @@ def test_loop_animation() -> None:
     loop_anim = Loop(animation=base_anim, n=3)
     prop.add_animation(loop_anim)
 
-    assert prop.get_value_at_frame(0) == 0, 0
-    assert prop.get_value_at_frame(1) == 1, 1
-    assert prop.get_value_at_frame(2) == 2, 2
-    assert prop.get_value_at_frame(3) == 0, 3
-    assert prop.get_value_at_frame(4) == 1, 4
-    assert prop.get_value_at_frame(5) == 2, 5
-    assert prop.get_value_at_frame(6) == 0, 6
-    assert prop.get_value_at_frame(7) == 1, 7
-    assert prop.get_value_at_frame(8) == 2, 8
-    assert prop.get_value_at_frame(9) == 2, 9
+    assert prop.at(0) == 0, 0
+    assert prop.at(1) == 1, 1
+    assert prop.at(2) == 2, 2
+    assert prop.at(3) == 0, 3
+    assert prop.at(4) == 1, 4
+    assert prop.at(5) == 2, 5
+    assert prop.at(6) == 0, 6
+    assert prop.at(7) == 1, 7
+    assert prop.at(8) == 2, 8
+    assert prop.at(9) == 2, 9

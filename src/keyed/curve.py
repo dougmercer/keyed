@@ -136,7 +136,7 @@ class BezierShape(Shape, Protocol):
 
     def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
         return calculate_control_points(
-            self.tension.get_value_at_frame(frame),
+            self.tension.at(frame),
             points,
         )
 
@@ -144,7 +144,7 @@ class BezierShape(Shape, Protocol):
         return shapely.LineString(self.points(frame))
 
     def _draw_shape(self, frame: int = 0) -> None:
-        t = self.t.get_value_at_frame(frame)
+        t = self.t.at(frame)
         if t < 0 or t > 1:
             raise ValueError("Parameter t must be between 0 and 1.")
 

@@ -21,9 +21,7 @@ code1.lines[0].chars[8].animate(
     ),
 )
 
-delta_x = code2.lines[0].chars[-3].x.get_value_at_frame(0) - code1.lines[0].chars[
-    -3
-].x.get_value_at_frame(0)
+delta_x = code2.lines[0].chars[-3].x.at(0) - code1.lines[0].chars[-3].x.at(0)
 
 code1.lines[0].chars[10:].shift(
     delta_x=delta_x,

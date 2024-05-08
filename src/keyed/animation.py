@@ -20,7 +20,7 @@ __all__ = [
 
 
 class Followable(Protocol):
-    def get_value_at_frame(self, frame: int) -> Any: ...
+    def at(self, frame: int) -> Any: ...
 
 
 class AnimationType(Enum):
@@ -210,11 +210,8 @@ class Property:
         self.animations.append(animation)
         return self
 
-    def get_value_at_frame(self, frame: int) -> float:
-        return self.at(frame)
-
     def at(self, frame: int) -> float:
-        current_value = self.following.get_value_at_frame(frame) if self.following else self.value
+        current_value = self.following.at(frame) if self.following else self.value
 
         for animation in self.animations:
             if animation.is_active(frame):
@@ -246,5 +243,5 @@ class LambdaFollower:
     def __init__(self, func: Callable[[int], float]) -> None:
         self.func = func
 
-    def get_value_at_frame(self, frame: int) -> Any:
+    def at(self, frame: int) -> Any:
         return self.func(frame)

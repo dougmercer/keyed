@@ -2,7 +2,7 @@ from keyed import LambdaFollower, Property
 
 
 class SimpleFollower:
-    def get_value_at_frame(self, frame: int) -> float:
+    def at(self, frame: int) -> float:
         return frame * 10
 
 
@@ -13,7 +13,7 @@ def test_property_following() -> None:
 
     for frame in range(10):
         expected_value = frame * 10
-        assert prop.get_value_at_frame(frame) == expected_value, f"Failed at frame {frame}"
+        assert prop.at(frame) == expected_value, f"Failed at frame {frame}"
 
 
 def test_lambda_follower() -> None:
@@ -23,7 +23,7 @@ def test_lambda_follower() -> None:
 
     for frame in range(10):
         expected_value = frame * 10
-        assert prop.get_value_at_frame(frame) == expected_value, f"Failed at frame {frame}"
+        assert prop.at(frame) == expected_value, f"Failed at frame {frame}"
 
 
 def test_property_offset() -> None:
@@ -33,4 +33,4 @@ def test_property_offset() -> None:
 
     for frame in range(10):
         expected_value = (frame * 10) + 5
-        assert prop.get_value_at_frame(frame) == expected_value, f"Failed at frame {frame}"
+        assert prop.at(frame) == expected_value, f"Failed at frame {frame}"

@@ -102,7 +102,7 @@ class Text(BaseText):
             self.ctx.save()
             self.ctx.select_font_face(self.font, self.slant, self.weight)
             self.ctx.set_font_size(self.size)
-            self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+            self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
             yield None
         finally:
             self.ctx.restore()
@@ -110,7 +110,7 @@ class Text(BaseText):
     def draw(self, frame: int = 0) -> None:
         with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
             with self.style(frame):
-                self.ctx.move_to(self.x.get_value_at_frame(frame), self.y.get_value_at_frame(frame))
+                self.ctx.move_to(self.x.at(frame), self.y.at(frame))
                 self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
@@ -133,8 +133,8 @@ class Text(BaseText):
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
-        x = self.x.get_value_at_frame(frame) + e.x_bearing
-        y = self.y.get_value_at_frame(frame) + e.y_bearing
+        x = self.x.at(frame) + e.x_bearing
+        y = self.y.at(frame) + e.y_bearing
         return shapely.box(x, y, x + e.width, y + e.height)
 
     def copy(self) -> Self:

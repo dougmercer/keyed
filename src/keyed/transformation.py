@@ -49,7 +49,7 @@ class Rotation:
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
-                ctx.rotate(math.radians(self.reference.controls.rotation.get_value_at_frame(frame)))
+                ctx.rotate(math.radians(self.reference.controls.rotation.at(frame)))
                 ctx.translate(-cx, -cy)
             yield
         finally:
@@ -69,7 +69,7 @@ class Scale:
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
-                s = self.reference.controls.scale.get_value_at_frame(frame)
+                s = self.reference.controls.scale.at(frame)
                 ctx.scale(s, s)
                 ctx.translate(-cx, -cy)
             yield
@@ -91,8 +91,8 @@ class Translate:
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            delta_x = self.reference.controls.delta_x.get_value_at_frame(frame)
-            delta_y = self.reference.controls.delta_y.get_value_at_frame(frame)
+            delta_x = self.reference.controls.delta_x.at(frame)
+            delta_y = self.reference.controls.delta_y.at(frame)
             ctx.translate(delta_x, delta_y)
             yield
         finally:
@@ -109,9 +109,9 @@ class PivotZoom:
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            pivot_x = self.pivot_x.get_value_at_frame(frame)
-            pivot_y = self.pivot_y.get_value_at_frame(frame)
-            zoom = self.zoom.get_value_at_frame(frame)
+            pivot_x = self.pivot_x.at(frame)
+            pivot_y = self.pivot_y.at(frame)
+            zoom = self.zoom.at(frame)
             ctx.translate(pivot_x, pivot_y)
             ctx.scale(zoom, zoom)
             ctx.translate(-pivot_x, -pivot_y)

@@ -41,7 +41,7 @@ class Shape(Base, Protocol):
             if self.dash is not None:
                 self.ctx.set_dash(*self.dash)
             self.ctx.set_operator(self.operator)
-            self.ctx.set_line_width(self.line_width.get_value_at_frame(frame))
+            self.ctx.set_line_width(self.line_width.at(frame))
             self.ctx.set_line_cap(self.line_cap)
             self.ctx.set_line_join(self.line_join)
             yield
@@ -51,14 +51,14 @@ class Shape(Base, Protocol):
     def draw(self, frame: int = 0) -> None:
         with self.style(frame):
             if self.draw_fill:
-                self.ctx.set_source_rgba(*self.fill_color, self.alpha.get_value_at_frame(frame))
+                self.ctx.set_source_rgba(*self.fill_color, self.alpha.at(frame))
                 with MultiContext(
                     [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
                 ):
                     self._draw_shape(frame)
                     self.ctx.fill()
             if self.draw_stroke:
-                self.ctx.set_source_rgba(*self.color, self.alpha.get_value_at_frame(frame))
+                self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
                 with MultiContext(
                     [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
                 ):
@@ -131,11 +131,11 @@ class Rectangle(Shape):
     def _draw_shape(self, frame: int) -> None:
         self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
         self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
-        x = self.x.get_value_at_frame(frame)
-        y = self.y.get_value_at_frame(frame)
-        w = self.width.get_value_at_frame(frame)
-        h = self.height.get_value_at_frame(frame)
-        r = self.radius.get_value_at_frame(frame)
+        x = self.x.at(frame)
+        y = self.y.at(frame)
+        w = self.width.at(frame)
+        h = self.height.at(frame)
+        r = self.radius.at(frame)
 
         self.ctx.new_sub_path()
         self.ctx.arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
@@ -146,11 +146,11 @@ class Rectangle(Shape):
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
         """Return the geometry of the rounded rectangle as a Shapely polygon."""
-        x = self.x.get_value_at_frame(frame)
-        y = self.y.get_value_at_frame(frame)
-        width = self.width.get_value_at_frame(frame)
-        height = self.height.get_value_at_frame(frame)
-        radius = self.radius.get_value_at_frame(frame)
+        x = self.x.at(frame)
+        y = self.y.at(frame)
+        width = self.width.at(frame)
+        height = self.height.at(frame)
+        radius = self.radius.at(frame)
 
         if radius == 0:
             return shapely.box(x, y, x + width, y + height)
@@ -189,7 +189,7 @@ class Rectangle(Shape):
             operator=self.operator,
             draw_fill=self.draw_fill,
             draw_stroke=self.draw_stroke,
-            radius=self.radius.get_value_at_frame(0),
+            radius=self.radius.at(0),
         )
         # Follow original
         new_copy.alpha.follow(self.alpha)
@@ -239,9 +239,9 @@ class Circle(Shape):
 
     def _draw_shape(self, frame: int = 0) -> None:
         self.ctx.arc(
-            self.x.get_value_at_frame(frame),
-            self.y.get_value_at_frame(frame),
-            self.radius.get_value_at_frame(frame),
+            self.x.at(frame),
+            self.y.at(frame),
+            self.radius.at(frame),
             0,
             2 * math.pi,
         )
@@ -252,9 +252,9 @@ class Circle(Shape):
         p.add_animation(animation)
 
     def geom(self, frame: int = 0) -> shapely.Polygon:
-        x = self.x.get_value_at_frame(frame)
-        y = self.y.get_value_at_frame(frame)
-        radius = self.radius.get_value_at_frame(frame)
+        x = self.x.at(frame)
+        y = self.y.at(frame)
+        radius = self.radius.at(frame)
         return shapely.Point(x, y).buffer(radius)
 
     def copy(self) -> Self:

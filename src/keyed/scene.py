@@ -130,7 +130,7 @@ class Scene:
                 else:
                     assert hasattr(obj, "alpha"), obj
                     assert isinstance(obj.alpha, Property)
-                    if obj.alpha.get_value_at_frame(frame) == 0:
+                    if obj.alpha.at(frame) == 0:
                         continue
                     geom = obj.geom(frame)
                     distance = point.distance(geom)
