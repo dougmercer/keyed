@@ -211,6 +211,9 @@ class Property:
         return self
 
     def get_value_at_frame(self, frame: int) -> float:
+        return self.at(frame)
+
+    def at(self, frame: int) -> float:
         current_value = self.following.get_value_at_frame(frame) if self.following else self.value
 
         for animation in self.animations:
