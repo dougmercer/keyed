@@ -206,8 +206,9 @@ class Property:
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
 
-    def add_animation(self, animation: Animation) -> None:
+    def add_animation(self, animation: Animation) -> Self:
         self.animations.append(animation)
+        return self
 
     def get_value_at_frame(self, frame: int) -> float:
         current_value = self.following.get_value_at_frame(frame) if self.following else self.value
