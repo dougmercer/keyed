@@ -59,13 +59,22 @@ def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
 
 
 def de_casteljau(
-    t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector
+    t: float,
+    p0: Vector,
+    p1: Vector,
+    p2: Vector,
+    p3: Vector,
+    reverse: bool = False,
 ) -> tuple[Vector, Vector, Vector, Vector]:
     """Find new control points for the Bezier curve segment from 0 to t."""
     assert p0.shape == (2,)
     assert p1.shape == (2,)
     assert p2.shape == (2,)
     assert p3.shape == (2,)
+
+    if reverse:
+        p0, p1, p2, p3 = p3, p2, p1, p0
+        t = 1 - t
 
     # First level interpolation
     a = (1 - t) * p0 + t * p1
@@ -79,6 +88,8 @@ def de_casteljau(
     # Third level interpolation (new endpoint at t)
     f = (1 - t) * d + t * e
 
+    if reverse:
+        p0, a, d, f = f, d, a, p0
     return p0, a, d, f
 
 
@@ -146,9 +157,14 @@ class BezierShape(Shape, Protocol):
         return shapely.LineString(self.points(frame))
 
     def _draw_shape(self, frame: int = 0) -> None:
-        t = self.end.at(frame)
-        if t < 0 or t > 1:
-            raise ValueError("Parameter t must be between 0 and 1.")
+        start = self.start.at(frame)
+        end = self.end.at(frame)
+        if start == end and self.start.at(frame + 1) == self.end.at(frame + 1):
+            return
+        if start < 0 or start > 1:
+            raise ValueError("Parameter start must be between 0 and 1.")
+        if end < 0 or end > 1:
+            raise ValueError("Parameter end must be between 0 and 1.")
         points = self.simplified_points(frame)
         cp1, cp2 = self.control_points(points, frame)
 
@@ -159,26 +175,44 @@ class BezierShape(Shape, Protocol):
         total_length = np.sum(segment_lengths)
         cumulative_lengths = np.cumsum(segment_lengths)
 
-        # Find the segment where the parameter t falls
-        target_length = t * total_length
-        idx = np.searchsorted(cumulative_lengths, target_length)
-        if idx == 0:
-            t_seg = target_length / segment_lengths[0]
-        elif idx < len(points) - 1:
-            segment_progress = target_length - cumulative_lengths[idx - 1]
-            t_seg = segment_progress / segment_lengths[idx]
+        # Find the segment where the parameter start falls
+        target_length = start * total_length
+        start_idx = np.searchsorted(cumulative_lengths, target_length)
+        if start_idx == 0:
+            start_seg = target_length / segment_lengths[0]
+        elif start_idx < len(points) - 1:
+            segment_progress = target_length - cumulative_lengths[start_idx - 1]
+            start_seg = segment_progress / segment_lengths[start_idx]
+        else:
+            print("early break")
+            return
+
+        # Find the segment where the parameter end falls
+        target_length = end * total_length
+        end_idx = np.searchsorted(cumulative_lengths, target_length)
+        if end_idx == 0:
+            end_seg = target_length / segment_lengths[0]
+        elif end_idx < len(points) - 1:
+            segment_progress = target_length - cumulative_lengths[end_idx - 1]
+            end_seg = segment_progress / segment_lengths[end_idx]
+
+        # Determine the first point, based on start_seg
+        p0, p1, p2, p3 = points[start_idx], cp1[start_idx], cp2[start_idx], points[start_idx + 1]
+        p0_new, cp1[start_idx], cp2[start_idx], p3_new = de_casteljau(
+            start_seg, p0, p1, p2, p3, reverse=True
+        )
 
         # Move to the first point
-        self.ctx.move_to(*points[0])
+        self.ctx.move_to(*p0_new)
 
-        # Draw full segments up to the idx
-        for i in range(idx):
+        # Draw full segments up to the end_idx
+        for i in range(start_idx, end_idx):
             self.ctx.curve_to(*cp1[i], *cp2[i], *points[i + 1])
 
         # Draw the partial segment up to t_seg
-        if idx < len(points) - 1:
-            p0, p1, p2, p3 = points[idx], cp1[idx], cp2[idx], points[idx + 1]
-            _, p1_new, p2_new, p3_new = de_casteljau(t_seg, p0, p1, p2, p3)
+        if end_idx < len(points) - 1:
+            p0, p1, p2, p3 = points[end_idx], cp1[end_idx], cp2[end_idx], points[end_idx + 1]
+            _, p1_new, p2_new, p3_new = de_casteljau(end_seg, p0, p1, p2, p3)
             self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
 
 
