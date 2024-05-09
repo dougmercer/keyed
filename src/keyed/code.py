@@ -18,13 +18,7 @@ if TYPE_CHECKING:
     from .scene import Scene
 
 
-__all__ = [
-    "Text",
-    "Token",
-    "Line",
-    "Code",
-    "TextSelection",
-]
+__all__ = ["Text", "Token", "Line", "Code", "TextSelection"]
 
 
 class Text(BaseText):
