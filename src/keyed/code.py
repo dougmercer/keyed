@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Generator, Iterable, Self, TypeVar
+from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
 
 import cairo
 import shapely
@@ -181,30 +181,25 @@ class Token(TextSelection[Text]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
-        _objects: Iterable[Text] | None = None,
     ):
         self._token = token
-
-        if _objects is not None:
-            objects = list(_objects)
-        else:
-            objects = []
-            for char in token.text:
-                objects.append(
-                    Text(
-                        scene,
-                        char,
-                        **token.to_cairo(),
-                        x=x,
-                        y=y,
-                        size=font_size,
-                        font=font,
-                        alpha=alpha,
-                        code=code,
-                    )
+        objects: list[Text] = []
+        for char in token.text:
+            objects.append(
+                Text(
+                    scene,
+                    char,
+                    **token.to_cairo(),
+                    x=x,
+                    y=y,
+                    size=font_size,
+                    font=font,
+                    alpha=alpha,
+                    code=code,
                 )
-                extents = objects[-1].extents()
-                x += extents.x_advance
+            )
+            extents = objects[-1].extents()
+            x += extents.x_advance
         super().__init__(objects)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
@@ -233,9 +228,9 @@ class Token(TextSelection[Text]):
         return TextSelection(self)
 
     def copy(self) -> Self:
-        return type(self)(
-            scene=self.scene, token=self._token, x=0, y=0, _objects=[obj.copy() for obj in self]
-        )
+        new = type(self)(scene=self.scene, token=self._token, x=0, y=0)
+        list.__init__(new, [obj.copy() for obj in self])
+        return new
 
 
 class Line(TextSelection[Token]):
@@ -249,28 +244,23 @@ class Line(TextSelection[Token]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
-        _objects: Iterable[Token] | None = None,
     ):
         self._tokens = tokens
-
-        if _objects is not None:
-            objects = list(_objects)
-        else:
-            objects = []
-            for token in tokens:
-                objects.append(
-                    Token(
-                        scene,
-                        token,
-                        x=x,
-                        y=y,
-                        font_size=font_size,
-                        font=font,
-                        alpha=alpha,
-                        code=code,
-                    )
+        objects: list[Token] = []
+        for token in tokens:
+            objects.append(
+                Token(
+                    scene,
+                    token,
+                    x=x,
+                    y=y,
+                    font_size=font_size,
+                    font=font,
+                    alpha=alpha,
+                    code=code,
                 )
-                x += objects[-1].extents().x_advance
+            )
+            x += objects[-1].extents().x_advance
         super().__init__(objects)
 
     @property
@@ -282,9 +272,9 @@ class Line(TextSelection[Token]):
         return list(self)
 
     def copy(self) -> Self:
-        _objects = [obj.copy() for obj in self]
-        new_token = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0, _objects=_objects)
-        return new_token
+        new = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
+        list.__init__(new, [obj.copy() for obj in self])
+        return new
 
 
 class Code(TextSelection[Line]):
@@ -297,7 +287,6 @@ class Code(TextSelection[Line]):
         x: float = 10,
         y: float = 10,
         alpha: float = 1,
-        _objects: TextSelection[Line] | None = None,
     ) -> None:
         self._tokens = tokens
         self.font = font
@@ -318,24 +307,21 @@ class Code(TextSelection[Line]):
             else:
                 line.append(token)
 
-        if _objects is not None:
-            objects = TextSelection(_objects)
-        else:
-            objects = TextSelection()
-            for line in lines:
-                objects.append(
-                    Line(
-                        scene,
-                        tokens=line,
-                        x=x,
-                        y=y,
-                        font=font,
-                        font_size=font_size,
-                        alpha=alpha,
-                        code=self,
-                    )
+        objects: TextSelection[Line] = TextSelection()
+        for line in lines:
+            objects.append(
+                Line(
+                    scene,
+                    tokens=line,
+                    x=x,
+                    y=y,
+                    font=font,
+                    font_size=font_size,
+                    alpha=alpha,
+                    code=self,
                 )
-                y += line_height
+            )
+            y += line_height
         super().__init__(objects)
 
     def set_default_font(self, ctx: cairo.Context) -> None:
@@ -372,6 +358,6 @@ class Code(TextSelection[Line]):
         return -1
 
     def copy(self) -> Self:
-        objects = TextSelection([obj.copy() for obj in self])
-        new_token = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0, _objects=objects)
-        return new_token
+        new = type(self)(scene=self.scene, tokens=self._tokens, x=10, y=10)
+        list.__init__(new, TextSelection([obj.copy() for obj in self]))
+        return new
