@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Generator, Iterable, Protocol, Self, TypeVar
+from typing import TYPE_CHECKING, Callable, Generator, Iterable, Self, TypeVar
 
 import cairo
 import shapely
@@ -25,16 +25,6 @@ __all__ = [
     "Code",
     "TextSelection",
 ]
-
-
-class Animatable(Protocol):
-    def draw(self, frame: int) -> None: ...
-    def animate(self, property: str, animation: Animation) -> None: ...
-    def is_whitespace(self) -> bool: ...
-    @property
-    def chars(self) -> Iterable[Text]: ...
-    @property
-    def ctx(self) -> cairo.Context: ...
 
 
 class Text(BaseText):
@@ -77,7 +67,6 @@ class Text(BaseText):
             f"{self.__class__.__name__}(text={self.text!r}, "
             f"x={self.x.value:2}, y={self.y.value:2}, "
             f"color={color_str}, alpha={self.alpha.value}, "
-            # f"slant={self.slant!r}, weight={self.weight!r}, "
             f"token_type={self.token_type!r}, "
             f"{line_str}"
             f"{token_str}"
@@ -195,8 +184,6 @@ class Token(TextSelection[Text]):
         _objects: Iterable[Text] | None = None,
     ):
         self._token = token
-        # self.scene = scene
-        # self.ctx = scene.get_context()
 
         if _objects is not None:
             objects = list(_objects)
@@ -245,10 +232,6 @@ class Token(TextSelection[Text]):
     def chars(self) -> TextSelection[Text]:
         return TextSelection(self)
 
-    @property
-    def characters(self) -> list[Text]:
-        return list(self)
-
     def copy(self) -> Self:
         return type(self)(
             scene=self.scene, token=self._token, x=0, y=0, _objects=[obj.copy() for obj in self]
@@ -269,8 +252,6 @@ class Line(TextSelection[Token]):
         _objects: Iterable[Token] | None = None,
     ):
         self._tokens = tokens
-        # self.scene = scene
-        # self.ctx = scene.get_context()
 
         if _objects is not None:
             objects = list(_objects)
@@ -360,10 +341,6 @@ class Code(TextSelection[Line]):
     def set_default_font(self, ctx: cairo.Context) -> None:
         ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         ctx.set_font_size(self.font_size)
-
-    # @property
-    # def chars(self) -> TextSelection[Text]:
-    #     return TextSelection(itertools.chain(*itertools.chain(*self.lines)))
 
     @property
     def tokens(self) -> TextSelection[Token]:
