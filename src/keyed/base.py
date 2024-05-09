@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from .shapes import Rectangle
 
 
-__all__ = ["Base", "BaseText", "Selection"]
+__all__ = ["Base", "BaseText", "Selection", "Composite"]
 
 
 class Base(Protocol):
@@ -259,7 +259,7 @@ class BaseText(Base, Protocol):
 T = TypeVar("T", bound=Base)
 
 
-class Selection(Base, list[T]):
+class Composite(Base, list[T]):
     def __init__(self, *args: Iterable[T]) -> None:
         Base.__init__(self)
         list.__init__(self, *args)
@@ -304,6 +304,15 @@ class Selection(Base, list[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([obj.geom(frame) for obj in self])
 
+    def copy(self) -> Self:
+        return type(self)(list(self))
+
+    def add_transform(self, transform: Transform) -> None:
+        for obj in self:
+            obj.add_transform(transform)
+
+
+class Selection(Composite[T]):
     @property
     def scene(self) -> Scene:  # type: ignore[override]
         if not self:
@@ -313,10 +322,3 @@ class Selection(Base, list[T]):
     @property
     def ctx(self) -> cairo.Context:  # type: ignore[override]
         return self.scene.get_context()
-
-    def copy(self) -> Self:
-        return type(self)(list(self))
-
-    def add_transform(self, transform: Transform) -> None:
-        for obj in self:
-            obj.add_transform(transform)

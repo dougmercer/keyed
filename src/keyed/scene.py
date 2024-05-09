@@ -9,7 +9,7 @@ from shapely import Point
 from tqdm import tqdm
 
 from .animation import Property
-from .code import Composite
+from .code import Selection
 from .previewer import create_animation_window
 from .transformation import PivotZoom, TransformControls
 
@@ -125,8 +125,8 @@ class Scene:
         def check_objects(objects: Iterable[Base]) -> None:
             nonlocal nearest, min_distance
             for obj in objects:
-                if isinstance(obj, Composite):
-                    check_objects(obj.objects)
+                if isinstance(obj, Selection):
+                    check_objects(list(obj))
                 else:
                     assert hasattr(obj, "alpha"), obj
                     assert isinstance(obj.alpha, Property)
