@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import copy
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -48,7 +49,7 @@ class Base(Protocol):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         pass
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         pass
 
     def add_transform(self, transform: Transform) -> None:
@@ -244,7 +245,7 @@ class BaseText(Base, Protocol):
 
         return Trace(
             self.scene,
-            objects=[c.copy() for c in self.chars],
+            objects=[copy(c) for c in self.chars],
             color=color,
             fill_color=fill_color,
             alpha=alpha,
@@ -304,7 +305,7 @@ class Composite(Base, list[T]):
     def geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([obj.geom(frame) for obj in self])
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         return type(self)(list(self))
 
     def add_transform(self, transform: Transform) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from copy import copy
 from enum import Enum, auto
 from functools import partial
 from typing import Any, Callable, Protocol, Self, Type
@@ -217,6 +218,12 @@ class Property:
             if animation.is_active(frame):
                 current_value = animation.apply(frame, current_value)
         return current_value
+
+    def __copy__(self) -> Self:
+        new = type(self)(self.value)
+        new.animations = copy(self.animations)
+        new.follow(self)
+        return new
 
     @property
     def is_animated(self) -> bool:

@@ -180,8 +180,8 @@ class Rectangle(Shape):
             for angle in [start_angle + (end_angle - start_angle) * i / 20 for i in range(21)]
         ]
 
-    def copy(self) -> Self:
-        new_copy = type(self)(
+    def __copy__(self) -> Self:
+        new = type(self)(
             scene=self.scene,
             color=self.color,
             fill_color=self.fill_color,
@@ -192,13 +192,14 @@ class Rectangle(Shape):
             radius=self.radius.at(0),
         )
         # Follow original
-        new_copy.alpha.follow(self.alpha)
-        new_copy.x.follow(self.x)
-        new_copy.y.follow(self.y)
-        new_copy.width.follow(self.width)
-        new_copy.height.follow(self.height)
-        new_copy.radius.follow(self.radius)
-        return new_copy
+        new.alpha.follow(self.alpha)
+        new.x.follow(self.x)
+        new.y.follow(self.y)
+        new.width.follow(self.width)
+        new.height.follow(self.height)
+        new.radius.follow(self.radius)
+        new.controls.follow(self.controls)
+        return new
 
 
 class Circle(Shape):
@@ -257,8 +258,8 @@ class Circle(Shape):
         radius = self.radius.at(frame)
         return shapely.Point(x, y).buffer(radius)
 
-    def copy(self) -> Self:
-        new_copy = type(self)(
+    def __copy__(self) -> Self:
+        new = type(self)(
             scene=self.scene,
             color=self.color,
             fill_color=self.fill_color,
@@ -267,8 +268,9 @@ class Circle(Shape):
             draw_fill=self.draw_fill,
             draw_stroke=self.draw_stroke,
         )
-        new_copy.alpha.follow(self.alpha)
-        new_copy.x.follow(self.x)
-        new_copy.y.follow(self.y)
-        new_copy.radius.follow(self.radius)
-        return new_copy
+        new.alpha.follow(self.alpha)
+        new.x.follow(self.x)
+        new.y.follow(self.y)
+        new.radius.follow(self.radius)
+        new.controls.follow(self.controls)
+        return new

@@ -21,7 +21,7 @@ METHODS = [
     Base.right,
     Base.down,
     Base.up,
-    Base.copy,
+    Base.__copy__,
     Base.draw,
     Base.geom,
     Base.get_critical_point,

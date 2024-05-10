@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from contextlib import contextmanager
+from copy import copy
 from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
 
 import cairo
@@ -109,8 +110,8 @@ class Text(BaseText):
         y = self.y.at(frame) + e.y_bearing
         return shapely.box(x, y, x + e.width, y + e.height)
 
-    def copy(self) -> Self:
-        new_copy = type(self)(
+    def __copy__(self) -> Self:
+        new = type(self)(
             scene=self.scene,
             x=self.x.value,
             y=self.y.value,
@@ -123,10 +124,11 @@ class Text(BaseText):
             weight=self.weight,
             code=self.code,
         )
-        new_copy.x.follow(self.x)
-        new_copy.y.follow(self.y)
-        new_copy.alpha.follow(self.alpha)
-        return new_copy
+        new.x.follow(self.x)
+        new.y.follow(self.y)
+        new.alpha.follow(self.alpha)
+        new.controls.follow(self.controls)
+        return new
 
 
 TextT = TypeVar("TextT", bound=BaseText)
@@ -157,7 +159,7 @@ class TextSelection(BaseText, Selection[TextT]):
     def is_whitespace(self) -> bool:
         return all(obj.is_whitespace() for obj in self)
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         return type(self)(list(self))
 
     def contains(self, query: Text) -> bool:
@@ -221,9 +223,9 @@ class Token(TextSelection[Text]):
     def chars(self) -> TextSelection[Text]:
         return TextSelection(self)
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         new = type(self)(scene=self.scene, token=self._token, x=0, y=0)
-        list.__init__(new, [obj.copy() for obj in self])
+        list.__init__(new, [copy(obj) for obj in self])
         return new
 
 
@@ -265,9 +267,9 @@ class Line(TextSelection[Token]):
     def tokens(self) -> list[Token]:
         return list(self)
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         new = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
-        list.__init__(new, [obj.copy() for obj in self])
+        list.__init__(new, [copy(obj) for obj in self])
         return new
 
 
@@ -351,7 +353,7 @@ class Code(TextSelection[Line]):
                 return index
         return -1
 
-    def copy(self) -> Self:
+    def __copy__(self) -> Self:
         new = type(self)(scene=self.scene, tokens=self._tokens, x=10, y=10)
-        list.__init__(new, TextSelection([obj.copy() for obj in self]))
+        list.__init__(new, TextSelection([copy(obj) for obj in self]))
         return new

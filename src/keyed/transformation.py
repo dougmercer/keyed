@@ -29,6 +29,20 @@ class TransformControls:
     def add(self, transform: Transform) -> None:
         self.transforms.append(transform)
 
+    def _follow(self, property: str, other: TransformControls) -> None:
+        from .animation import Property
+
+        us = getattr(self, property)
+        assert isinstance(us, Property)
+        them = getattr(other, property)
+        assert isinstance(them, Property)
+        us.follow(them)
+
+    def follow(self, other: TransformControls) -> None:
+        properties = ["rotation", "scale", "delta_x", "delta_y", "pivot_x", "pivot_y"]
+        for p in properties:
+            self._follow(p, other)
+
 
 class Transform(Protocol):
     @contextmanager

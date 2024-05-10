@@ -1,5 +1,6 @@
 """Draw lines and curves."""
 
+from copy import copy
 from functools import partial
 from typing import Protocol, Self, Sequence
 
@@ -263,8 +264,8 @@ class Curve(BezierShape):
             ")"
         )
 
-    def copy(self) -> Self:
-        new_curve = type(self)(
+    def __copy__(self) -> Self:
+        new = type(self)(
             self.scene,
             points=self._points.copy(),
             color=self.color,
@@ -273,12 +274,12 @@ class Curve(BezierShape):
             operator=self.operator,
             simplify=self.simplify,
         )
-        new_curve.alpha.follow(self.alpha)
-        new_curve.tension.follow(self.tension)
-        new_curve.start.follow(self.start)
-        new_curve.end.follow(self.end)
-        new_curve.line_width.follow(self.line_width)
-        return new_curve
+        new.alpha.follow(self.alpha)
+        new.tension.follow(self.tension)
+        new.start.follow(self.start)
+        new.end.follow(self.end)
+        new.line_width.follow(self.line_width)
+        return new
 
 
 class Trace(BezierShape):
@@ -300,7 +301,7 @@ class Trace(BezierShape):
             raise ValueError("Need at least two objects")
         self.scene = scene
         self.ctx = scene.get_context()
-        self.objects = [obj.copy() for obj in objects]
+        self.objects = [copy(obj) for obj in objects]
         self.color = color
         self.fill_color = fill_color
         self.alpha = Property(alpha)
@@ -363,19 +364,19 @@ class Trace(BezierShape):
             assert isinstance(p, Property)
             p.add_animation(animation)
 
-    def copy(self) -> Self:
-        new_trace = type(self)(
+    def __copy__(self) -> Self:
+        new = type(self)(
             scene=self.scene,
-            objects=[obj.copy() for obj in self.objects],
+            objects=[copy(obj) for obj in self.objects],
             color=self.color,
             fill_color=self.fill_color,
             dash=self.dash,
             operator=self.operator,
             simplify=self.simplify,
         )
-        new_trace.alpha.follow(self.alpha)
-        new_trace.tension.follow(self.tension)
-        new_trace.start.follow(self.start)
-        new_trace.end.follow(self.end)
-        new_trace.line_width.follow(self.line_width)
-        return new_trace
+        new.alpha.follow(self.alpha)
+        new.tension.follow(self.tension)
+        new.start.follow(self.start)
+        new.end.follow(self.end)
+        new.line_width.follow(self.line_width)
+        return new
