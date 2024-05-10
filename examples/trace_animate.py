@@ -9,14 +9,7 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1, x=100, y=100)
 
 scene.add(code)
 
-trace = Trace(
-    scene,
-    code.lines[0:4].chars,
-    alpha=0.5,
-    line_width=50,
-    simplify=None,
-    tension=1,
-)
+trace = Trace(scene, code.lines[:4].chars.filter_whitespace(), alpha=0.5, line_width=50)
 
 scene.add(trace)
 

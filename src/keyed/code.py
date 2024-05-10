@@ -165,6 +165,9 @@ class TextSelection(BaseText, Selection[TextT]):
     def contains(self, query: Text) -> bool:
         return query in self.chars
 
+    def filter_whitespace(self) -> TextSelection:
+        return TextSelection(obj for obj in self if not obj.is_whitespace())
+
 
 class Token(TextSelection[Text]):
     def __init__(
