@@ -16,11 +16,11 @@ scene.add(code)
 
 points = np.array([np.array(c.geom().centroid.coords).flatten() for c in s])
 trace1 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=0, color=(1, 0, 0))
-# trace2 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=1, color=(0, 1, 0))
-# trace3 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=-1, color=(0, 0, 1))
+trace2 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=1, color=(0, 1, 0))
+trace3 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=-1, color=(0, 0, 1))
 
-# scene.add(trace2)
-# scene.add(trace3)
+scene.add(trace2)
+scene.add(trace3)
 scene.add(trace1)
 trace1.end.value = 0
 trace1.end.add_animation(Animation(4, 28, 0, 1, easing.CubicEaseInOut))
