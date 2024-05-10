@@ -35,7 +35,6 @@ __all__ = ["Base", "BaseText", "Selection", "Composite"]
 class Base(Protocol):
     controls: TransformControls
     scene: Scene
-    ctx: cairo.Context
 
     def __init__(self) -> None:
         self.controls = TransformControls()
@@ -319,7 +318,3 @@ class Selection(Composite[T]):
         if not self:
             raise ValueError("Cannot retrieve 'scene': Selection is empty.")
         return self[0].scene
-
-    @property
-    def ctx(self) -> cairo.Context:  # type: ignore[override]
-        return self.scene.get_context()
