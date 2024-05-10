@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Protocol
+from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
 
 import cairo
 from shapely import Point
@@ -72,7 +72,7 @@ class Scene:
         self.ctx.paint()
         self.ctx.set_operator(cairo.OPERATOR_OVER)
 
-    def draw(self) -> None:
+    def draw(self, layers: Sequence[int] | None = None) -> None:
         self.finalize()
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
@@ -80,21 +80,31 @@ class Scene:
         for file in self.full_output_dir.glob("frame*.png"):
             file.unlink()
 
+        layer_name = "-".join([str(layer) for layer in layers]) if layers is not None else "all"
         for frame in tqdm(range(self.num_frames)):
-            raster = self.rasterize(frame)
-            filename = self.full_output_dir / f"frame_{frame:03}.png"
+            raster = self.rasterize(frame, layers=tuple(layers) if layers is not None else None)
+            filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
-    def draw_frame(self, frame: int) -> None:
+    def draw_as_layers(self) -> None:
+        for i, _ in enumerate(self.content):
+            self.draw([i])
+
+    def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
         self.finalize()
         self.clear()
-        for content in self.content:
+        layers_to_render = (
+            (content for idx, content in enumerate(self.content) if idx in layers)
+            if layers is not None
+            else self.content
+        )
+        for content in layers_to_render:
             content.draw(frame)
 
     @cache
-    def rasterize(self, frame: int) -> cairo.ImageSurface:
+    def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
         self.finalize()
-        self.draw_frame(frame)
+        self.draw_frame(frame, layers=layers)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
         ctx = cairo.Context(raster)
         ctx.set_antialias(self.antialias)

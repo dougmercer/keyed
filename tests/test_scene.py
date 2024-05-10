@@ -59,7 +59,7 @@ def test_output_directory_creation(tmpdir: Path) -> None:
 
     # Check if the directory was created
     assert scene_dir.exists(), "Output directory was not created by the scene"
-    assert len(list(scene_dir.glob("frame*.png"))) == 1, "Didn't draw the one frame"
+    assert len(list(scene_dir.glob("*.png"))) == 1, "Didn't draw the one frame"
 
 
 def test_clear_scene() -> None:
