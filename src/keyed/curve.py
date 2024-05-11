@@ -240,7 +240,7 @@ class Curve(BezierShape):
         if self._points.shape[1] != 2:
             raise ValueError("Points should be nx2 array.")
         self.color = color
-        self.fill_color = fill_color
+        self.fill_color: tuple[float, float, float] = fill_color
         self.alpha = Property(alpha)
         self.dash = dash
         self.operator = operator
@@ -288,7 +288,6 @@ class Trace(BezierShape):
         scene: Scene,
         objects: Sequence[Base],
         color: tuple[float, float, float] = (1, 1, 1),
-        fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
@@ -303,7 +302,7 @@ class Trace(BezierShape):
         self.ctx = scene.get_context()
         self.objects = [copy(obj) for obj in objects]
         self.color = color
-        self.fill_color = fill_color
+        self.fill_color: tuple[float, float, float] = (1, 1, 1)
         self.alpha = Property(alpha)
         self.dash = dash
         self.operator = operator
@@ -321,7 +320,6 @@ class Trace(BezierShape):
         scene: Scene,
         points: Sequence[tuple[float, float]] | VecArray,
         color: tuple[float, float, float] = (1, 1, 1),
-        fill_color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
@@ -334,7 +332,6 @@ class Trace(BezierShape):
             scene=scene,
             objects=objects,
             color=color,
-            fill_color=fill_color,
             alpha=alpha,
             dash=dash,
             operator=operator,
@@ -369,7 +366,6 @@ class Trace(BezierShape):
             scene=self.scene,
             objects=[copy(obj) for obj in self.objects],
             color=self.color,
-            fill_color=self.fill_color,
             dash=self.dash,
             operator=self.operator,
             simplify=self.simplify,

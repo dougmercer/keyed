@@ -32,9 +32,7 @@ def curve(scene: Scene, test_points: list[tuple[float, float]]) -> Curve:
 @pytest.fixture
 def trace(scene: Scene, test_points: Sequence[tuple[float, float]]) -> Trace:
     objects = [Circle(scene, x=x, y=y) for x, y in test_points]
-    return Trace(
-        scene, objects=objects, color=(1, 0, 0), fill_color=(0, 1, 0), alpha=1, tension=0.5
-    )
+    return Trace(scene, objects=objects, color=(1, 0, 0), alpha=1, tension=0.5)
 
 
 def test_curve_points_equal(curve: Curve, test_points: list[tuple[float, float]]) -> None:
