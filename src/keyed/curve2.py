@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Protocol, Self, Sequence
+from typing import Self, Sequence
 
 import cairo
 import numpy as np
@@ -9,41 +9,10 @@ from .animation import Animation, Property
 from .base import Base
 from .curve import VecArray, Vector, bezier_length, calculate_control_points, de_casteljau
 from .scene import Scene
-from .shapes import Shape
+from .shapes import Circle, Shape
 
 
-class BezierShape2(Shape, Protocol):
-    tension: Property
-    line_width: Property
-    start: Property
-    end: Property
-    buffer: Property
-    simplify: float | None
-
-    def __init__(self) -> None:
-        Shape.__init__(self)
-        self.start = Property(0)
-        self.end = Property(1)
-
-    def points(self, frame: int = 0) -> VecArray:
-        pass
-
-    def raw_points(self, frame: int = 0) -> VecArray:
-        pass
-
-    def geom(self, frame: int = 0) -> shapely.Polygon:
-        return shapely.LineString(self.points(frame)).buffer(self.buffer.at(frame))
-
-    def simplified_points(self, frame: int = 0) -> VecArray:
-        line = shapely.LineString(self.raw_points)
-        line = line.simplify(self.simplify) if self.simplify is not None else line
-        return np.array(list(line.coords))
-
-    def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
-        return calculate_control_points(self.tension.at(frame), points)
-
-
-class Trace2(BezierShape2):
+class Trace2(Shape):
     def __init__(
         self,
         scene: Scene,
@@ -61,6 +30,8 @@ class Trace2(BezierShape2):
         super().__init__()
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
+        self.start = Property(0)
+        self.end = Property(1)
         self.scene = scene
         self.ctx = scene.get_context()
         self.objects = [copy(obj) for obj in objects]
@@ -167,6 +138,47 @@ class Trace2(BezierShape2):
             p = getattr(self, property)
             assert isinstance(p, Property)
             p.add_animation(animation)
+
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return shapely.LineString(self.points(frame)).buffer(self.buffer.at(frame))
+
+    def simplified_points(self, frame: int = 0) -> VecArray:
+        line = shapely.LineString(self.raw_points)
+        line = line.simplify(self.simplify) if self.simplify is not None else line
+        return np.array(list(line.coords))
+
+    def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
+        return calculate_control_points(self.tension.at(frame), points)
+
+    @classmethod
+    def from_points(
+        cls,
+        scene: Scene,
+        points: Sequence[tuple[float, float]] | VecArray,
+        color: tuple[float, float, float] = (1, 1, 1),
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+        line_width: float = 1,
+        simplify: float | None = None,
+        tension: float = 1,
+        buffer: float = 30,
+    ) -> Self:
+        objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
+        return cls(
+            scene=scene,
+            objects=objects,
+            color=color,
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            line_width=line_width,
+            simplify=simplify,
+            tension=tension,
+            buffer=buffer,
+        )
 
 
 class Polygon(Shape):
