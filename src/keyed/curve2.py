@@ -1,16 +1,49 @@
-from typing import Sequence
+from copy import copy
+from typing import Protocol, Self, Sequence
 
 import cairo
 import numpy as np
-from shapely.geometry import LineString, Polygon
+import shapely
 
-from .animation import Property
+from .animation import Animation, Property
 from .base import Base
-from .curve import Trace, VecArray, bezier_length, de_casteljau
+from .curve import VecArray, Vector, bezier_length, calculate_control_points, de_casteljau
 from .scene import Scene
+from .shapes import Shape
 
 
-class Trace2(Trace):
+class BezierShape2(Shape, Protocol):
+    tension: Property
+    line_width: Property
+    start: Property
+    end: Property
+    buffer: Property
+    simplify: float | None
+
+    def __init__(self) -> None:
+        Shape.__init__(self)
+        self.start = Property(0)
+        self.end = Property(1)
+
+    def points(self, frame: int = 0) -> VecArray:
+        pass
+
+    def raw_points(self, frame: int = 0) -> VecArray:
+        pass
+
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return shapely.LineString(self.points(frame)).buffer(self.buffer.at(frame))
+
+    def simplified_points(self, frame: int = 0) -> VecArray:
+        line = shapely.LineString(self.raw_points)
+        line = line.simplify(self.simplify) if self.simplify is not None else line
+        return np.array(list(line.coords))
+
+    def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
+        return calculate_control_points(self.tension.at(frame), points)
+
+
+class Trace2(BezierShape2):
     def __init__(
         self,
         scene: Scene,
@@ -25,20 +58,28 @@ class Trace2(Trace):
         tension: float = 1,
         buffer: float = 30,
     ):
-        super().__init__(
-            scene,
-            objects=objects,
-            color=color,
-            alpha=alpha,
-            dash=dash,
-            operator=operator,
-            line_width=line_width,
-            simplify=simplify,
-            tension=tension,
-        )
-        self.buffer = Property(buffer)
+        super().__init__()
+        if len(objects) < 2:
+            raise ValueError("Need at least two objects")
+        self.scene = scene
+        self.ctx = scene.get_context()
+        self.objects = [copy(obj) for obj in objects]
+        self.color = color
         self.fill_color = fill_color
+        self.alpha = Property(alpha)
+        self.dash = dash
+        self.operator = operator
         self.draw_fill = True
+        self.draw_stroke = True
+        self.line_width = Property(line_width)
+        self.simplify = simplify
+        self.tension = Property(tension)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
+        self.buffer = Property(buffer)
+
+    def raw_points(self, frame: int = 0) -> VecArray:
+        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
 
     def points(self, frame: int = 0) -> VecArray:
         start = self.start.at(frame)
@@ -49,15 +90,10 @@ class Trace2(Trace):
             raise ValueError("Parameter start must be between 0 and 1.")
         if end < 0 or end > 1:
             raise ValueError("Parameter end must be between 0 and 1.")
-        points = super().points(frame)
-        cp1, cp2 = self.control_points(points, frame)
+        pts = self.raw_points(frame)
+        cp1, cp2 = self.control_points(pts, frame)
 
-        segment_lengths = np.array(
-            [
-                bezier_length(p1, c1, c2, p2)
-                for p1, c1, c2, p2 in zip(points[:-1], cp1, cp2, points[1:])
-            ]
-        )
+        segment_lengths = np.array([bezier_length(*b) for b in zip(pts[:-1], cp1, cp2, pts[1:])])
         total_length = np.sum(segment_lengths)
         cumulative_lengths = np.hstack([0, np.cumsum(segment_lengths)])
 
@@ -81,33 +117,20 @@ class Trace2(Trace):
         )
 
         # Adjust the first and last segments using De Casteljau's algorithm
-        if start_idx < len(points) - 1:
-            p0, p1, p2, p3 = (
-                points[start_idx],
-                cp1[start_idx],
-                cp2[start_idx],
-                points[start_idx + 1],
-            )
+        if start_idx < len(pts) - 1:
+            p0, p1, p2, p3 = pts[start_idx], cp1[start_idx], cp2[start_idx], pts[start_idx + 1]
             p0_new, _, _, _ = de_casteljau(t_start, p0, p1, p2, p3)
         else:
-            p0_new = points[start_idx]
+            p0_new = pts[start_idx]
 
-        if end_idx < len(points) - 1:
-            p0, p1, p2, p3 = (
-                points[end_idx],
-                cp1[end_idx],
-                cp2[end_idx],
-                points[end_idx + 1],
-            )
+        if end_idx < len(pts) - 1:
+            p0, p1, p2, p3 = pts[end_idx], cp1[end_idx], cp2[end_idx], pts[end_idx + 1]
             _, _, _, p3_new = de_casteljau(t_end, p0, p1, p2, p3)
         else:
-            p3_new = points[end_idx]
+            p3_new = pts[end_idx]
 
         # Collect all points between the modified start and end
-        return np.array([p0_new] + points[start_idx + 1 : end_idx + 1].tolist() + [p3_new])
-
-    def geom(self, frame: int = 0) -> Polygon:
-        return LineString(self.points(frame)).buffer(self.buffer.at(frame))
+        return np.array([p0_new] + pts[start_idx + 1 : end_idx + 1].tolist() + [p3_new])
 
     def _draw_shape(self, frame: int = 0) -> None:
         geom = self.geom(frame)
@@ -118,3 +141,116 @@ class Trace2(Trace):
         for coord in coords[1:]:
             self.ctx.line_to(*coord)
         self.ctx.close_path()
+
+    def __copy__(self) -> Self:
+        new = type(self)(
+            scene=self.scene,
+            objects=[copy(obj) for obj in self.objects],
+            color=self.color,
+            dash=self.dash,
+            operator=self.operator,
+            simplify=self.simplify,
+        )
+        new.alpha.follow(self.alpha)
+        new.tension.follow(self.tension)
+        new.start.follow(self.start)
+        new.end.follow(self.end)
+        new.line_width.follow(self.line_width)
+        new.buffer.follow(self.buffer)
+        return new
+
+    def animate(self, property: str, animation: Animation) -> None:
+        if property in ["x", "y"]:
+            for obj in self.objects:
+                obj.animate(property, animation)
+        else:
+            p = getattr(self, property)
+            assert isinstance(p, Property)
+            p.add_animation(animation)
+
+
+class Polygon(Shape):
+    def __init__(
+        self,
+        scene: Scene,
+        polygon: shapely.Polygon,
+        color: tuple[float, float, float] = (1, 1, 1),
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+        line_width: float = 1,
+        simplify: float | None = None,
+        buffer: float = 0,
+    ):
+        super().__init__()
+        self.scene = scene
+        self.ctx = scene.get_context()
+        self.polygon = polygon
+        self.color = color
+        self.fill_color = fill_color
+        self.alpha = Property(alpha)
+        self.dash = dash
+        self.operator = operator
+        self.draw_fill = True
+        self.draw_stroke = True
+        self.line_width = Property(line_width)
+        self.simplify = simplify
+        self.buffer = Property(buffer)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
+
+    def raw_points(self, frame: int = 0) -> VecArray:
+        if self.polygon.is_empty:
+            return np.empty((0, 2))
+        return np.array(list(self.polygon.exterior.coords))
+
+    def points(self, frame: int = 0) -> VecArray:
+        buffered = self.polygon.buffer(self.buffer.at(frame))
+        assert isinstance(buffered, shapely.Polygon)
+        return np.array(list(buffered.exterior.coords))
+
+    def _draw_shape(self, frame: int = 0) -> None:
+        ctx = self.ctx
+        polygon = self.geom(frame)
+        ctx.set_fill_rule(cairo.FILL_RULE_WINDING)
+        coords = list(polygon.exterior.coords)
+        ctx.move_to(*coords[0])
+        for coord in coords[1:]:
+            ctx.line_to(*coord)
+        ctx.close_path()
+
+        ctx.clip_preserve()
+
+        # Draw any holes
+        # Note: This works for holes entirely contained by the exterior Polygon
+        # or if stroke is False, but will draw undesirable lines otherwise.
+        #
+        # So, we assert that these conditions hold.
+        full_polygon = shapely.Polygon(polygon.exterior)
+        for interior in polygon.interiors:
+            assert self.draw_stroke is False or full_polygon.contains(interior)
+            ctx.move_to(*interior.coords[0])
+            for coord in reversed(interior.coords[1:]):
+                print(coord)
+                ctx.line_to(*coord)
+            ctx.close_path()
+
+    def __copy__(self) -> Self:
+        new = type(self)(
+            scene=self.scene,
+            polygon=self.polygon,
+            color=self.color,
+            fill_color=self.fill_color,
+            dash=self.dash,
+            operator=self.operator,
+            simplify=self.simplify,
+        )
+        new.alpha.follow(self.alpha)
+        new.line_width.follow(self.line_width)
+        new.buffer.follow(self.buffer)
+        new.controls.follow(self.controls)
+        return new
+
+    def geom(self, frame: int = 0) -> shapely.Polygon:
+        return self.polygon
