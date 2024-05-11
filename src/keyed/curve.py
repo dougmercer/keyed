@@ -166,13 +166,11 @@ class BezierShape(Shape, Protocol):
             raise ValueError("Parameter start must be between 0 and 1.")
         if end < 0 or end > 1:
             raise ValueError("Parameter end must be between 0 and 1.")
-        points = self.simplified_points(frame)
-        cp1, cp2 = self.control_points(points, frame)
+        pts = self.simplified_points(frame)
+        cp1, cp2 = self.control_points(pts, frame)
 
         # Compute lengths of each segment and their cumulative sum
-        segment_lengths = np.array(
-            [bezier_length(p1, c1, c2, p2) for p1, c1, c2, p2 in zip(points, cp1, cp2, points[1:])]
-        )
+        segment_lengths = np.array([bezier_length(*b) for b in zip(pts, cp1, cp2, pts[1:])])
         total_length = np.sum(segment_lengths)
         cumulative_lengths = np.cumsum(segment_lengths)
 
@@ -181,24 +179,21 @@ class BezierShape(Shape, Protocol):
         start_idx = np.searchsorted(cumulative_lengths, target_length)
         if start_idx == 0:
             start_seg = target_length / segment_lengths[0]
-        elif start_idx < len(points) - 1:
+        else:
             segment_progress = target_length - cumulative_lengths[start_idx - 1]
             start_seg = segment_progress / segment_lengths[start_idx]
-        else:
-            print("early break")
-            return
 
         # Find the segment where the parameter end falls
         target_length = end * total_length
         end_idx = np.searchsorted(cumulative_lengths, target_length)
         if end_idx == 0:
             end_seg = target_length / segment_lengths[0]
-        elif end_idx < len(points) - 1:
+        else:
             segment_progress = target_length - cumulative_lengths[end_idx - 1]
             end_seg = segment_progress / segment_lengths[end_idx]
 
         # Determine the first point, based on start_seg
-        p0, p1, p2, p3 = points[start_idx], cp1[start_idx], cp2[start_idx], points[start_idx + 1]
+        p0, p1, p2, p3 = pts[start_idx], cp1[start_idx], cp2[start_idx], pts[start_idx + 1]
         p0_new, cp1[start_idx], cp2[start_idx], p3_new = de_casteljau(
             start_seg, p0, p1, p2, p3, reverse=True
         )
@@ -208,11 +203,11 @@ class BezierShape(Shape, Protocol):
 
         # Draw full segments up to the end_idx
         for i in range(start_idx, end_idx):
-            self.ctx.curve_to(*cp1[i], *cp2[i], *points[i + 1])
+            self.ctx.curve_to(*cp1[i], *cp2[i], *pts[i + 1])
 
         # Draw the partial segment up to t_seg
-        if end_idx < len(points) - 1:
-            p0, p1, p2, p3 = points[end_idx], cp1[end_idx], cp2[end_idx], points[end_idx + 1]
+        if end_idx < len(pts) - 1:
+            p0, p1, p2, p3 = pts[end_idx], cp1[end_idx], cp2[end_idx], pts[end_idx + 1]
             _, p1_new, p2_new, p3_new = de_casteljau(end_seg, p0, p1, p2, p3)
             self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
 
