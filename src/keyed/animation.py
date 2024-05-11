@@ -245,6 +245,18 @@ class Property:
         )
         return self
 
+    def set(self, value: float) -> Self:
+        self.add_animation(
+            Animation(
+                start_frame=0,
+                end_frame=0,
+                start_value=value,
+                end_value=value,
+                animation_type=AnimationType.ABSOLUTE,
+            ),
+        )
+        return self
+
 
 class LambdaFollower:
     def __init__(self, func: Callable[[int], float]) -> None:
