@@ -115,3 +115,15 @@ def test_delete_old_frames(tmp_path: Path) -> None:
     assert len(list(scene_dir.glob("*.png"))) > 0
     scene.delete_old_frames()
     assert len(list(scene_dir.glob("*.png"))) == 0
+
+
+def test_find(tmp_path: Path) -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
+    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    scene.add(text0, text1)
+
+    obj0 = scene.find(11, 11, 0)
+    assert text0 == obj0
+    obj1 = scene.find(94, 89, 0)
+    assert text1 == obj1
