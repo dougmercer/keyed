@@ -1,5 +1,6 @@
 """Draw lines and curves."""
 
+import warnings
 from copy import copy
 from functools import partial
 from typing import Protocol, Self, Sequence
@@ -177,20 +178,24 @@ class BezierShape(Shape, Protocol):
         # Find the segment where the parameter start falls
         target_length = start * total_length
         start_idx = np.searchsorted(cumulative_lengths, target_length)
-        if start_idx == 0:
-            start_seg = target_length / segment_lengths[0]
-        else:
-            segment_progress = target_length - cumulative_lengths[start_idx - 1]
-            start_seg = segment_progress / segment_lengths[start_idx]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            if start_idx == 0:
+                start_seg = target_length / segment_lengths[0]
+            else:
+                segment_progress = target_length - cumulative_lengths[start_idx - 1]
+                start_seg = segment_progress / segment_lengths[start_idx]
 
         # Find the segment where the parameter end falls
         target_length = end * total_length
         end_idx = np.searchsorted(cumulative_lengths, target_length)
-        if end_idx == 0:
-            end_seg = target_length / segment_lengths[0]
-        else:
-            segment_progress = target_length - cumulative_lengths[end_idx - 1]
-            end_seg = segment_progress / segment_lengths[end_idx]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            if end_idx == 0:
+                end_seg = target_length / segment_lengths[0]
+            else:
+                segment_progress = target_length - cumulative_lengths[end_idx - 1]
+                end_seg = segment_progress / segment_lengths[end_idx]
 
         # Determine the first point, based on start_seg
         p0, p1, p2, p3 = pts[start_idx], cp1[start_idx], cp2[start_idx], pts[start_idx + 1]

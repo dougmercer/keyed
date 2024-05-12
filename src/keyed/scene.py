@@ -122,7 +122,7 @@ class Scene:
 
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         return np.ndarray(
-            shape=(self.width, self.height, 4),
+            shape=(self.height, self.width, 4),
             dtype=np.uint8,
             buffer=self.rasterize(frame, tuple(layers) if layers is not None else None).get_data(),
         )

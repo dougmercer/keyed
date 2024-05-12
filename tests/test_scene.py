@@ -105,6 +105,7 @@ def test_draw_as_layers(tmp_path: Path) -> None:
     # Check that img0 has only pure green pixels.
     assert img1[:, :, 1].max() > 0 and (img1[:, :, [0, 2]] == 0).all()
 
+
 def test_delete_old_frames(tmp_path: Path) -> None:
     # Write content to file layerwise
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
@@ -127,6 +128,7 @@ def test_find(tmp_path: Path) -> None:
     assert scene.find(11, 11, 0) == text0
     assert scene.find(94, 89, 0) == text1
 
+
 def test_find_no_content(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
     scene.add()
@@ -143,6 +145,7 @@ def test_find_not_visible(tmp_path: Path) -> None:
     # Although text0 is much closer to (11, 11), it is not visible. So, find returns text1
     assert scene.find(11, 11, 0) == text1
 
+
 def test_find_collection(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
     text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
@@ -153,13 +156,24 @@ def test_find_collection(tmp_path: Path) -> None:
     # Make sure we don't return the TextSelection
     assert scene.find(11, 11, 0) != s
 
+
 def test_finalize() -> None:
     scene = Scene()
     scene.finalize()
     with pytest.raises(ValueError):
         scene.add(Text(scene, "hello"))
 
+
 def test_cant_write_without_scene_name() -> None:
     scene = Scene()
     with pytest.raises(ValueError):
         scene.draw()
+
+
+def test_asarray() -> None:
+    scene = Scene(width=20, height=30)
+    text = Text(scene, "Hello")
+    scene.add(text)
+    arr = scene.asarray(0)
+    assert isinstance(arr, np.ndarray)
+    assert arr.shape == (scene.height, scene.width, 4)
