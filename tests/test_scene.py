@@ -103,3 +103,15 @@ def test_draw_as_layers(tmp_path: Path) -> None:
     assert img0[:, :, 0].max() > 0 and (img0[:, :, 1:3] == 0).all()
     # Check that img0 has only pure green pixels.
     assert img1[:, :, 1].max() > 0 and (img1[:, :, [0, 2]] == 0).all()
+
+def test_delete_old_frames(tmp_path: Path) -> None:
+    # Write content to file layerwise
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    text0 = Text(scene, "Hello", color=(1, 0, 0))
+    scene.add(text0)
+    scene.draw()
+
+    scene_dir = tmp_path / "test_scene"
+    assert len(list(scene_dir.glob("*.png"))) > 0
+    scene.delete_old_frames()
+    assert len(list(scene_dir.glob("*.png"))) == 0
