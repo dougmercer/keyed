@@ -4,7 +4,7 @@ import cairo
 import numpy as np
 from PIL import Image
 
-from keyed import Scene, Text
+from keyed import Scene, Text, TextSelection
 
 
 def test_text_drawing() -> None:
@@ -141,3 +141,13 @@ def test_find_not_visible(tmp_path: Path) -> None:
 
     # Although text0 is much closer to (11, 11), it is not visible. So, find returns text1
     assert scene.find(11, 11, 0) == text1
+
+def test_find_collection(tmp_path: Path) -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
+    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    s = TextSelection([text0, text1])
+    scene.add(s)
+
+    # Make sure we don't return the TextSelection
+    assert scene.find(11, 11, 0) != s
