@@ -123,7 +123,21 @@ def test_find(tmp_path: Path) -> None:
     text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
     scene.add(text0, text1)
 
-    obj0 = scene.find(11, 11, 0)
-    assert text0 == obj0
-    obj1 = scene.find(94, 89, 0)
-    assert text1 == obj1
+    assert scene.find(11, 11, 0) == text0
+    assert scene.find(94, 89, 0) == text1
+
+def test_find_no_content(tmp_path: Path) -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    scene.add()
+
+    assert scene.find(11, 11, 0) is None
+
+
+def test_find_not_visible(tmp_path: Path) -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0), alpha=0)
+    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    scene.add(text0, text1)
+
+    # Although text0 is much closer to (11, 11), it is not visible. So, find returns text1
+    assert scene.find(11, 11, 0) == text1
