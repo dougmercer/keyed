@@ -17,11 +17,12 @@ from typing import (
 
 import cairo
 import shapely
+import shapely.affinity
 
 from .animation import Animation, AnimationType, LambdaFollower
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import Rotation, Scale, Transform, TransformControls, Translate
+from .transformation import MultiContext, Rotation, Scale, Transform, TransformControls, Translate
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -221,6 +222,14 @@ class Base(Protocol):
 
     def up(self, frame: int = 0) -> float:
         return self.geom(frame).bounds[3]
+
+    def get_matrix(self, frame: int = 0) -> cairo.Matrix | None:
+        if not hasattr(self, "ctx"):
+            return None
+        else:
+            assert isinstance(self.ctx, cairo.Context)
+            with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
+                return self.ctx.get_matrix()
 
 
 class BaseText(Base, Protocol):
