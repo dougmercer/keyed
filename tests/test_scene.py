@@ -2,6 +2,7 @@ from pathlib import Path
 
 import cairo
 import numpy as np
+from PIL import Image
 
 from keyed import Scene, Text
 
@@ -82,3 +83,23 @@ def test_clear_scene() -> None:
     buf = raster.get_data()
     arr: np.ndarray = np.ndarray(shape=(100, 100, 4), dtype=np.uint8, buffer=buf)
     assert np.all(arr[:, :, 3] == 0), "Not all pixels are clear"
+
+
+def test_draw_as_layers(tmp_path: Path) -> None:
+    # Write content to file layerwise
+    scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
+    text0 = Text(scene, "Hello", color=(1, 0, 0))
+    text1 = Text(scene, "World", color=(0, 1, 0))
+    scene.add(text0, text1)
+    scene.draw_as_layers()
+
+    # Read the two layers in
+    scene_dir = tmp_path / "test_scene"
+    img0 = np.asarray(Image.open(scene_dir / "0_000.png"))
+    img1 = np.asarray(Image.open(scene_dir / "1_000.png"))
+    # Note: Channels are r,g,b,a
+
+    # Check that img0 has only pure red pixels.
+    assert img0[:, :, 0].max() > 0 and (img0[:, :, 1:3] == 0).all()
+    # Check that img0 has only pure green pixels.
+    assert img1[:, :, 1].max() > 0 and (img1[:, :, [0, 2]] == 0).all()
