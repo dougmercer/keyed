@@ -162,3 +162,8 @@ def test_interwoven_animations() -> None:
     assert prop.at(0) == 1  # All start at 1
     assert prop.at(5) == 3  # Absolute in action, should override others
     assert prop.at(10) == 5  # Absolute ends, should have priority
+
+
+def test_frame_check() -> None:
+    with pytest.raises(ValueError):
+        Animation(start_frame=10, end_frame=0, start_value=1, end_value=2)
