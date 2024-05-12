@@ -1,3 +1,5 @@
+from copy import copy
+
 import pytest
 
 from keyed import Animation, AnimationType, Property
@@ -167,3 +169,27 @@ def test_interwoven_animations() -> None:
 def test_frame_check() -> None:
     with pytest.raises(ValueError):
         Animation(start_frame=10, end_frame=0, start_value=1, end_value=2)
+
+
+def test_set() -> None:
+    val = 5
+    assert Property(10).set(val).at(0) == val
+
+
+def test_offset() -> None:
+    val = 5
+    assert Property(10).offset(val).at(0) == 15
+
+
+def test_is_animated() -> None:
+    p = Property(10)
+    assert not p.is_animated
+    p.offset(5)
+    assert p.is_animated
+
+
+def test_copy() -> None:
+    old = Property(10)
+    new = copy(old)
+    assert id(old) != id(new)
+    assert new.following == old
