@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
@@ -143,7 +144,9 @@ class Scene:
                     if obj.alpha.at(frame) == 0:
                         continue
                     geom = obj.geom(frame)
-                    distance = point.distance(geom)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        distance = point.distance(geom)
                     if distance < min_distance:
                         min_distance = distance
                         nearest = obj
