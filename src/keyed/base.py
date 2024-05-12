@@ -12,6 +12,7 @@ from typing import (
     SupportsIndex,
     TypeVar,
     overload,
+    runtime_checkable,
 )
 
 import cairo
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 __all__ = ["Base", "BaseText", "Selection", "Composite"]
 
 
+@runtime_checkable
 class Base(Protocol):
     controls: TransformControls
     scene: Scene
