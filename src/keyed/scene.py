@@ -74,23 +74,29 @@ class Scene:
         self.ctx.paint()
         self.ctx.set_operator(cairo.OPERATOR_OVER)
 
-    def draw(self, layers: Sequence[int] | None = None) -> None:
+    def delete_old_frames(self) -> None:
+        for file in self.full_output_dir.glob("*.png"):
+            file.unlink()
+
+    def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
         self.finalize()
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
-        for file in self.full_output_dir.glob("*.png"):
-            file.unlink()
+        if delete:
+            self.delete_old_frames()
 
         layer_name = "-".join([str(layer) for layer in layers]) if layers is not None else "all"
         for frame in tqdm(range(self.num_frames)):
             raster = self.rasterize(frame, layers=tuple(layers) if layers is not None else None)
             filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
+            print(filename)
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
     def draw_as_layers(self) -> None:
+        self.delete_old_frames()
         for i, _ in enumerate(self.content):
-            self.draw([i])
+            self.draw([i], delete=False)
 
     def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
         self.finalize()
