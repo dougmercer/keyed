@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
 
 import cairo
+import numpy as np
 from shapely import Point
 from tqdm import tqdm
 
@@ -112,6 +113,13 @@ class Scene:
         ctx.set_source_surface(self.surface, 0, 0)
         ctx.paint()
         return raster
+
+    def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
+        return np.ndarray(
+            shape=(self.width, self.height, 4),
+            dtype=np.uint8,
+            buffer=self.rasterize(frame, tuple(layers) if layers is not None else None).get_data(),
+        )
 
     def find(self, x: float, y: float, frame: int = 0) -> Base | None:
         """Find the nearest object on the canvas to the given x, y coordinates.
