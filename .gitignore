@@ -8,4 +8,8 @@ junk
 build
 media
 animation_frames
-
+__snapshots__
+.coverage
+_old
+*.html
+testing
