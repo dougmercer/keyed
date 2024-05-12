@@ -1,5 +1,6 @@
 from functools import partial
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -61,7 +62,20 @@ def polygon(scene: keyed.Scene) -> keyed.Polygon:
 
 @pytest.fixture
 def code(scene: keyed.Scene) -> keyed.Code:
-    return keyed.Code(scene, tokens=keyed.tokenize("import this"))
+    code_txt = r"""import this
+a = 1
+b = 2
+c = 3
+d = 4
+e = 5
+f = 6
+"""
+    return keyed.Code(scene, tokens=keyed.tokenize(code_txt))
+
+
+@pytest.fixture
+def text(scene: keyed.Scene) -> keyed.Text:
+    return keyed.Text(scene, "import this", 20, 10, 10, "Anonymous Pro", color=(1, 1, 1))
 
 
 @pytest.mark.parametrize("drawable", DRAWABLES)
@@ -84,5 +98,36 @@ def test_base_animations(
     for frame in range(6):
         val = scene.asarray(frame).tobytes()
         assert val == snapshot(include=props(f"{frame}", str(type(obj)), method.func.__name__))
+        if last is not None:
+            assert last != val
+
+
+@pytest.mark.parametrize("level", ["chars", "lines", "tokens"])
+def test_write_on(
+    scene: keyed.Scene,
+    code: keyed.Code,
+    level: Literal["chars", "lines", "tokens"],
+    snapshot: syrupy.SnapshotAssertion,
+) -> None:
+    scene.add(code)
+    obj: keyed.TextSelection
+    match level:
+        case "chars":
+            obj = code.chars
+        case "tokens":
+            obj = code.tokens
+        case "lines":
+            obj = code.lines
+    obj.write_on(
+        "alpha",
+        lagged_animation=keyed.lag_animation(animation_type=keyed.AnimationType.ABSOLUTE),
+        delay=1,
+        duration=1,
+        start_frame=0,
+    )
+    last = None
+    for frame in range(6):
+        val = scene.asarray(frame).tobytes()
+        assert val == snapshot(include=props(f"{frame}", level))
         if last is not None:
             assert last != val
