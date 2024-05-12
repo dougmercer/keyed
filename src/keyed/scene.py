@@ -79,7 +79,7 @@ class Scene:
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
-        for file in self.full_output_dir.glob("frame*.png"):
+        for file in self.full_output_dir.glob("*.png"):
             file.unlink()
 
         layer_name = "-".join([str(layer) for layer in layers]) if layers is not None else "all"
