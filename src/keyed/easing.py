@@ -25,11 +25,11 @@ del easing_types, modifiers
 
 @runtime_checkable
 class EasingFunction(Protocol):
-    def __init__(self, start: float, end: float, start_frame: int, end_frame: int) -> None: ...
-    def __call__(self, frame: float) -> float: ...
+    start: float
+    end: float
+    start_frame: int
+    end_frame: int
 
-
-class EasingBase:
     def __init__(
         self,
         start: float = 0,
@@ -43,7 +43,8 @@ class EasingBase:
         self.end_frame = end_frame
 
     def func(self, t: float) -> float:
-        raise NotImplementedError
+        """Implement easing function here."""
+        pass
 
     def ease(self, frame: float) -> float:
         if frame <= self.start_frame:
@@ -61,39 +62,39 @@ class EasingBase:
         return self.ease(frame)
 
 
-class LinearInOut(EasingBase):
+class LinearInOut(EasingFunction):
     def func(self, t: float) -> float:
         return t
 
 
-class QuadEaseInOut(EasingBase):
+class QuadEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 2 * t * t
         return (-2 * t * t) + (4 * t) - 1
 
 
-class QuadEaseIn(EasingBase):
+class QuadEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return t * t
 
 
-class QuadEaseOut(EasingBase):
+class QuadEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return -(t * (t - 2))
 
 
-class CubicEaseIn(EasingBase):
+class CubicEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return t * t * t
 
 
-class CubicEaseOut(EasingBase):
+class CubicEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return (t - 1) * (t - 1) * (t - 1) + 1
 
 
-class CubicEaseInOut(EasingBase):
+class CubicEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 4 * t * t * t
@@ -101,17 +102,17 @@ class CubicEaseInOut(EasingBase):
         return 0.5 * p * p * p + 1
 
 
-class QuarticEaseIn(EasingBase):
+class QuarticEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return t * t * t * t
 
 
-class QuarticEaseOut(EasingBase):
+class QuarticEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return (t - 1) * (t - 1) * (t - 1) * (1 - t) + 1
 
 
-class QuarticEaseInOut(EasingBase):
+class QuarticEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 8 * t * t * t * t
@@ -119,17 +120,17 @@ class QuarticEaseInOut(EasingBase):
         return -8 * p * p * p * p + 1
 
 
-class QuinticEaseIn(EasingBase):
+class QuinticEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return t * t * t * t * t
 
 
-class QuinticEaseOut(EasingBase):
+class QuinticEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return (t - 1) * (t - 1) * (t - 1) * (t - 1) * (t - 1) + 1
 
 
-class QuinticEaseInOut(EasingBase):
+class QuinticEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 16 * t * t * t * t * t
@@ -137,53 +138,53 @@ class QuinticEaseInOut(EasingBase):
         return 0.5 * p * p * p * p * p + 1
 
 
-class SineEaseIn(EasingBase):
+class SineEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return math.sin((t - 1) * math.pi / 2) + 1
 
 
-class SineEaseOut(EasingBase):
+class SineEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return math.sin(t * math.pi / 2)
 
 
-class SineEaseInOut(EasingBase):
+class SineEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         return 0.5 * (1 - math.cos(t * math.pi))
 
 
-class CircularEaseIn(EasingBase):
+class CircularEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return 1 - math.sqrt(1 - (t * t))
 
 
-class CircularEaseOut(EasingBase):
+class CircularEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return math.sqrt((2 - t) * t)
 
 
-class CircularEaseInOut(EasingBase):
+class CircularEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 0.5 * (1 - math.sqrt(1 - 4 * (t * t)))
         return 0.5 * (math.sqrt(-((2 * t) - 3) * ((2 * t) - 1)) + 1)
 
 
-class ExponentialEaseIn(EasingBase):
+class ExponentialEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         if t == 0:
             return 0
         return math.pow(2, 10 * (t - 1))
 
 
-class ExponentialEaseOut(EasingBase):
+class ExponentialEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         if t == 1:
             return 1
         return 1 - math.pow(2, -10 * t)
 
 
-class ExponentialEaseInOut(EasingBase):
+class ExponentialEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t == 0 or t == 1:
             return t
@@ -193,17 +194,17 @@ class ExponentialEaseInOut(EasingBase):
         return -0.5 * math.pow(2, (-20 * t) + 10) + 1
 
 
-class ElasticEaseIn(EasingBase):
+class ElasticEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return math.sin(13 * math.pi / 2 * t) * math.pow(2, 10 * (t - 1))
 
 
-class ElasticEaseOut(EasingBase):
+class ElasticEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         return math.sin(-13 * math.pi / 2 * (t + 1)) * math.pow(2, -10 * t) + 1
 
 
-class ElasticEaseInOut(EasingBase):
+class ElasticEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 0.5 * math.sin(13 * math.pi / 2 * (2 * t)) * math.pow(2, 10 * ((2 * t) - 1))
@@ -212,18 +213,18 @@ class ElasticEaseInOut(EasingBase):
         )
 
 
-class BackEaseIn(EasingBase):
+class BackEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return t * t * t - t * math.sin(t * math.pi)
 
 
-class BackEaseOut(EasingBase):
+class BackEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         p = 1 - t
         return 1 - (p * p * p - p * math.sin(p * math.pi))
 
 
-class BackEaseInOut(EasingBase):
+class BackEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             p = 2 * t
@@ -234,12 +235,12 @@ class BackEaseInOut(EasingBase):
         return 0.5 * (1 - (p * p * p - p * math.sin(p * math.pi))) + 0.5
 
 
-class BounceEaseIn(EasingBase):
+class BounceEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         return 1 - BounceEaseOut().func(1 - t)
 
 
-class BounceEaseOut(EasingBase):
+class BounceEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 4 / 11:
             return 121 * t * t / 16
@@ -250,7 +251,7 @@ class BounceEaseOut(EasingBase):
         return (54 / 5.0 * t * t) - (513 / 25.0 * t) + 268 / 25.0
 
 
-class BounceEaseInOut(EasingBase):
+class BounceEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t < 0.5:
             return 0.5 * BounceEaseIn().func(t * 2)
