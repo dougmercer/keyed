@@ -1,7 +1,6 @@
 import cairo
 
-from keyed import Animation, Code, Scene, Trace, easing, tokenize
-from keyed.curve2 import Trace2
+from keyed import Animation, Code, Scene, Trace, Trace2, easing, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
