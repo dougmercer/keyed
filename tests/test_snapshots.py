@@ -80,6 +80,7 @@ def text(scene: keyed.Scene) -> keyed.Text:
 
 @pytest.mark.parametrize("drawable", DRAWABLES)
 @pytest.mark.parametrize("method", METHODS, ids=lambda x: x.func.__name__)
+@pytest.mark.snapshot
 def test_base_animations(
     drawable: str,
     method: partial,
@@ -103,6 +104,7 @@ def test_base_animations(
 
 
 @pytest.mark.parametrize("level", ["chars", "lines", "tokens"])
+@pytest.mark.snapshot
 def test_write_on(
     scene: keyed.Scene,
     code: keyed.Code,
