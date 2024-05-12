@@ -11,10 +11,10 @@ from .curve import VecArray, Vector, bezier_length, calculate_control_points, de
 from .scene import Scene
 from .shapes import Circle, Shape
 
-__all__ = ["Trace2", "Polygon"]
+__all__ = ["Curve2", "Polygon"]
 
 
-class Trace2(Shape):
+class Curve2(Shape):
     def __init__(
         self,
         scene: Scene,

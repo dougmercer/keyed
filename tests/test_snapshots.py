@@ -48,8 +48,8 @@ def trace(scene: keyed.Scene) -> keyed.Curve:
 
 
 @pytest.fixture
-def trace2(scene: keyed.Scene) -> keyed.Trace2:
-    return keyed.Trace2(scene, objects=[keyed.Circle(scene), keyed.Circle(scene)])
+def trace2(scene: keyed.Scene) -> keyed.Curve2:
+    return keyed.Curve2(scene, objects=[keyed.Circle(scene), keyed.Circle(scene)])
 
 
 @pytest.fixture

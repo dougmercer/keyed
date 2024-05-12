@@ -1,6 +1,6 @@
 import cairo
 
-from keyed import Animation, Code, Curve, Scene, Trace2, easing, tokenize
+from keyed import Animation, Code, Curve, Scene, Curve2, easing, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -10,7 +10,7 @@ scene = Scene(scene_name="trace", num_frames=48, width=1920, height=1080)
 code = Code(scene, styled_tokens, font_size=48, x=100, y=100)
 
 scene.add(code)
-trace2 = Trace2(
+trace2 = Curve2(
     scene,
     code.lines[:4].chars.filter_whitespace(),
     line_width=8,
