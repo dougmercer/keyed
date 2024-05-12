@@ -2,6 +2,7 @@ from pathlib import Path
 
 import cairo
 import numpy as np
+import pytest
 from PIL import Image
 
 from keyed import Scene, Text, TextSelection
@@ -151,3 +152,14 @@ def test_find_collection(tmp_path: Path) -> None:
 
     # Make sure we don't return the TextSelection
     assert scene.find(11, 11, 0) != s
+
+def test_finalize() -> None:
+    scene = Scene()
+    scene.finalize()
+    with pytest.raises(ValueError):
+        scene.add(Text(scene, "hello"))
+
+def test_cant_write_without_scene_name() -> None:
+    scene = Scene()
+    with pytest.raises(ValueError):
+        scene.draw()
