@@ -9,7 +9,7 @@ build
 media
 animation_frames
 __snapshots__
-.coverage
+.coverage*
 _old
 *.html
 testing
