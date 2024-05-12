@@ -25,7 +25,7 @@ from .transformation import Rotation, Scale, Transform, TransformControls, Trans
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
-    from .curve import Trace
+    from .curve import Curve
     from .scene import Scene
     from .shapes import Rectangle
 
@@ -239,10 +239,10 @@ class BaseText(Base, Protocol):
         line_width: float = 1,
         simplify: float | None = None,
         tension: float = 1,
-    ) -> "Trace":
-        from .curve import Trace
+    ) -> "Curve":
+        from .curve import Curve
 
-        return Trace(
+        return Curve(
             self.scene,
             objects=[copy(c) for c in self.chars.filter_whitespace()],
             color=color,

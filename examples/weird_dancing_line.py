@@ -1,6 +1,6 @@
 import numpy as np
 
-from keyed import Code, PingPong, Scene, SinusoidalAnimation, TextSelection, Trace, tokenize
+from keyed import Code, Curve, PingPong, Scene, SinusoidalAnimation, TextSelection, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -15,7 +15,7 @@ scene.add(*s)
 scene.add(code)
 
 points = np.array([np.array(c.geom().centroid.coords).flatten() for c in s])
-trace = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=1)
+trace = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=1)
 
 scene.add(trace)
 

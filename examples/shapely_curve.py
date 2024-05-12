@@ -1,6 +1,6 @@
 import cairo
 
-from keyed import Animation, Code, Scene, Trace, Trace2, easing, tokenize
+from keyed import Animation, Code, Curve, Scene, Trace2, easing, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -17,7 +17,7 @@ trace2 = Trace2(
     fill_color=(1, 0, 0),
     operator=cairo.OPERATOR_SCREEN,
 )
-trace = Trace(scene, code.lines[:4].chars.filter_whitespace(), alpha=0.5, line_width=2)
+trace = Curve(scene, code.lines[:4].chars.filter_whitespace(), alpha=0.5, line_width=2)
 
 trace2.end.value = 0
 trace2.start.add_animation(Animation(8, 32, 0, 1, easing.CubicEaseInOut))

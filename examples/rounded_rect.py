@@ -1,6 +1,6 @@
 # from matplotlib import pyplot as plt
 
-from keyed import Animation, Circle, PingPong, Rectangle, Scene, Text, Trace, easing
+from keyed import Animation, Circle, Curve, PingPong, Rectangle, Scene, Text, easing
 
 scene = Scene(num_frames=24 * 8)
 s = 600
@@ -42,7 +42,7 @@ scene.add(t2)
 r.rotate(PingPong(Animation(0, 12, 45, 90 + 45, easing=easing.CubicEaseInOut), n=8))
 rr.rotate(PingPong(Animation(0, 12, -45, -90 - 45, easing=easing.CubicEaseInOut), n=8))
 
-trace = Trace.from_points(
+trace = Curve.from_points(
     scene,
     points=[(offset, offset), (offset, s), (s, offset), (s, s)],
     color=(0, 0, 1),

@@ -3,7 +3,7 @@
 import warnings
 from copy import copy
 from functools import partial
-from typing import Protocol, Self, Sequence
+from typing import Self, Sequence
 
 import cairo
 import numpy as np
@@ -16,7 +16,7 @@ from .base import Base
 from .scene import Scene
 from .shapes import Circle, Shape
 
-__all__ = ["Curve", "Trace"]
+__all__ = ["Curve"]
 
 Vector = npt.NDArray[np.float64]  # Intended to to be of shape (2,)
 VecArray = npt.NDArray[np.float64]  # Intended to to be of shape (n, 2)
@@ -126,20 +126,42 @@ def calculate_control_points(
     return cp1, cp2
 
 
-class BezierShape(Shape, Protocol):
-    tension: Property
-    line_width: Property
-    start: Property
-    end: Property
-    simplify: float | None
-
-    def __init__(self) -> None:
-        Shape.__init__(self)
+class Curve(Shape):
+    def __init__(
+        self,
+        scene: Scene,
+        objects: Sequence[Base],
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+        line_width: float = 1,
+        simplify: float | None = None,
+        tension: float = 1,
+    ):
+        super().__init__()
         self.start = Property(0)
         self.end = Property(1)
+        if len(objects) < 2:
+            raise ValueError("Need at least two objects")
+        self.scene = scene
+        self.ctx = scene.get_context()
+        self.objects = [copy(obj) for obj in objects]
+        self.color = color
+        self.fill_color: tuple[float, float, float] = (1, 1, 1)
+        self.alpha = Property(alpha)
+        self.dash = dash
+        self.operator = operator
+        self.draw_fill = False
+        self.draw_stroke = True
+        self.line_width = Property(line_width)
+        self.simplify = simplify
+        self.tension = Property(tension)
+        self.line_cap = cairo.LINE_CAP_ROUND
+        self.line_join = cairo.LINE_JOIN_ROUND
 
     def points(self, frame: int = 0) -> VecArray:
-        pass
+        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
 
     def simplified_points(self, frame: int = 0) -> VecArray:
         line = (
@@ -216,104 +238,6 @@ class BezierShape(Shape, Protocol):
             _, p1_new, p2_new, p3_new = de_casteljau(end_seg, p0, p1, p2, p3)
             self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
 
-
-class Curve(BezierShape):
-    def __init__(
-        self,
-        scene: Scene,
-        points: Sequence[tuple[float, float]] | VecArray,
-        color: tuple[float, float, float] = (1, 1, 1),
-        fill_color: tuple[float, float, float] = (1, 1, 1),
-        alpha: float = 1,
-        dash: tuple[Sequence[float], float] | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_OVER,
-        line_width: float = 1,
-        tension: float = 0,
-        simplify: float | None = None,
-    ):
-        super().__init__()
-        self.scene = scene
-        self.ctx = scene.get_context()
-        self._points = np.array(points)
-        if self._points.shape[0] < 2:
-            raise ValueError("Need at least two points.")
-        if self._points.shape[1] != 2:
-            raise ValueError("Points should be nx2 array.")
-        self.color = color
-        self.fill_color: tuple[float, float, float] = fill_color
-        self.alpha = Property(alpha)
-        self.dash = dash
-        self.operator = operator
-        self.draw_fill = False
-        self.draw_stroke = True
-        self.line_width = Property(line_width)
-        self.tension = Property(tension)
-        self.simplify = simplify
-        self.line_cap = cairo.LINE_CAP_ROUND
-        self.line_join = cairo.LINE_JOIN_ROUND
-
-    def points(self, frame: int = 0) -> VecArray:
-        return self._points
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"points={self._points!r}, "
-            f"dash={self.dash}, "
-            f"operator={self.operator}, "
-            ")"
-        )
-
-    def __copy__(self) -> Self:
-        new = type(self)(
-            self.scene,
-            points=self._points.copy(),
-            color=self.color,
-            fill_color=self.fill_color,
-            dash=self.dash,
-            operator=self.operator,
-            simplify=self.simplify,
-        )
-        new.alpha.follow(self.alpha)
-        new.tension.follow(self.tension)
-        new.start.follow(self.start)
-        new.end.follow(self.end)
-        new.line_width.follow(self.line_width)
-        return new
-
-
-class Trace(BezierShape):
-    def __init__(
-        self,
-        scene: Scene,
-        objects: Sequence[Base],
-        color: tuple[float, float, float] = (1, 1, 1),
-        alpha: float = 1,
-        dash: tuple[Sequence[float], float] | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_OVER,
-        line_width: float = 1,
-        simplify: float | None = None,
-        tension: float = 1,
-    ):
-        super().__init__()
-        if len(objects) < 2:
-            raise ValueError("Need at least two objects")
-        self.scene = scene
-        self.ctx = scene.get_context()
-        self.objects = [copy(obj) for obj in objects]
-        self.color = color
-        self.fill_color: tuple[float, float, float] = (1, 1, 1)
-        self.alpha = Property(alpha)
-        self.dash = dash
-        self.operator = operator
-        self.draw_fill = False
-        self.draw_stroke = True
-        self.line_width = Property(line_width)
-        self.simplify = simplify
-        self.tension = Property(tension)
-        self.line_cap = cairo.LINE_CAP_ROUND
-        self.line_join = cairo.LINE_JOIN_ROUND
-
     @classmethod
     def from_points(
         cls,
@@ -339,9 +263,6 @@ class Trace(BezierShape):
             simplify=simplify,
             tension=tension,
         )
-
-    def points(self, frame: int = 0) -> VecArray:
-        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
 
     def __repr__(self) -> str:
         return (

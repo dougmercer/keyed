@@ -1,6 +1,6 @@
 import numpy as np
 
-from keyed import Animation, Code, Scene, TextSelection, Trace, easing, tokenize
+from keyed import Animation, Code, Curve, Scene, TextSelection, easing, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -15,9 +15,9 @@ scene.add(*s)
 scene.add(code)
 
 points = np.array([np.array(c.geom().centroid.coords).flatten() for c in s])
-trace1 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=0, color=(1, 0, 0))
-trace2 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=1, color=(0, 1, 0))
-trace3 = Trace.from_points(scene, points, alpha=0.5, line_width=50, tension=-1, color=(0, 0, 1))
+trace1 = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=0, color=(1, 0, 0))
+trace2 = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=1, color=(0, 1, 0))
+trace3 = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=-1, color=(0, 0, 1))
 
 scene.add(trace2)
 scene.add(trace3)
