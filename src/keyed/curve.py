@@ -215,7 +215,7 @@ class Curve(Shape):
             warnings.simplefilter("ignore", RuntimeWarning)
             if end_idx == 0:
                 end_seg = target_length / segment_lengths[0]
-            else:
+            elif end_idx < len(segment_lengths):
                 segment_progress = target_length - cumulative_lengths[end_idx - 1]
                 end_seg = segment_progress / segment_lengths[end_idx]
 
