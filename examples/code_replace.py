@@ -10,7 +10,7 @@ code2 = Code(scene, styled_tokens2, font_size=48, alpha=0)
 
 scene.add(code1, code2)
 
-code1.lines[0].chars[-1:-5:-1].write_on(
+code1.chars[-1:-5:-1].write_on(
     "alpha",
     lagged_animation=lag_animation(
         start_value=1, end_value=0, animation_type=AnimationType.ABSOLUTE
@@ -20,7 +20,7 @@ code1.lines[0].chars[-1:-5:-1].write_on(
     start_frame=0,
 )
 
-code2.lines[0].chars[-5:].write_on(
+code2.chars[-5:].write_on(
     "alpha",
     lagged_animation=lag_animation(
         start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE
