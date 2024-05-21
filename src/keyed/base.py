@@ -203,14 +203,15 @@ class Base(Protocol):
         from_: Base | None = None,
         easing: type[EasingFunction] = CubicEaseInOut,
         direction: Direction = ORIGIN,
+        center_on_zero: bool = False,
     ) -> None:
-        from_ = from_ if from_ is not None else self
+        from_ = from_ or self
 
         to_point = to.get_critical_point(end_frame, direction)
         from_point = from_.get_critical_point(end_frame, direction)
 
-        delta_x = to_point[0] - from_point[0] if direction[0] != 0 else 0
-        delta_y = to_point[1] - from_point[1] if direction[1] != 0 else 0
+        delta_x = (to_point[0] - from_point[0]) if center_on_zero or direction[0] != 0 else 0
+        delta_y = (to_point[1] - from_point[1]) if center_on_zero or direction[1] != 0 else 0
 
         self.shift(
             delta_x=delta_x,
