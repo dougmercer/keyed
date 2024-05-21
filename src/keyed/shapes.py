@@ -50,19 +50,13 @@ class Shape(Base, Protocol):
 
     def draw(self, frame: int = 0) -> None:
         with self.style(frame):
-            if self.draw_fill:
-                self.ctx.set_source_rgba(*self.fill_color, self.alpha.at(frame))
-                with MultiContext(
-                    [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
-                ):
-                    self._draw_shape(frame)
-                    self.ctx.fill()
-            if self.draw_stroke:
-                self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
-                with MultiContext(
-                    [t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]
-                ):
-                    self._draw_shape(frame)
+            with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
+                self._draw_shape(frame)
+                if self.draw_fill:
+                    self.ctx.set_source_rgba(*self.fill_color, self.alpha.at(frame))
+                    self.ctx.fill_preserve()
+                if self.draw_stroke:
+                    self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
                     self.ctx.stroke()
 
     def animate(self, property: str, animation: Animation) -> None:
