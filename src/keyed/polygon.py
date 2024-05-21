@@ -200,6 +200,8 @@ class Polygon(Shape):
         super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
+        if not isinstance(polygon, shapely.Polygon):
+            raise NotImplementedError("Currently only supports a Polygon.")
         self.polygon = polygon
         self.color = color
         self.fill_color = fill_color
