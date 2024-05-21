@@ -213,7 +213,6 @@ class Property:
 
     def at(self, frame: int) -> float:
         current_value = self.following.at(frame) if self.following else self.value
-
         for animation in self.animations:
             if animation.is_active(frame):
                 current_value = animation.apply(frame, current_value)
