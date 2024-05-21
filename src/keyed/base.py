@@ -178,6 +178,7 @@ class Base(Protocol):
                     easing=easing,
                 ),
             )
+        return self
 
     def get_position_along_dim(
         self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
