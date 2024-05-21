@@ -57,11 +57,13 @@ class Base(Protocol):
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
 
-    def rotate(self, animation: Animation) -> None:
+    def rotate(self, animation: Animation) -> Self:
         self.add_transform(Rotation(self, animation))
+        return self
 
-    def scale(self, animation: Animation) -> None:
+    def scale(self, animation: Animation) -> Self:
         self.add_transform(Scale(self, animation))
+        return self
 
     def translate(
         self,
@@ -139,7 +141,7 @@ class Base(Protocol):
         start_frame: int,
         end_frame: int,
         easing: type[EasingFunction] = CubicEaseInOut,
-    ) -> None:
+    ) -> Self:
         if delta_x:
             self.animate(
                 "x",
