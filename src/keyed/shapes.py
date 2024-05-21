@@ -144,7 +144,7 @@ class Rectangle(Shape):
         self.ctx.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
         self.ctx.close_path()
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         """Return the geometry of the rounded rectangle as a Shapely polygon."""
         x = self.x.at(frame)
         y = self.y.at(frame)
@@ -252,7 +252,7 @@ class Circle(Shape):
         assert isinstance(p, Property)
         p.add_animation(animation)
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         x = self.x.at(frame)
         y = self.y.at(frame)
         radius = self.radius.at(frame)

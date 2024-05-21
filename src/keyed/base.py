@@ -22,7 +22,15 @@ import shapely.affinity
 from .animation import Animation, AnimationType, LambdaFollower
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import MultiContext, Rotation, Scale, Transform, TransformControls, Translate
+from .transformation import (
+    MultiContext,
+    Rotation,
+    Scale,
+    Transform,
+    TransformControls,
+    Translate,
+    affine_transform,
+)
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -48,8 +56,12 @@ class Base(Protocol):
     def animate(self, property: str, animation: Animation) -> None:
         pass
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         pass
+
+    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Polygon:
+        g = self._geom(frame)
+        return affine_transform(g, self.get_matrix(frame)) if with_transforms else g
 
     def __copy__(self) -> Self:
         pass
@@ -311,7 +323,7 @@ class Composite(Base, list[T]):
         else:
             return super().__getitem__(key)
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.GeometryCollection([obj.geom(frame) for obj in self])
 
     def __copy__(self) -> Self:

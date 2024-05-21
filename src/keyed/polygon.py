@@ -141,7 +141,7 @@ class Curve2(Shape):
             assert isinstance(p, Property)
             p.add_animation(animation)
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         return shapely.LineString(self.points(frame)).buffer(self.buffer.at(frame))
 
     def simplified_points(self, frame: int = 0) -> VecArray:
@@ -266,5 +266,5 @@ class Polygon(Shape):
         new.controls.follow(self.controls)
         return new
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         return self.polygon

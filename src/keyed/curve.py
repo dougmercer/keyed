@@ -177,7 +177,7 @@ class Curve(Shape):
             points,
         )
 
-    def geom(self, frame: int = 0) -> shapely.LineString:
+    def _geom(self, frame: int = 0) -> shapely.LineString:
         return shapely.LineString(self.points(frame))
 
     def _draw_shape(self, frame: int = 0) -> None:

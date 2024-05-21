@@ -104,7 +104,7 @@ class Text(BaseText):
     def chars(self) -> TextSelection[Self]:
         return TextSelection([self])
 
-    def geom(self, frame: int = 0) -> shapely.Polygon:
+    def _geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
         x = self.x.at(frame) + e.x_bearing
         y = self.y.at(frame) + e.y_bearing

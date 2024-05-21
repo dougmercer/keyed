@@ -6,6 +6,9 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, ContextManager, Generator, Protocol, Self
 
 import cairo
+import shapely
+import shapely.affinity
+from shapely.geometry.base import BaseGeometry
 
 if TYPE_CHECKING:
     from .animation import Animation, Property
@@ -152,3 +155,11 @@ class MultiContext:
     ) -> bool | None:
         self.stack.close()
         return None
+
+
+def affine_transform(geom: BaseGeometry, matrix: cairo.Matrix | None) -> BaseGeometry:
+    if matrix is not None:
+        transform_params = [matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.x0, matrix.y0]
+        return shapely.affinity.affine_transform(geom, transform_params)
+    else:
+        return geom
