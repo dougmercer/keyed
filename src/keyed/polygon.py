@@ -248,7 +248,6 @@ class Polygon(Shape):
             assert self.draw_stroke is False or full_polygon.contains(interior)
             ctx.move_to(*interior.coords[0])
             for coord in reversed(interior.coords[1:]):
-                print(coord)
                 ctx.line_to(*coord)
             ctx.close_path()
 
