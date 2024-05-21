@@ -184,15 +184,9 @@ class Base(Protocol):
         self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
     ) -> float:
         assert -1 <= direction[dim] <= 1
-        magnitude = 0.5 * (direction[dim] + 1)  # remap [-1, 1] to [0, 1]
-
-        # Take convex combination along dimension
-        # bounds are min_x, min_y, max_x, max_y.
-        # Indices 0 and 2 are x, indices 1 and 3 are y
-        return (
-            magnitude * self.geom(frame).bounds[dim]
-            + (1 - magnitude) * self.geom(frame).bounds[dim + 2]
-        )
+        bounds = self.geom(frame, with_transforms=True).bounds
+        magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
+        return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
 
     def get_critical_point(
         self, frame: int = 0, direction: Direction = ORIGIN
