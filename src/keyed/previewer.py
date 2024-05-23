@@ -5,7 +5,10 @@ from tkinter import font as tkfont
 from tkinter.ttk import Button, Label, Scale
 from typing import TYPE_CHECKING
 
+import shapely
 from PIL import Image, ImageTk
+
+from .transformation import affine_transform
 
 if TYPE_CHECKING:
     from keyed import Scene
@@ -160,11 +163,12 @@ def create_animation_window(scene: "Scene") -> None:
     def on_canvas_click(event: tk.Event) -> None:
         x, y = event.x, event.y
         frame = round(slider.get())
-        scale = scene.controls.scale.at(frame)
-        pivot_x = scene.controls.pivot_x.at(frame)
-        pivot_y = scene.controls.pivot_y.at(frame)
-        scene_x = (x - pivot_x) / scale + pivot_x
-        scene_y = (y - pivot_y) / scale + pivot_y
+
+        matrix = scene.get_matrix(frame)
+        if matrix is None:
+            scene_x, scene_y = x, y
+        else:
+            scene_x, scene_y = affine_transform(shapely.Point(x, y), matrix.invert()).coords[0]
 
         nearest_object = scene.find(scene_x, scene_y, frame)
         if nearest_object:

@@ -22,15 +22,7 @@ import shapely.affinity
 from .animation import Animation, AnimationType, LambdaFollower
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import (
-    MultiContext,
-    Rotation,
-    Scale,
-    Transform,
-    TransformControls,
-    Translate,
-    affine_transform,
-)
+from .transformation import Transform, TransformControls, Transformable, affine_transform
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -43,7 +35,7 @@ __all__ = ["Base", "BaseText", "Selection", "Composite"]
 
 
 @runtime_checkable
-class Base(Protocol):
+class Base(Transformable, Protocol):
     controls: TransformControls
     scene: Scene
 
@@ -65,50 +57,6 @@ class Base(Protocol):
 
     def __copy__(self) -> Self:
         pass
-
-    def add_transform(self, transform: Transform) -> None:
-        self.controls.add(transform)
-
-    def rotate(self, animation: Animation) -> Self:
-        self.add_transform(Rotation(self, animation))
-        return self
-
-    def scale(self, animation: Animation) -> Self:
-        self.add_transform(Scale(self, animation))
-        return self
-
-    def translate(
-        self,
-        delta_x: float,
-        delta_y: float,
-        start_frame: int,
-        end_frame: int,
-        easing: type[EasingFunction] = CubicEaseInOut,
-    ) -> Self:
-        if delta_x:
-            x = Animation(
-                start_frame=start_frame,
-                end_frame=end_frame,
-                start_value=0,
-                end_value=delta_x,
-                animation_type=AnimationType.ADDITIVE,
-                easing=easing,
-            )
-        else:
-            x = None
-        if delta_y:
-            y = Animation(
-                start_frame=start_frame,
-                end_frame=end_frame,
-                start_value=0,
-                end_value=delta_y,
-                animation_type=AnimationType.ADDITIVE,
-                easing=easing,
-            )
-        else:
-            y = None
-        self.add_transform(Translate(self, x, y))
-        return self
 
     def emphasize(
         self,
@@ -213,7 +161,7 @@ class Base(Protocol):
         delta_x = (to_point[0] - from_point[0]) if center_on_zero or direction[0] != 0 else 0
         delta_y = (to_point[1] - from_point[1]) if center_on_zero or direction[1] != 0 else 0
 
-        self.shift(
+        self.translate(
             delta_x=delta_x,
             delta_y=delta_y,
             start_frame=start_frame,
@@ -222,24 +170,16 @@ class Base(Protocol):
         )
 
     def left(self, frame: int = 0) -> float:
-        return self.geom(frame).bounds[0]
+        return self.geom(frame, with_transforms=True).bounds[0]
 
     def right(self, frame: int = 0) -> float:
-        return self.geom(frame).bounds[2]
+        return self.geom(frame, with_transforms=True).bounds[2]
 
     def down(self, frame: int = 0) -> float:
-        return self.geom(frame).bounds[1]
+        return self.geom(frame, with_transforms=True).bounds[1]
 
     def up(self, frame: int = 0) -> float:
-        return self.geom(frame).bounds[3]
-
-    def get_matrix(self, frame: int = 0) -> cairo.Matrix | None:
-        if not hasattr(self, "ctx"):
-            return None
-        else:
-            assert isinstance(self.ctx, cairo.Context)
-            with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
-                return self.ctx.get_matrix()
+        return self.geom(frame, with_transforms=True).bounds[3]
 
 
 class BaseText(Base, Protocol):

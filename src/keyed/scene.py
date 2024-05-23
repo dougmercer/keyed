@@ -3,17 +3,18 @@ from __future__ import annotations
 import warnings
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
+from typing import TYPE_CHECKING, Iterable, Protocol, Self, Sequence
 
 import cairo
 import numpy as np
-from shapely import Point
+import shapely
+from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from .animation import Property
+from .animation import Animation, Property
 from .code import Selection
 from .previewer import create_animation_window
-from .transformation import PivotZoom, TransformControls
+from .transformation import HasGeometry, TransformControls, Transformable
 
 if TYPE_CHECKING:
     from .base import Base
@@ -26,7 +27,7 @@ class Drawable(Protocol):
     def draw(self, frame: int) -> None: ...
 
 
-class Scene:
+class Scene(Transformable):
     def __init__(
         self,
         scene_name: str | None = None,
@@ -143,7 +144,7 @@ class Scene:
         -------
         Base | None
         """
-        point = Point(x, y)
+        point = shapely.Point(x, y)
         nearest: Base | None = None
         min_distance = float("inf")
 
@@ -157,10 +158,9 @@ class Scene:
                     assert isinstance(obj.alpha, Property)
                     if obj.alpha.at(frame) == 0:
                         continue
-                    geom = obj.geom(frame)
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
-                        distance = point.distance(geom)
+                        distance = point.distance(obj.geom(frame, with_transforms=True))
                     if distance < min_distance:
                         min_distance = distance
                         nearest = obj
@@ -178,7 +178,15 @@ class Scene:
     def finalize(self) -> None:
         if not self.final:
             for c in self.content:
-                c.add_transform(
-                    PivotZoom(self.controls.pivot_x, self.controls.pivot_y, self.controls.scale)
-                )
+                for t in self.controls.transforms:
+                    c.add_transform(t)
             self.final = True
+
+    def geom(self, frame: int = 0) -> BaseGeometry:
+        return shapely.box(0, 0, self.width, self.height)
+
+    def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
+        return super().rotate(animation, center or self.controls)
+
+    def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
+        return super().scale(animation, center or self.controls)

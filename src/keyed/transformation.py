@@ -3,48 +3,121 @@ from __future__ import annotations
 import math
 from contextlib import ExitStack, contextmanager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ContextManager, Generator, Protocol, Self
+from typing import Any, ContextManager, Generator, Protocol, Self
 
 import cairo
 import shapely
 import shapely.affinity
 from shapely.geometry.base import BaseGeometry
 
-if TYPE_CHECKING:
-    from .animation import Animation, Property
-    from .base import Base
+from .animation import Animation, AnimationType, Point, Property
+from .easing import CubicEaseInOut, EasingFunction
 
-__all__ = ["Transform", "Rotation", "MultiContext", "PivotZoom", "Translate", "TransformControls"]
+__all__ = [
+    "Transform",
+    "Rotation",
+    "MultiContext",
+    "PivotZoom",
+    "Translate",
+    "TransformControls",
+    "HasGeometry",
+    "Transformable",
+]
 
 
 class TransformControls:
     def __init__(self) -> None:
-        from .animation import Property
-
         self.rotation = Property(0)
         self.scale = Property(1)
         self.delta_x = Property(0)
         self.delta_y = Property(0)
-        self.pivot_x = Property(0)
-        self.pivot_y = Property(0)
+        self.pivot = Point()
         self.transforms: list[Transform] = []
 
     def add(self, transform: Transform) -> None:
         self.transforms.append(transform)
 
     def _follow(self, property: str, other: TransformControls) -> None:
-        from .animation import Property
-
         us = getattr(self, property)
-        assert isinstance(us, Property)
+        assert isinstance(us, Property | Point)
         them = getattr(other, property)
-        assert isinstance(them, Property)
+        assert isinstance(them, type(us))
         us.follow(them)
 
+    def geom(self, frame: int = 0) -> BaseGeometry:
+        return shapely.Point(self.pivot.x.at(frame), self.pivot.y.at(frame))
+
     def follow(self, other: TransformControls) -> None:
-        properties = ["rotation", "scale", "delta_x", "delta_y", "pivot_x", "pivot_y"]
+        properties = ["rotation", "scale", "delta_x", "delta_y", "pivot"]
         for p in properties:
             self._follow(p, other)
+
+    def get_matrix(self, ctx: cairo.Context, frame: int = 0) -> cairo.Matrix:
+        with MultiContext([t.at(ctx=ctx, frame=frame) for t in self.transforms]):
+            return ctx.get_matrix()
+
+
+class HasGeometry(Protocol):
+    def geom(self, frame: int = 0) -> BaseGeometry:
+        pass
+
+
+class Transformable(Protocol):
+    controls: TransformControls
+
+    def geom(self, frame: int = 0) -> BaseGeometry:
+        pass
+
+    def add_transform(self, transform: Transform) -> None:
+        self.controls.add(transform)
+
+    def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
+        self.add_transform(Rotation(self, animation, center))
+        return self
+
+    def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
+        self.add_transform(Scale(self, animation, center))
+        return self
+
+    def translate(
+        self,
+        delta_x: float,
+        delta_y: float,
+        start_frame: int,
+        end_frame: int,
+        easing: type[EasingFunction] = CubicEaseInOut,
+    ) -> Self:
+        if delta_x:
+            x = Animation(
+                start_frame=start_frame,
+                end_frame=end_frame,
+                start_value=0,
+                end_value=delta_x,
+                animation_type=AnimationType.ADDITIVE,
+                easing=easing,
+            )
+        else:
+            x = None
+        if delta_y:
+            y = Animation(
+                start_frame=start_frame,
+                end_frame=end_frame,
+                start_value=0,
+                end_value=delta_y,
+                animation_type=AnimationType.ADDITIVE,
+                easing=easing,
+            )
+        else:
+            y = None
+        self.add_transform(Translate(self, x, y))
+        return self
+
+    def get_matrix(self, frame: int = 0) -> cairo.Matrix | None:
+        if not hasattr(self, "ctx"):
+            return None
+        else:
+            assert isinstance(self.ctx, cairo.Context)
+            return self.controls.get_matrix(self.ctx, frame)
 
 
 class Transform(Protocol):
@@ -54,19 +127,25 @@ class Transform(Protocol):
 
 
 class Rotation:
-    def __init__(self, reference: Base, animation: Animation):
+    def __init__(
+        self, reference: Transformable, animation: Animation, center: HasGeometry | None = None
+    ):
         self.reference = reference
-        self.reference.controls.rotation.add_animation(animation)
+        self.animation = animation
+        self.center = center or reference
+
+    def rotation(self, frame: int = 0) -> float:
+        return self.animation.apply(frame, self.reference.controls.rotation.at(frame))
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            coords = self.reference.geom(frame).centroid.coords
+            coords = self.center.geom(frame).centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
-                ctx.rotate(math.radians(self.reference.controls.rotation.at(frame)))
+                ctx.rotate(math.radians(self.rotation(frame)))
                 ctx.translate(-cx, -cy)
             yield
         finally:
@@ -74,19 +153,25 @@ class Rotation:
 
 
 class Scale:
-    def __init__(self, reference: Base, animation: Animation):
+    def __init__(
+        self, reference: Transformable, animation: Animation, center: HasGeometry | None = None
+    ):
         self.reference = reference
-        self.reference.controls.scale.add_animation(animation)
+        self.animation = animation
+        self.center = center or reference
+
+    def scale(self, frame: int = 0) -> float:
+        return self.animation.apply(frame, self.reference.controls.scale.at(frame))
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            coords = self.reference.geom(frame).centroid.coords
+            coords = self.center.geom(frame).centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
-                s = self.reference.controls.scale.at(frame)
+                s = self.scale(frame)
                 ctx.scale(s, s)
                 ctx.translate(-cx, -cy)
             yield
@@ -96,21 +181,29 @@ class Scale:
 
 class Translate:
     def __init__(
-        self, reference: Base, x: Animation | None = None, y: Animation | None = None
+        self, reference: Transformable, x: Animation | None = None, y: Animation | None = None
     ) -> None:
         self.reference = reference
-        if x is not None:
-            self.reference.controls.delta_x.add_animation(x)
-        if y is not None:
-            self.reference.controls.delta_y.add_animation(y)
+        self.x = x
+        self.y = y
+
+    def delta_x(self, frame: int = 0) -> float:
+        if self.x is not None:
+            return self.x.apply(frame, self.reference.controls.delta_x.at(frame))
+        else:
+            return 0
+
+    def delta_y(self, frame: int = 0) -> float:
+        if self.y is not None:
+            return self.y.apply(frame, self.reference.controls.delta_y.at(frame))
+        else:
+            return 0
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            delta_x = self.reference.controls.delta_x.at(frame)
-            delta_y = self.reference.controls.delta_y.at(frame)
-            ctx.translate(delta_x, delta_y)
+            ctx.translate(self.delta_x(frame), self.delta_y(frame))
             yield
         finally:
             ctx.restore()

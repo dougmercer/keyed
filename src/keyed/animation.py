@@ -17,6 +17,7 @@ __all__ = [
     "Loop",
     "PingPong",
     "LambdaFollower",
+    "Point",
 ]
 
 
@@ -263,3 +264,19 @@ class LambdaFollower:
 
     def at(self, frame: int) -> Any:
         return self.func(frame)
+
+
+class Point:
+    def __init__(self, x: float = 0, y: float = 0):
+        self.x = Property(x)
+        self.y = Property(y)
+
+    def follow(self, other: Point) -> None:
+        # TODO - This is a bit jank to only be able to follow other points.
+        # Should be able to follow anything with x/y.
+        self.x.follow(other.x)
+        self.y.follow(other.y)
+
+    def set(self, x: float, y: float) -> None:
+        self.x.set(x)
+        self.y.set(y)

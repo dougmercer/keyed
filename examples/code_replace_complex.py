@@ -40,10 +40,12 @@ code2.chars[8:18].write_on(
     start_frame=36,
 )
 
-scene.controls.pivot_x.offset(200)
-scene.controls.pivot_y.offset(100)
-scene.controls.scale.add_animation(
-    Animation(start_frame=0, end_frame=24, start_value=1, end_value=3, easing=easing.CubicEaseInOut)
+scene.controls.pivot.set(200, 100)
+scene.scale(
+    Animation(
+        start_frame=0, end_frame=24, start_value=1, end_value=2, easing=easing.CubicEaseInOut
+    ),
+    scene.controls,
 )
 
 scene.preview()
