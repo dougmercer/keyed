@@ -91,7 +91,6 @@ class Scene(Transformable):
         for frame in tqdm(range(self.num_frames)):
             raster = self.rasterize(frame, layers=tuple(layers) if layers is not None else None)
             filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
-            print(filename)
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
     def draw_as_layers(self) -> None:

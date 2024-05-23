@@ -66,7 +66,7 @@ class Base(Transformable, Protocol):
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_SCREEN,
-    ) -> "Rectangle":
+    ) -> Rectangle:
         from .shapes import Rectangle
 
         r = Rectangle(
