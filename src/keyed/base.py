@@ -5,7 +5,6 @@ from typing import (
     TYPE_CHECKING,
     Callable,
     Iterable,
-    Literal,
     Protocol,
     Self,
     Sequence,
@@ -20,9 +19,8 @@ import shapely
 import shapely.affinity
 
 from .animation import Animation, AnimationType, LambdaFollower
-from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .transformation import Transform, TransformControls, Transformable, affine_transform
+from .transformation import Transform, TransformControls, Transformable
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -47,13 +45,6 @@ class Base(Transformable, Protocol):
 
     def animate(self, property: str, animation: Animation) -> None:
         pass
-
-    def _geom(self, frame: int = 0) -> shapely.Polygon:
-        pass
-
-    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Polygon:
-        g = self._geom(frame)
-        return affine_transform(g, self.get_matrix(frame)) if with_transforms else g
 
     def __copy__(self) -> Self:
         pass
@@ -127,59 +118,6 @@ class Base(Transformable, Protocol):
                 ),
             )
         return self
-
-    def get_position_along_dim(
-        self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
-    ) -> float:
-        assert -1 <= direction[dim] <= 1
-        bounds = self.geom(frame, with_transforms=True).bounds
-        magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
-        return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
-
-    def get_critical_point(
-        self, frame: int = 0, direction: Direction = ORIGIN
-    ) -> tuple[float, float]:
-        x = self.get_position_along_dim(frame, direction, dim=0)
-        y = self.get_position_along_dim(frame, direction, dim=1)
-        return x, y
-
-    def align_to(
-        self,
-        to: Base,
-        start_frame: int,
-        end_frame: int,
-        from_: Base | None = None,
-        easing: type[EasingFunction] = CubicEaseInOut,
-        direction: Direction = ORIGIN,
-        center_on_zero: bool = False,
-    ) -> None:
-        from_ = from_ or self
-
-        to_point = to.get_critical_point(end_frame, direction)
-        from_point = from_.get_critical_point(end_frame, direction)
-
-        delta_x = (to_point[0] - from_point[0]) if center_on_zero or direction[0] != 0 else 0
-        delta_y = (to_point[1] - from_point[1]) if center_on_zero or direction[1] != 0 else 0
-
-        self.translate(
-            delta_x=delta_x,
-            delta_y=delta_y,
-            start_frame=start_frame,
-            end_frame=end_frame,
-            easing=easing,
-        )
-
-    def left(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[0]
-
-    def right(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[2]
-
-    def down(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[1]
-
-    def up(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[3]
 
 
 class BaseText(Base, Protocol):

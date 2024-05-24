@@ -181,7 +181,7 @@ class Scene(Transformable):
                     c.add_transform(t)
             self.final = True
 
-    def geom(self, frame: int = 0) -> BaseGeometry:
+    def _geom(self, frame: int = 0) -> BaseGeometry:
         return shapely.box(0, 0, self.width, self.height)
 
     def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
