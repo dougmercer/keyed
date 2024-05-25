@@ -13,7 +13,8 @@ from tqdm import tqdm
 
 from .animation import Animation, Property
 from .code import Selection
-from .previewer import create_animation_window
+from .constants import Previewer
+from .previewer import Quality
 from .transformation import HasGeometry, TransformControls, Transformable
 
 if TYPE_CHECKING:
@@ -171,9 +172,14 @@ class Scene(Transformable):
         check_objects(self.content)
         return nearest
 
-    def preview(self) -> None:
+    def preview(
+        self,
+        previewer: Previewer = Previewer.qt,
+        quality: Quality = Quality.high,
+        frame_rate: int = 24,
+    ) -> None:
         self.finalize()
-        create_animation_window(self)
+        previewer(self, quality=quality, frame_rate=frame_rate)  # type: ignore[operator]
 
     def get_context(self) -> cairo.Context:
         return cairo.Context(self.surface)
