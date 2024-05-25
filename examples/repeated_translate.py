@@ -1,5 +1,3 @@
-from cairo import OPERATOR_CLEAR
-
 from keyed import Circle, Scene
 
 scene = Scene(num_frames=24, width=1920, height=1080)
