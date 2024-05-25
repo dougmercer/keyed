@@ -1,29 +1,76 @@
+from __future__ import annotations
+
 import time
 import tkinter as tk
-from collections import deque
+from dataclasses import dataclass
+from enum import Enum
 from tkinter import font as tkfont
 from tkinter.ttk import Button, Label, Scale
 from typing import TYPE_CHECKING
 
 import shapely
 from PIL import Image, ImageTk
-
-from .transformation import affine_transform
+from tqdm import tqdm
 
 if TYPE_CHECKING:
     from keyed import Scene
 
+from .transformation import affine_transform
 
-def create_animation_window(scene: "Scene") -> None:
+
+@dataclass
+class QualitySetting:
+    width: int
+    height: int
+
+    def __post_init__(self) -> None:
+        assert self.width / self.height == 16 / 9, "Not 16:9"
+        assert self.width <= 1920, "Too big to fit on preview window"
+
+    def __str__(self) -> str:
+        return f"{self.width}x{self.height}"
+
+
+class Quality(Enum):
+    low = QualitySetting(width=1024, height=576)
+    medium = QualitySetting(width=1280, height=720)
+    high = QualitySetting(width=1920, height=1080)
+
+
+FRAME_CACHE: dict[int, ImageTk.PhotoImage] = {}
+IMAGE_ID: int | None = None
+
+TARGET_FPS = 24
+TARGET_FRAME_DURATION = 1000 / TARGET_FPS  # Duration in milliseconds
+
+
+def _prepopulate_frame_cache(scene: Scene, quality: QualitySetting) -> None:
+    global FRAME_CACHE
+    for frame in tqdm(
+        range(scene.num_frames), desc="Generating frame cache", total=scene.num_frames
+    ):
+        raster = scene.rasterize(frame)
+
+        # Convert the Cairo surface to a PIL Image
+        data = raster.get_data()
+        width, height = scene.width, scene.height
+        pil_image = Image.frombuffer("RGBA", (width, height), data, "raw", "BGRA", 0, 1)
+        # Resize the image to the target resolution
+        resized_image = pil_image.resize((quality.width, quality.height), Image.Resampling.LANCZOS)
+        FRAME_CACHE[frame] = ImageTk.PhotoImage(image=resized_image)
+
+
+def create_animation_window(
+    scene: Scene, frame_rate: int = 24, quality: Quality = Quality.low
+) -> None:
     # Create the main window
     root = tk.Tk()
     root.title("Manic Preview")
-    root.geometry("1920x1080")
+    root.geometry(str(quality.value))
 
     monospace_font = tkfont.Font(family="Courier", weight="bold")
 
     last_frame_time = time.perf_counter()
-    frame_times: deque[float] = deque(maxlen=24)
 
     root.grid_rowconfigure(0, weight=1)
     root.grid_columnconfigure(0, weight=1)
@@ -61,22 +108,23 @@ def create_animation_window(scene: "Scene") -> None:
         update_canvas(round(float(frame_number)))
 
     def update_canvas(frame_number: int) -> None:
+        global IMAGE_ID
         frame_number = round(frame_number)
         assert isinstance(frame_number, int)
 
         frame_counter_label["text"] = (
             f"{frame_number}/{scene.num_frames - 1}"  # Update frame counter label
         )
-        raster = scene.rasterize(frame_number)
 
         # Convert the Cairo surface to a PIL Image
-        data = raster.get_data()
-        width, height = scene.width, scene.height
-        pil_image = Image.frombuffer("RGBA", (width, height), data, "raw", "BGRA", 0, 1)
-        photo = ImageTk.PhotoImage(image=pil_image)
+        photo = FRAME_CACHE[frame_number]
 
         # Display the image in Tkinter
-        canvas.create_image((0, 0), image=photo, anchor="nw")
+        if IMAGE_ID is None:
+            canvas.create_rectangle(0, 0, quality.value.width, quality.value.height, fill="black")
+            IMAGE_ID = canvas.create_image((0, 0), image=photo, anchor="nw")
+        else:
+            canvas.itemconfig(IMAGE_ID, image=photo)
         canvas.image = photo  # type: ignore[attr-defined]
 
     def toggle_play() -> None:
@@ -87,7 +135,6 @@ def create_animation_window(scene: "Scene") -> None:
             play_animation()
         else:
             play_button["text"] = "▶️"
-            frame_times.clear()
             fps_label["text"] = ""
 
     def toggle_loop() -> None:
@@ -100,12 +147,13 @@ def create_animation_window(scene: "Scene") -> None:
             nonlocal last_frame_time
             current_time = time.perf_counter()
             frame_duration = current_time - last_frame_time
-            frame_times.append(frame_duration)
             last_frame_time = current_time
-            average_frame_time = sum(frame_times) / len(frame_times)
-            fps = 1.0 / average_frame_time if average_frame_time else 0
-            fps_label.config(text=f"{fps:.2f}" if fps else "")
 
+            # Instantaneous FPS calculation
+            fps = 1.0 / frame_duration if frame_duration > 0 else 0
+            fps_label.config(text=f"{fps:.2f} FPS" if fps else "")
+
+            # Determine the next frame to show
             current_frame = slider.get()
             if current_frame < slider["to"]:
                 current_frame += 1
@@ -116,7 +164,11 @@ def create_animation_window(scene: "Scene") -> None:
                 toggle_play()
 
             slider.set(current_frame)
-            root.after(int(1000 / 24), play_animation)
+            update_canvas(int(current_frame))
+
+            # Calculate the next call's delay to try maintaining a consistent frame rate
+            next_frame_delay = max(1, int(1000 / frame_rate - frame_duration))
+            root.after(next_frame_delay, play_animation)
 
     def save_scene() -> None:
         scene.draw()
@@ -189,6 +241,7 @@ def create_animation_window(scene: "Scene") -> None:
     root.bind("<Left>", lambda event: change_frame(slider, -1))
     root.bind("<Right>", lambda event: change_frame(slider, 1))
 
+    _prepopulate_frame_cache(scene, quality=quality.value)
     update_canvas(0)
 
     root.mainloop()

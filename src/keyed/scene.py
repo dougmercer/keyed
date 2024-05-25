@@ -120,6 +120,10 @@ class Scene(Transformable):
         ctx.paint()
         return raster
 
+    def _populate_raster_cache(self) -> None:
+        for frame in range(self.num_frames):
+            self.rasterize(frame)
+
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         return np.ndarray(
             shape=(self.height, self.width, 4),
