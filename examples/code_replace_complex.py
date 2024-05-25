@@ -1,6 +1,6 @@
 from keyed import Animation, AnimationType, Code, Scene, easing, lag_animation, tokenize
 
-scene = Scene(scene_name="code_replace_complex", num_frames=90, width=3840, height=2160)
+scene = Scene(scene_name="code_replace_complex", num_frames=90, width=1920, height=1080)
 
 styled_tokens1 = tokenize(r"x = 1 + 2 + 3")
 code1 = Code(scene, styled_tokens1, font_size=36, x=200, y=200)
