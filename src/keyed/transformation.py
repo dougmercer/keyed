@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from contextlib import ExitStack, contextmanager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ContextManager, Generator, Literal, Protocol, Self
+from typing import TYPE_CHECKING, Any, ContextManager, Generator, Protocol, Self, runtime_checkable
 
 import cairo
 import shapely
@@ -13,6 +13,8 @@ from shapely.geometry.base import BaseGeometry
 from .animation import Animation, AnimationType, Point, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
+from .geometry import HasGeometry
+from .helpers import ExtendedList
 
 if TYPE_CHECKING:
     from .base import Base
@@ -52,21 +54,22 @@ class TransformControls:
         return shapely.Point(self.pivot.x.at(frame), self.pivot.y.at(frame))
 
     def follow(self, other: TransformControls) -> None:
-        properties = ["rotation", "scale", "delta_x", "delta_y", "pivot"]
-        for p in properties:
-            self._follow(p, other)
+        """Follow another transform control.
+
+        This is implemented as a shallow copy of other's transforms.
+
+        This has the effect of ensuring that self is transformed identically to other,
+        but allows self to add additional transforms after the fact.
+        """
+        self.transforms = ExtendedList(other.transforms)
 
     def get_matrix(self, ctx: cairo.Context, frame: int = 0) -> cairo.Matrix:
         with MultiContext([t.at(ctx=ctx, frame=frame) for t in self.transforms]):
             return ctx.get_matrix()
 
 
-class HasGeometry(Protocol):
-    def geom(self, frame: int = 0) -> BaseGeometry:
-        pass
-
-
-class Transformable(Protocol):
+@runtime_checkable
+class Transformable(HasGeometry, Protocol):
     controls: TransformControls
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
@@ -127,21 +130,6 @@ class Transformable(Protocol):
             assert isinstance(self.ctx, cairo.Context)
             return self.controls.get_matrix(self.ctx, frame)
 
-    def get_position_along_dim(
-        self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
-    ) -> float:
-        assert -1 <= direction[dim] <= 1
-        bounds = self.geom(frame, with_transforms=True).bounds
-        magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
-        return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
-
-    def get_critical_point(
-        self, frame: int = 0, direction: Direction = ORIGIN
-    ) -> tuple[float, float]:
-        x = self.get_position_along_dim(frame, direction, dim=0)
-        y = self.get_position_along_dim(frame, direction, dim=1)
-        return x, y
-
     def align_to(
         self,
         to: Base,
@@ -168,18 +156,6 @@ class Transformable(Protocol):
             easing=easing,
         )
 
-    def left(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[0]
-
-    def right(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[2]
-
-    def down(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[1]
-
-    def up(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[3]
-
 
 class Transform(Protocol):
     @contextmanager
@@ -189,11 +165,22 @@ class Transform(Protocol):
 
 class Rotation:
     def __init__(
-        self, reference: Transformable, animation: Animation, center: HasGeometry | None = None
+        self,
+        reference: Transformable,
+        animation: Animation,
+        center: HasGeometry | None = None,
     ):
         self.reference = reference
         self.animation = animation
         self.center = center or reference
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"reference={self.reference}, "
+            f"animation={self.animation}, "
+            f"center={self.center})"
+        )
 
     def rotation(self, frame: int = 0) -> float:
         return self.animation.apply(frame, self.reference.controls.rotation.at(frame))
@@ -221,6 +208,14 @@ class Scale:
         self.animation = animation
         self.center = center or reference
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"reference={self.reference}, "
+            f"animation={self.animation}, "
+            f"center={self.center})"
+        )
+
     def scale(self, frame: int = 0) -> float:
         return self.animation.apply(frame, self.reference.controls.scale.at(frame))
 
@@ -247,6 +242,14 @@ class Translate:
         self.reference = reference
         self.x = x
         self.y = y
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"reference={self.reference}, "
+            f"x={self.x}, "
+            f"y={self.y})"
+        )
 
     def delta_x(self, frame: int = 0) -> float:
         if self.x is not None:

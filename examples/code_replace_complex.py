@@ -45,7 +45,7 @@ scene.scale(
     Animation(
         start_frame=0, end_frame=24, start_value=1, end_value=2, easing=easing.CubicEaseInOut
     ),
-    scene.controls,
+    scene.controls.pivot,
 )
 
 scene.preview()

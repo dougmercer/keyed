@@ -185,7 +185,7 @@ class Scene(Transformable):
         return shapely.box(0, 0, self.width, self.height)
 
     def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().rotate(animation, center or self.controls)
+        return super().rotate(animation, center or self.controls.pivot)
 
     def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().scale(animation, center or self.controls)
+        return super().scale(animation, center or self.controls.pivot)
