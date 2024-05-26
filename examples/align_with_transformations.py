@@ -11,7 +11,7 @@ scene.add(r1, r2)
 for x, y in itertools.product([10, 600], [10, 600]):
     scene.add(Text(scene, f"{x}_{y}", x=x, y=y))
 
-r1.shift(100, 0, 0, 3)
+r1.translate(100, 0, 0, 3)
 start_frame = 6
 for d in [UR, RIGHT, DR, DOWN, DL, LEFT, UL, UP, ORIGIN]:
     r2.align_to(r1, start_frame, start_frame + 2, direction=d, center_on_zero=True)
@@ -21,5 +21,7 @@ r1.rotate(Animation(start_frame, start_frame + 80, 0, 180))
 for d in [UR, RIGHT, DR, DOWN, DL, LEFT, UL, UP, ORIGIN]:
     r2.align_to(r1, start_frame, start_frame + 2, direction=d, center_on_zero=True)
     start_frame += 8
+
+scene.translate(0, 100, -1, -1)
 
 scene.preview()

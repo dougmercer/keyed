@@ -21,6 +21,6 @@ scene.add(r)
 # emphs = [c.emphasize() for c in code.chars]
 # scene.add(*emphs)
 
-code.chars.shift(100, 0, 0, 12)
+code.chars.translate(100, 0, 0, 12)
 
 scene.preview()

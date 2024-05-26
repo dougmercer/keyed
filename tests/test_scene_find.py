@@ -23,7 +23,7 @@ def test_scene_find(scene: Scene, tokens: list[StyledToken]) -> None:
     code = Code(scene, tokens, font_size=48, alpha=1)
     scene.add(code)
     obj = code.chars[15]
-    actual = scene.find(obj.x.at(0), obj.y.at(0), 0)
+    actual = scene.find(obj.x, obj.y, 0)
     assert actual == obj, (actual, obj)
 
 
@@ -31,5 +31,5 @@ def test_scene_find_not_visible(scene: Scene, tokens: list[StyledToken]) -> None
     code = Code(scene, tokens, font_size=48, alpha=0)
     scene.add(code)
     obj = code.chars[15]
-    actual = scene.find(obj.x.at(0), obj.y.at(0), 0)
+    actual = scene.find(obj.x, obj.y, 0)
     assert actual is None, actual

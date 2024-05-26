@@ -21,9 +21,9 @@ code1.chars[8].animate(
     ),
 )
 
-delta_x = code2.chars[-3].x.at(0) - code1.chars[-3].x.at(0)
+delta_x = code2.chars[-3].x - code1.chars[-3].x
 
-code1.chars[10:].shift(
+code1.chars[10:].translate(
     delta_x=delta_x,
     delta_y=0,
     start_frame=12,

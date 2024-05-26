@@ -47,8 +47,8 @@ class Text(BaseText):
         self.slant = slant
         self.weight = weight
         self.size = size
-        self.x = Property(value=x)
-        self.y = Property(value=y)
+        self.x = x
+        self.y = y
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
@@ -60,7 +60,7 @@ class Text(BaseText):
         char_str = f"char={self.code.find_char(self)}" if self.code is not None else ""
         return (
             f"{self.__class__.__name__}(text={self.text!r}, "
-            f"x={self.x.value:2}, y={self.y.value:2}, "
+            f"x={self.x:2}, y={self.y:2}, "
             f"color={color_str}, alpha={self.alpha.value}, "
             f"token_type={self.token_type!r}, "
             f"{line_str}"
@@ -83,7 +83,7 @@ class Text(BaseText):
     def draw(self, frame: int = 0) -> None:
         with ApplyTransforms(ctx=self.ctx, frame=frame, transforms=self.controls.transforms):
             with self.style(frame):
-                self.ctx.move_to(self.x.at(frame), self.y.at(frame))
+                self.ctx.move_to(self.x, self.y)
                 self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
@@ -106,15 +106,15 @@ class Text(BaseText):
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
-        x = self.x.at(frame) + e.x_bearing
-        y = self.y.at(frame) + e.y_bearing
+        x = self.x + e.x_bearing
+        y = self.y + e.y_bearing
         return shapely.box(x, y, x + e.width, y + e.height)
 
     def __copy__(self) -> Self:
         new = type(self)(
             scene=self.scene,
-            x=self.x.value,
-            y=self.y.value,
+            x=self.x,
+            y=self.y,
             text=self.text,
             size=self.size,
             font=self.font,
@@ -124,8 +124,6 @@ class Text(BaseText):
             weight=self.weight,
             code=self.code,
         )
-        new.x.follow(self.x)
-        new.y.follow(self.y)
         new.alpha.follow(self.alpha)
         new.controls.follow(self.controls)
         return new

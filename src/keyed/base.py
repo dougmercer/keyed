@@ -18,8 +18,7 @@ import cairo
 import shapely
 import shapely.affinity
 
-from .animation import Animation, AnimationType, LambdaFollower
-from .easing import CubicEaseInOut, EasingFunction
+from .animation import Animation, LambdaFollower
 from .transformation import Transform, TransformControls, Transformable
 
 if TYPE_CHECKING:
@@ -84,40 +83,6 @@ class Base(Transformable, Protocol):
         r.width.follow(LambdaFollower(get_width))
         r.height.follow(LambdaFollower(get_height))
         return r
-
-    def shift(
-        self,
-        delta_x: float,
-        delta_y: float,
-        start_frame: int,
-        end_frame: int,
-        easing: type[EasingFunction] = CubicEaseInOut,
-    ) -> Self:
-        if delta_x:
-            self.animate(
-                "x",
-                Animation(
-                    start_frame=start_frame,
-                    end_frame=end_frame,
-                    start_value=0,
-                    end_value=delta_x,
-                    animation_type=AnimationType.ADDITIVE,
-                    easing=easing,
-                ),
-            )
-        if delta_y:
-            self.animate(
-                "y",
-                Animation(
-                    start_frame=start_frame,
-                    end_frame=end_frame,
-                    start_value=0,
-                    end_value=delta_y,
-                    animation_type=AnimationType.ADDITIVE,
-                    easing=easing,
-                ),
-            )
-        return self
 
 
 class BaseText(Base, Protocol):

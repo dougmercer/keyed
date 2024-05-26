@@ -23,6 +23,6 @@ a.animate(
 )
 for i in range(13, 24):
     sign = -(2 * (i % 2) - 1)
-    a.shift(delta_x=0, delta_y=sign * 100, start_frame=i, end_frame=i + 1)
+    a.translate(delta_x=0, delta_y=sign * 100, start_frame=i, end_frame=i + 1)
 
 scene.preview()

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import bisect
 import math
 from contextlib import ExitStack, contextmanager
 from types import TracebackType
@@ -58,6 +57,7 @@ def get_geom(
     if isinstance(center, Transformable):
         # Get all transforms at or before current frame
         transforms = [t for t in center.controls.transforms if t.animation.start_frame <= frame]
+        transforms = sorted(transforms, key=lambda t: t.animation.start_frame)
 
         # try:
         #     transforms.remove(current_transform)
@@ -66,6 +66,8 @@ def get_geom(
         transforms = [t for t in transforms if not isinstance(t, (Rotation, Scale))]
 
         # Apply those transforms
+        # for t in transforms:
+        #     ctx = t.at(ctx, frame)
         with ApplyTransforms(ctx=ctx, frame=frame, transforms=transforms):
             matrix = ctx.get_matrix()
         geom = affine_transform(geom, matrix)

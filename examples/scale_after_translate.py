@@ -6,8 +6,8 @@ scene = Scene(num_frames=24, width=1920, height=1080)
 
 r_s = (
     Circle(scene, radius=50, x=100, y=100)
-    .shift(100, 0, 0, 2)
-    .shift(100, 0, 2, 4)
+    .translate(100, 0, 0, 2)
+    .translate(100, 0, 2, 4)
     .scale(Animation(6, 8, 0, 3, animation_type=AnimationType.ADDITIVE))
 )
 r_t = (

@@ -15,6 +15,6 @@ s = Selection([r1, c1, r2, c2])
 
 scene.add(s)
 
-s.shift(100, 0, 6, 12)
+s.translate(100, 0, 6, 12)
 
 scene.preview()

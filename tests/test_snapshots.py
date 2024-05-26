@@ -20,7 +20,6 @@ DRAWABLES = [
 ]
 
 METHODS = [
-    partial(keyed.Base.shift, delta_x=90, delta_y=10, start_frame=0, end_frame=6),
     partial(keyed.Base.translate, delta_x=90, delta_y=10, start_frame=0, end_frame=6),
     partial(keyed.Base.scale, animation=keyed.Animation(0, 6, 1, 3)),
     partial(keyed.Base.rotate, animation=keyed.Animation(0, 6, 0, 360)),

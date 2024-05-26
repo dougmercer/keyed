@@ -18,8 +18,8 @@ t2.color = (0, 0, 0)
 
 scene.add(t2, trace)
 
-trace.shift(0, 100, 0, 10)
+trace.translate(0, 100, 0, 10)
 
-code.lines[:4].shift(100, 0, 0, 10)
+code.lines[:4].translate(100, 0, 0, 10)
 
 scene.preview()

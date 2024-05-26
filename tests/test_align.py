@@ -17,7 +17,7 @@ def test_align_to() -> None:
     code2.align_to(
         code1.chars[-1], from_=code2.chars[-1], start_frame=24, end_frame=30, direction=RIGHT
     )
-    code2.shift(delta_x=300, delta_y=300, start_frame=36, end_frame=42)
+    code2.translate(delta_x=300, delta_y=300, start_frame=36, end_frame=42)
     code2.align_to(
         code1.chars[-1], from_=code2.chars[-1], start_frame=48, end_frame=54, direction=DL
     )

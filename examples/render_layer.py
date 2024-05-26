@@ -8,15 +8,15 @@ c1 = Circle(scene, 100, 100, radius=20)
 c1.fill_color = (1, 0, 0)
 
 
-c1.shift(100, 0, 0, 12)
+c1.translate(100, 0, 0, 12)
 c2 = copy(c1)
 c2.fill_color = (0, 1, 0)
-c2.shift(0, 100, 0, 12)
-c2.shift(100, 0, 12, 24)
+c2.translate(0, 100, 0, 12)
+c2.translate(100, 0, 12, 24)
 c3 = copy(c2)
 c3.fill_color = (0, 0, 1)
-c3.shift(0, 100, 0, 12)
-c3.shift(100, 0, 12, 24)
+c3.translate(0, 100, 0, 12)
+c3.translate(100, 0, 12, 24)
 
 scene.add(c1, c2, c3)
 

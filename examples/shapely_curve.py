@@ -26,6 +26,6 @@ for obj in [trace, trace2]:
     obj.start.add_animation(Animation(8, 32, 0, 1, easing.CubicEaseInOut))
     obj.end.add_animation(Animation(2, 26, 0, 1, easing.CubicEaseInOut))
 
-code.lines[:4].shift(100, 0, 0, 10)
+code.lines[:4].translate(100, 0, 0, 10)
 
 scene.preview()

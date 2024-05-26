@@ -92,8 +92,8 @@ class Rectangle(Shape):
         super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
-        self.x = Property(x)
-        self.y = Property(y)
+        self.x = x
+        self.y = y
         self.width = Property(width)
         self.height = Property(height)
         self.radius = Property(radius)
@@ -125,8 +125,8 @@ class Rectangle(Shape):
     def _draw_shape(self, frame: int) -> None:
         self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
         self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
-        x = self.x.at(frame)
-        y = self.y.at(frame)
+        x = self.x
+        y = self.y
         w = self.width.at(frame)
         h = self.height.at(frame)
         r = self.radius.at(frame)
@@ -140,8 +140,8 @@ class Rectangle(Shape):
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
         """Return the geometry of the rounded rectangle as a Shapely polygon."""
-        x = self.x.at(frame)
-        y = self.y.at(frame)
+        x = self.x
+        y = self.y
         width = self.width.at(frame)
         height = self.height.at(frame)
         radius = self.radius.at(frame)
@@ -178,6 +178,8 @@ class Rectangle(Shape):
         new = type(self)(
             scene=self.scene,
             color=self.color,
+            x=self.x,
+            y=self.y,
             fill_color=self.fill_color,
             dash=self.dash,
             operator=self.operator,
@@ -187,8 +189,6 @@ class Rectangle(Shape):
         )
         # Follow original
         new.alpha.follow(self.alpha)
-        new.x.follow(self.x)
-        new.y.follow(self.y)
         new.width.follow(self.width)
         new.height.follow(self.height)
         new.radius.follow(self.radius)
@@ -215,8 +215,8 @@ class Circle(Shape):
         super().__init__()
         self.scene = scene
         self.ctx = scene.get_context()
-        self.x = Property(x)
-        self.y = Property(y)
+        self.x = x
+        self.y = y
         self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color
@@ -234,8 +234,8 @@ class Circle(Shape):
 
     def _draw_shape(self, frame: int = 0) -> None:
         self.ctx.arc(
-            self.x.at(frame),
-            self.y.at(frame),
+            self.x,
+            self.y,
             self.radius.at(frame),
             0,
             2 * math.pi,
@@ -247,8 +247,8 @@ class Circle(Shape):
         p.add_animation(animation)
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
-        x = self.x.at(frame)
-        y = self.y.at(frame)
+        x = self.x
+        y = self.y
         radius = self.radius.at(frame)
         return shapely.Point(x, y).buffer(radius)
 
@@ -256,6 +256,8 @@ class Circle(Shape):
         new = type(self)(
             scene=self.scene,
             color=self.color,
+            x=self.x,
+            y=self.y,
             fill_color=self.fill_color,
             dash=self.dash,
             operator=self.operator,
@@ -263,8 +265,6 @@ class Circle(Shape):
             draw_stroke=self.draw_stroke,
         )
         new.alpha.follow(self.alpha)
-        new.x.follow(self.x)
-        new.y.follow(self.y)
         new.radius.follow(self.radius)
         new.controls.follow(self.controls)
         return new
