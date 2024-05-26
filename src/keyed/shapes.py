@@ -9,7 +9,7 @@ import shapely.ops
 from .animation import Animation, Property
 from .base import Base
 from .scene import Scene
-from .transformation import MultiContext
+from .transformation import ApplyTransforms
 
 __all__ = ["Circle", "Rectangle"]
 
@@ -50,7 +50,7 @@ class Shape(Base, Protocol):
 
     def draw(self, frame: int = 0) -> None:
         with self.style(frame):
-            with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
+            with ApplyTransforms(ctx=self.ctx, frame=frame, transforms=self.controls.transforms):
                 self._draw_shape(frame)
                 if self.draw_fill:
                     self.ctx.set_source_rgba(*self.fill_color, self.alpha.at(frame))

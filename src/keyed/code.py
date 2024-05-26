@@ -13,7 +13,7 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
-from .transformation import MultiContext
+from .transformation import ApplyTransforms
 
 if TYPE_CHECKING:
     from .scene import Scene
@@ -81,7 +81,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with MultiContext([t.at(ctx=self.ctx, frame=frame) for t in self.controls.transforms]):
+        with ApplyTransforms(ctx=self.ctx, frame=frame, transforms=self.controls.transforms):
             with self.style(frame):
                 self.ctx.move_to(self.x.at(frame), self.y.at(frame))
                 self.ctx.show_text(self.text)

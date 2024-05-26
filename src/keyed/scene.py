@@ -192,10 +192,15 @@ class Scene(Transformable):
             self.final = True
 
     def _geom(self, frame: int = 0) -> BaseGeometry:
-        return shapely.box(0, 0, self.width, self.height)
+        return shapely.box(
+            self.controls.pivot.x.at(frame),
+            self.controls.pivot.y.at(frame),
+            self.width,
+            self.height,
+        )
 
     def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().rotate(animation, center or self.controls.pivot)
+        return super().rotate(animation, center or self)
 
     def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().scale(animation, center or self.controls.pivot)
+        return super().scale(animation, center or self)

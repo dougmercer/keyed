@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import bisect
 import math
 from contextlib import ExitStack, contextmanager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ContextManager, Generator, Protocol, Self, runtime_checkable
+from typing import TYPE_CHECKING, Any, Generator, Iterator, Protocol, Self, runtime_checkable
 
 import cairo
 import shapely
@@ -22,13 +23,53 @@ if TYPE_CHECKING:
 __all__ = [
     "Transform",
     "Rotation",
-    "MultiContext",
-    "PivotZoom",
-    "Translate",
+    "ApplyTransforms",
+    "TranslateX",
+    "TranslateY",
     "TransformControls",
     "HasGeometry",
     "Transformable",
 ]
+
+
+def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
+    """Yields increasing subsets of the list."""
+    for i in range(1, len(lst) + 1):
+        yield lst[:i]
+
+
+def left_of(lst: list[Transform], query: Transform | None) -> list[Transform]:
+    try:
+        index = lst.index(query)  # type: ignore[arg-type]
+        return lst[:index]
+    except ValueError:
+        print("not smaller", query)
+        return lst
+
+
+def get_geom(
+    center: Transformable | HasGeometry,
+    ctx: cairo.Context,
+    frame: int,
+    current_transform: Transform,
+) -> BaseGeometry:
+    # Get the geometry as it is from all transformations *before* this one.
+    geom = center.geom(frame)
+    if isinstance(center, Transformable):
+        # Get all transforms at or before current frame
+        transforms = [t for t in center.controls.transforms if t.animation.start_frame <= frame]
+
+        # try:
+        #     transforms.remove(current_transform)
+        # except ValueError:
+        #     pass
+        transforms = [t for t in transforms if not isinstance(t, (Rotation, Scale))]
+
+        # Apply those transforms
+        with ApplyTransforms(ctx=ctx, frame=frame, transforms=transforms):
+            matrix = ctx.get_matrix()
+        geom = affine_transform(geom, matrix)
+    return geom
 
 
 class TransformControls:
@@ -64,7 +105,7 @@ class TransformControls:
         self.transforms = ExtendedList(other.transforms)
 
     def get_matrix(self, ctx: cairo.Context, frame: int = 0) -> cairo.Matrix:
-        with MultiContext([t.at(ctx=ctx, frame=frame) for t in self.transforms]):
+        with ApplyTransforms(ctx=ctx, frame=frame, transforms=self.transforms):
             return ctx.get_matrix()
 
 
@@ -99,28 +140,9 @@ class Transformable(HasGeometry, Protocol):
         easing: type[EasingFunction] = CubicEaseInOut,
     ) -> Self:
         if delta_x:
-            x = Animation(
-                start_frame=start_frame,
-                end_frame=end_frame,
-                start_value=0,
-                end_value=delta_x,
-                animation_type=AnimationType.ADDITIVE,
-                easing=easing,
-            )
-        else:
-            x = None
+            self.add_transform(TranslateX(self, start_frame, end_frame, delta_x, easing))
         if delta_y:
-            y = Animation(
-                start_frame=start_frame,
-                end_frame=end_frame,
-                start_value=0,
-                end_value=delta_y,
-                animation_type=AnimationType.ADDITIVE,
-                easing=easing,
-            )
-        else:
-            y = None
-        self.add_transform(Translate(self, x, y))
+            self.add_transform(TranslateY(self, start_frame, end_frame, delta_y, easing))
         return self
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix | None:
@@ -158,6 +180,9 @@ class Transformable(HasGeometry, Protocol):
 
 
 class Transform(Protocol):
+    reference: Transformable
+    animation: Animation
+
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         pass
@@ -187,9 +212,14 @@ class Rotation:
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
+        # Get the geometry as it is from all transformations *before* this one.
+        geom = get_geom(self.center, ctx, frame, self)
+        # geom = self.center.geom(frame)
+
+        # Apply the transformation
         try:
             ctx.save()
-            coords = self.center.geom(frame).centroid.coords
+            coords = geom.centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
@@ -221,9 +251,14 @@ class Scale:
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
+        # Get the geometry as it is from all transformations *before* this one.
+        geom = get_geom(self.center, ctx, frame, self)
+        # geom = self.center.geom(frame)
+
+        # Apply the transformation
         try:
             ctx.save()
-            coords = self.center.geom(frame).centroid.coords
+            coords = geom.centroid.coords
             if len(coords) > 0:
                 cx, cy = coords[0]
                 ctx.translate(cx, cy)
@@ -235,73 +270,80 @@ class Scale:
             ctx.restore()
 
 
-class Translate:
+class TranslateX:
     def __init__(
-        self, reference: Transformable, x: Animation | None = None, y: Animation | None = None
-    ) -> None:
+        self,
+        reference: Transformable,
+        start_frame: int,
+        end_frame: int,
+        delta: float,
+        easing: type[EasingFunction],
+    ):
         self.reference = reference
-        self.x = x
-        self.y = y
+        self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
-            f"x={self.x}, "
-            f"y={self.y})"
+            f"animation={self.animation}"
         )
 
     def delta_x(self, frame: int = 0) -> float:
-        if self.x is not None:
-            return self.x.apply(frame, self.reference.controls.delta_x.at(frame))
-        else:
-            return 0
+        return self.animation.apply(frame, self.reference.controls.delta_x.at(frame))
+
+    @contextmanager
+    def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
+        try:
+            ctx.save()
+            ctx.translate(self.delta_x(frame), 0)
+            yield
+        finally:
+            ctx.restore()
+
+
+class TranslateY:
+    def __init__(
+        self,
+        reference: Transformable,
+        start_frame: int,
+        end_frame: int,
+        delta: float,
+        easing: type[EasingFunction],
+    ):
+        self.reference = reference
+        self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"reference={self.reference}, "
+            f"animation={self.animation}"
+        )
 
     def delta_y(self, frame: int = 0) -> float:
-        if self.y is not None:
-            return self.y.apply(frame, self.reference.controls.delta_y.at(frame))
-        else:
-            return 0
+        return self.animation.apply(frame, self.reference.controls.delta_y.at(frame))
 
     @contextmanager
     def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
         try:
             ctx.save()
-            ctx.translate(self.delta_x(frame), self.delta_y(frame))
+            ctx.translate(0, self.delta_y(frame))
             yield
         finally:
             ctx.restore()
 
 
-class PivotZoom:
-    def __init__(self, pivot_x: Property, pivot_y: Property, zoom: Property):
-        self.pivot_x = pivot_x
-        self.pivot_y = pivot_y
-        self.zoom = zoom
-
-    @contextmanager
-    def at(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
-        try:
-            ctx.save()
-            pivot_x = self.pivot_x.at(frame)
-            pivot_y = self.pivot_y.at(frame)
-            zoom = self.zoom.at(frame)
-            ctx.translate(pivot_x, pivot_y)
-            ctx.scale(zoom, zoom)
-            ctx.translate(-pivot_x, -pivot_y)
-            yield
-        finally:
-            ctx.restore()
-
-
-class MultiContext:
-    def __init__(self, context_managers: list[ContextManager]):
-        self.context_managers = context_managers
+class ApplyTransforms:
+    def __init__(self, ctx: cairo.Context, frame: int, transforms: list[Transform]):
+        self.ctx = ctx
+        self.transforms = transforms
+        self.frame = frame
         self.stack = ExitStack()
 
     def __enter__(self) -> Self:
-        for cm in self.context_managers:
-            self.stack.enter_context(cm)
+        for cm in self.transforms:
+            self.stack.enter_context(cm.at(self.ctx, self.frame))
         return self
 
     def __exit__(
