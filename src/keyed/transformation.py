@@ -424,6 +424,7 @@ class Orbit(Transform):
         initial_angle: float = 0,
         start_frame: int = 0,
         end_frame: int = 999,
+        direction: Direction = ORIGIN,
     ):
         super().__init__()
         self.reference = reference
@@ -432,6 +433,7 @@ class Orbit(Transform):
         self.rotation_speed = Property(rotation_speed)
         self.center = center
         self.initial_angle = initial_angle
+        self.direction = direction
 
     def __repr__(self) -> str:
         return (
@@ -442,7 +444,8 @@ class Orbit(Transform):
             f"initial_angle={self.initial_angle}, "
             f"start_frame={self.animation.start_frame}, "
             f"end_frame={self.animation.end_frame}, "
-            f"center={self.center}"
+            f"center={self.center}, "
+            f"direction={self.direction})"
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
