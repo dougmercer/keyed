@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Protocol, Self, Sequence
+from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
 
 import cairo
 import numpy as np
@@ -11,11 +11,11 @@ import shapely
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from .animation import Animation, Property
+from .animation import Property
 from .code import Selection
 from .constants import Previewer
 from .previewer import Quality
-from .transformation import HasGeometry, TransformControls, Transformable
+from .transformation import TransformControls, Transformable
 
 if TYPE_CHECKING:
     from .base import Base
@@ -189,9 +189,3 @@ class Scene(Transformable):
             self._width,
             self._height,
         )
-
-    def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().rotate(animation, center or self)
-
-    def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        return super().scale(animation, center or self)

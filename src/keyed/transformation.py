@@ -4,11 +4,11 @@ import math
 from contextlib import contextmanager
 from copy import copy
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Generator,
     Iterator,
+    Literal,
     Protocol,
     Self,
     Sequence,
@@ -20,14 +20,10 @@ import shapely
 import shapely.affinity
 from shapely.geometry.base import BaseGeometry
 
-from .animation import Animation, AnimationType, Point, Property
+from .animation import Animation, AnimationType, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .geometry import HasGeometry
 from .helpers import ExtendedList
-
-if TYPE_CHECKING:
-    from .base import Base
 
 __all__ = [
     "Transform",
@@ -38,7 +34,49 @@ __all__ = [
     "TransformControls",
     "HasGeometry",
     "Transformable",
+    "Orbit",
+    "HasGeometry",
+    "Point",
 ]
+
+
+@runtime_checkable
+class HasGeometry(Protocol):
+    def geom(self, frame: int = 0, with_transforms: bool = False) -> BaseGeometry:
+        pass
+
+    def get_position_along_dim(
+        self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
+    ) -> float:
+        assert -1 <= direction[dim] <= 1
+        bounds = self.geom(frame, with_transforms=True).bounds
+        magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
+        return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
+
+    def get_critical_point(
+        self, frame: int = 0, direction: Direction = ORIGIN
+    ) -> tuple[float, float]:
+        x = self.get_position_along_dim(frame, direction, dim=0)
+        y = self.get_position_along_dim(frame, direction, dim=1)
+        return x, y
+
+    def left(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[0]
+
+    def right(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[2]
+
+    def down(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[1]
+
+    def up(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[3]
+
+    def width(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.right(frame, with_transforms) - self.left(frame, with_transforms)
+
+    def height(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.up(frame, with_transforms) - self.down(frame, with_transforms)
 
 
 def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
@@ -190,10 +228,10 @@ class Transformable(HasGeometry, Protocol):
 
     def align_to(
         self,
-        to: Base,
+        to: Transformable,
         start_frame: int,
         end_frame: int,
-        from_: Base | None = None,
+        from_: Transformable | None = None,
         easing: type[EasingFunction] = CubicEaseInOut,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
@@ -331,6 +369,57 @@ class TranslateY:
         return matrix
 
 
+class Orbit:
+    def __init__(
+        self,
+        reference: Transformable,
+        distance: float,
+        center: HasGeometry,
+        rotation_speed: float = 2,
+        initial_angle: float = 0,
+        start_frame: int = 0,
+        end_frame: int = 999,
+    ):
+        self.reference = reference
+        self.animation = Animation(start_frame, end_frame, 0, 0)  # values don't do anything.
+        self.distance = Property(distance)
+        self.rotation_speed = Property(rotation_speed)
+        self.center = center
+        self.initial_angle = initial_angle
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"reference={self.reference}, "
+            f"distance={self.distance}, "
+            f"distance={self.rotation_speed}, "
+            f"initial_angle={self.initial_angle}, "
+            f"start_frame={self.animation.start_frame}, "
+            f"end_frame={self.animation.end_frame}, "
+            f"center={self.center}"
+        )
+
+    def get_matrix(self, frame: int = 0) -> cairo.Matrix:
+        cx, cy = get_geom(self.center, frame).centroid.coords[0]
+        angle = math.radians(self.initial_angle) + frame * math.radians(
+            self.rotation_speed.at(frame)
+        )
+        distance = self.distance.at(frame)
+        width = self.reference.width(frame, with_transforms=False)
+        height = self.reference.height(frame, with_transforms=False)
+        x = self.reference.controls.delta_x.at(frame)
+        y = self.reference.controls.delta_y.at(frame)
+
+        matrix = cairo.Matrix()
+
+        matrix.translate(cx, cy)
+        matrix.rotate(angle)
+        matrix.translate(distance, 0)
+
+        matrix.translate(-(x + width / 2), -(y + height / 2))
+        return matrix
+
+
 def apply_transforms(frame: int, transforms: list[Transform]) -> cairo.Matrix:
     matrix = cairo.Matrix()
     transforms = sort_transforms(transforms)
@@ -356,5 +445,25 @@ def sort_transforms(transforms: list[Transform]) -> list[Transform]:
         TranslateY: 1,
         Scale: 2,
         Rotation: 3,
+        Orbit: 4,
     }
     return sorted(transforms, key=lambda t: d[type(t)])
+
+
+class Point(HasGeometry):
+    def __init__(self, x: float = 0, y: float = 0):
+        self.x = Property(x)
+        self.y = Property(y)
+
+    def follow(self, other: Point) -> None:
+        # TODO - This is a bit jank to only be able to follow other points.
+        # Should be able to follow anything with x/y.
+        self.x.follow(other.x)
+        self.y.follow(other.y)
+
+    def set(self, x: float, y: float) -> None:
+        self.x.set(x)
+        self.y.set(y)
+
+    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Point:
+        return shapely.Point(self.x.at(frame), self.y.at(frame))
