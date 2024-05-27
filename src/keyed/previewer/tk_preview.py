@@ -191,8 +191,8 @@ def create_animation_window(
         frame = round(slider.get())
 
         # Get the current scale between the original size and the displayed size
-        scale_x = quality.value.width / scene.width
-        scale_y = quality.value.height / scene.height
+        scale_x = quality.value.width / scene._width
+        scale_y = quality.value.height / scene._height
 
         # Adjust x, y coordinates based on the scaling
         x = event.x / scale_x

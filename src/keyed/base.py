@@ -37,7 +37,7 @@ class Base(Transformable, Protocol):
     scene: Scene
 
     def __init__(self) -> None:
-        self.controls = TransformControls()
+        self.controls = TransformControls(self)
 
     def draw(self, frame: int = 0) -> None:
         pass
@@ -67,21 +67,13 @@ class Base(Transformable, Protocol):
             dash=dash,
             operator=operator,
         )
-        x_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[0])
-        y_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[1])
+        x_follower = LambdaFollower(lambda frame: self.geom(frame, with_transforms=True).bounds[0])
+        y_follower = LambdaFollower(lambda frame: self.geom(frame, with_transforms=True).bounds[1])
 
-        def get_width(frame: int) -> float:
-            min_x, _, max_x, _ = self.geom(frame).bounds
-            return max_x - min_x + 2 * buffer
-
-        def get_height(frame: int) -> float:
-            _, min_y, _, max_y = self.geom(frame).bounds
-            return max_y - min_y + 2 * buffer
-
-        r.x.follow(x_follower).offset(-buffer)
-        r.y.follow(y_follower).offset(-buffer)
-        r.width.follow(LambdaFollower(get_width))
-        r.height.follow(LambdaFollower(get_height))
+        r.controls.delta_x.follow(x_follower).offset(-buffer)
+        r.controls.delta_y.follow(y_follower).offset(-buffer)
+        r._width.follow(LambdaFollower(lambda frame: self.width(frame, with_transforms=False)))
+        r._height.follow(LambdaFollower(lambda frame: self.height(frame, with_transforms=False)))
         return r
 
 
@@ -163,7 +155,15 @@ class Composite(Base, list[T]):
             return super().__getitem__(key)
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
+        # not really used
         return shapely.GeometryCollection([obj.geom(frame) for obj in self])
+
+    def geom(
+        self, frame: int = 0, with_transforms: bool = False, safe: bool = False
+    ) -> shapely.Polygon:
+        return shapely.GeometryCollection(
+            [obj.geom(frame, with_transforms=with_transforms, safe=safe) for obj in self]
+        )
 
     def __copy__(self) -> Self:
         return type(self)(list(self))

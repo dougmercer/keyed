@@ -31,8 +31,8 @@ __all__ = ["create_animation_window"]
 def get_object_info(
     scene: Scene, quality: QualitySetting, frame: int, point: tuple[float, float]
 ) -> Base | None:
-    scale_x = quality.width / scene.width
-    scale_y = quality.height / scene.height
+    scale_x = quality.width / scene._width
+    scale_y = quality.height / scene._height
 
     # Adjust coordinates based on the UI scaling
     x, y = point
@@ -195,7 +195,9 @@ class MainWindow(QMainWindow):
     def update_canvas(self, frame_number: int) -> None:
         self.current_frame = frame_number
         img_data = self.scene.rasterize(frame_number).get_data()
-        qimage = QImage(img_data, self.scene.width, self.scene.height, QImage.Format.Format_ARGB32)
+        qimage = QImage(
+            img_data, self.scene._width, self.scene._height, QImage.Format.Format_ARGB32
+        )
         qpixmap = QPixmap.fromImage(qimage)
         qpixmap = qpixmap.scaled(
             self.quality.width,

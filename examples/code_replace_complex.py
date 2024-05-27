@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Code, Scene, easing, lag_animation, tokenize
+from keyed import Animation, AnimationType, Code, Point, Scene, easing, lag_animation, tokenize
 
 scene = Scene(scene_name="code_replace_complex", num_frames=90, width=1920, height=1080)
 
@@ -40,12 +40,11 @@ code2.chars[8:18].write_on(
     start_frame=36,
 )
 
-scene.controls.pivot.set(200, 100)
 scene.scale(
     Animation(
         start_frame=0, end_frame=24, start_value=1, end_value=2, easing=easing.CubicEaseInOut
     ),
-    scene.controls.pivot,
+    Point(200, 100),
 )
 
 scene.preview()

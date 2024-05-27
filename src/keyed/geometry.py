@@ -25,14 +25,20 @@ class HasGeometry(Protocol):
         y = self.get_position_along_dim(frame, direction, dim=1)
         return x, y
 
-    def left(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[0]
+    def left(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[0]
 
-    def right(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[2]
+    def right(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[2]
 
-    def down(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[1]
+    def down(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[1]
 
-    def up(self, frame: int = 0) -> float:
-        return self.geom(frame, with_transforms=True).bounds[3]
+    def up(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.geom(frame, with_transforms=with_transforms).bounds[3]
+
+    def width(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.right(frame, with_transforms) - self.left(frame, with_transforms)
+
+    def height(self, frame: int = 0, with_transforms: bool = True) -> float:
+        return self.up(frame, with_transforms) - self.down(frame, with_transforms)

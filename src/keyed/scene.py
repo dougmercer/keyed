@@ -41,14 +41,13 @@ class Scene(Transformable):
         self.scene_name = scene_name
         self.num_frames = num_frames
         self.output_dir = output_dir
-        self.width = width
-        self.height = height
-        self.surface = cairo.SVGSurface(None, self.width, self.height)  # type: ignore[arg-type]
+        self._width = width
+        self._height = height
+        self.surface = cairo.SVGSurface(None, width, height)  # type: ignore[arg-type]
         self.ctx = cairo.Context(self.surface)
         self.content: list[Base] = []
         self.antialias = antialias
-        self.controls = TransformControls()
-        self.final = False
+        self.controls = TransformControls(self)
 
     def __repr__(self) -> str:
         return (
@@ -56,8 +55,8 @@ class Scene(Transformable):
             f"scene_name={self.scene_name!r}, "
             f"num_frames={self.num_frames}, "
             f"output_dir={self.output_dir!r}, "
-            f"width={self.width}, "
-            f"height={self.height})"
+            f"width={self._width}, "
+            f"height={self._height})"
         )
 
     @property
@@ -66,8 +65,6 @@ class Scene(Transformable):
         return self.output_dir / self.scene_name
 
     def add(self, *content: Base) -> None:
-        if self.final:
-            raise ValueError("Scene is already finalized.")
         self.content.extend(content)
 
     def clear(self) -> None:
@@ -81,7 +78,6 @@ class Scene(Transformable):
             file.unlink()
 
     def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
-        self.finalize()
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
@@ -100,7 +96,6 @@ class Scene(Transformable):
             self.draw([i], delete=False)
 
     def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
-        self.finalize()
         self.clear()
         layers_to_render = (
             (content for idx, content in enumerate(self.content) if idx in layers)
@@ -112,13 +107,17 @@ class Scene(Transformable):
 
     @cache
     def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
-        self.finalize()
         self.draw_frame(frame, layers=layers)
-        raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
+        raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
         ctx = cairo.Context(raster)
+
+        matrix = self.controls.get_matrix(frame)
+        ctx.save()
+        ctx.set_matrix(matrix)
         ctx.set_antialias(self.antialias)
         ctx.set_source_surface(self.surface, 0, 0)
         ctx.paint()
+        ctx.restore()
         return raster
 
     def _populate_raster_cache(self) -> None:
@@ -127,7 +126,7 @@ class Scene(Transformable):
 
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         return np.ndarray(
-            shape=(self.height, self.width, 4),
+            shape=(self._height, self._width, 4),
             dtype=np.uint8,
             buffer=self.rasterize(frame, tuple(layers) if layers is not None else None).get_data(),
         )
@@ -178,25 +177,17 @@ class Scene(Transformable):
         quality: Quality = Quality.high,
         frame_rate: int = 24,
     ) -> None:
-        self.finalize()
         previewer(self, quality=quality, frame_rate=frame_rate)  # type: ignore[operator]
 
     def get_context(self) -> cairo.Context:
         return cairo.Context(self.surface)
 
-    def finalize(self) -> None:
-        if not self.final:
-            for c in self.content:
-                for t in self.controls.transforms:
-                    c.add_transform(t)
-            self.final = True
-
     def _geom(self, frame: int = 0) -> BaseGeometry:
         return shapely.box(
-            self.controls.pivot.x.at(frame),
-            self.controls.pivot.y.at(frame),
-            self.width,
-            self.height,
+            self.controls.delta_x.at(frame),
+            self.controls.delta_y.at(frame),
+            self._width,
+            self._height,
         )
 
     def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:

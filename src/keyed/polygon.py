@@ -52,7 +52,9 @@ class Curve2(Shape):
         self.buffer = Property(buffer)
 
     def raw_points(self, frame: int = 0) -> VecArray:
-        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
+        return np.array(
+            [obj.geom(frame, with_transforms=True).centroid.coords[0] for obj in self.objects]
+        )
 
     def points(self, frame: int = 0) -> VecArray:
         start = self.start.at(frame)

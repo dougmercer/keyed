@@ -13,7 +13,6 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 from .animation import Animation, Property
 from .base import BaseText, Selection
 from .highlight import StyledToken
-from .transformation import ApplyTransforms
 
 if TYPE_CHECKING:
     from .scene import Scene
@@ -49,6 +48,8 @@ class Text(BaseText):
         self.size = size
         self.x = x
         self.y = y
+        self.controls.delta_x.set(x)
+        self.controls.delta_y.set(y)
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
@@ -81,14 +82,15 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self, frame: int = 0) -> None:
-        with ApplyTransforms(ctx=self.ctx, frame=frame, transforms=self.controls.transforms):
-            with self.style(frame):
-                self.ctx.move_to(self.x, self.y)
+        with self.style(frame):
+            self.ctx.new_path()
+            with self.controls.transform(self.ctx, frame):
                 self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
         with self.style(frame):
-            return self.ctx.text_extents(self.text)
+            extents = self.ctx.text_extents(self.text)
+        return extents
 
     def is_whitespace(self) -> bool:
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
@@ -96,7 +98,10 @@ class Text(BaseText):
         )
 
     def animate(self, property: str, animation: Animation) -> None:
-        p = getattr(self, property)
+        if property in self.controls.animatable_properties:
+            p = getattr(self.controls, property)
+        else:
+            p = getattr(self, property)
         assert isinstance(p, Property)
         p.add_animation(animation)
 
@@ -106,8 +111,8 @@ class Text(BaseText):
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
         e = self.extents(frame)
-        x = self.x + e.x_bearing
-        y = self.y + e.y_bearing
+        x = e.x_bearing
+        y = e.y_bearing
         return shapely.box(x, y, x + e.width, y + e.height)
 
     def __copy__(self) -> Self:

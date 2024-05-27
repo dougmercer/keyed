@@ -6,7 +6,6 @@ styled_tokens = tokenize(content)
 
 scene = Scene(scene_name="write_on_tokens", num_frames=24, width=1920, height=1080)
 code = Code(scene, styled_tokens, font_size=48, alpha=1)
-s = code.lines[3:]
 scene.add(code)
 
 # These should basically cancel out, slightly rotating counter clockwise

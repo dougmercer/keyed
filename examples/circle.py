@@ -6,8 +6,7 @@ circle = Circle(scene, 100, 100, radius=20)
 
 scene.add(circle)
 
-circle.animate(
-    "y",
+circle.controls.delta_y.add_animation(
     PingPong(
         Animation(
             start_value=100,
@@ -18,7 +17,7 @@ circle.animate(
             easing=easing.CubicEaseInOut,
         ),
         n=5,
-    ),
+    )
 )
 
 text = Text(scene, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0), token_type=None)
@@ -26,8 +25,7 @@ scene.add(text)
 
 c2 = text.emphasize()
 
-text.animate(
-    "x",
+text.controls.delta_x.add_animation(
     PingPong(
         Animation(
             start_value=1,

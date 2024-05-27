@@ -9,7 +9,6 @@ import shapely.ops
 from .animation import Animation, Property
 from .base import Base
 from .scene import Scene
-from .transformation import ApplyTransforms
 
 __all__ = ["Circle", "Rectangle"]
 
@@ -50,7 +49,7 @@ class Shape(Base, Protocol):
 
     def draw(self, frame: int = 0) -> None:
         with self.style(frame):
-            with ApplyTransforms(ctx=self.ctx, frame=frame, transforms=self.controls.transforms):
+            with self.controls.transform(self.ctx, frame):
                 self._draw_shape(frame)
                 if self.draw_fill:
                     self.ctx.set_source_rgba(*self.fill_color, self.alpha.at(frame))
@@ -60,7 +59,10 @@ class Shape(Base, Protocol):
                     self.ctx.stroke()
 
     def animate(self, property: str, animation: Animation) -> None:
-        p = getattr(self, property)
+        if property in self.controls.animatable_properties:
+            p = getattr(self.controls, property)
+        else:
+            p = getattr(self, property)
         assert isinstance(p, Property)
         p.add_animation(animation)
 
@@ -94,8 +96,10 @@ class Rectangle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
-        self.width = Property(width)
-        self.height = Property(height)
+        self.controls.delta_x.set(x)
+        self.controls.delta_y.set(y)
+        self._width = Property(width)
+        self._height = Property(height)
         self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color
@@ -114,8 +118,8 @@ class Rectangle(Shape):
             f"{self.__class__.__name__}("
             f"x={self.x}, "
             f"y={self.y}, "
-            f"width={self.width}, "
-            f"height={self.height}, "
+            f"width={self._width}, "
+            f"height={self._height}, "
             f"radius={self.radius}, "
             f"dash={self.dash}, "
             f"rotation={self.controls.rotation}, "
@@ -125,41 +129,37 @@ class Rectangle(Shape):
     def _draw_shape(self, frame: int) -> None:
         self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
         self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
-        x = self.x
-        y = self.y
-        w = self.width.at(frame)
-        h = self.height.at(frame)
+        w = self._width.at(frame)
+        h = self._height.at(frame)
         r = self.radius.at(frame)
 
         self.ctx.new_sub_path()
-        self.ctx.arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
-        self.ctx.arc(x + w - r, y + r, r, 3 * math.pi / 2, 0)
-        self.ctx.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
-        self.ctx.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+        self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
+        self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 0)
+        self.ctx.arc(w - r, h - r, r, 0, math.pi / 2)
+        self.ctx.arc(r, h - r, r, math.pi / 2, math.pi)
         self.ctx.close_path()
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
         """Return the geometry of the rounded rectangle as a Shapely polygon."""
-        x = self.x
-        y = self.y
-        width = self.width.at(frame)
-        height = self.height.at(frame)
+        width = self._width.at(frame)
+        height = self._height.at(frame)
         radius = self.radius.at(frame)
 
         if radius == 0:
-            return shapely.box(x, y, x + width, y + height)
+            return shapely.box(0, 0, width, height)
 
         # Create the four corners using buffers
-        tl = shapely.Point(x + radius, y + radius).buffer(radius, resolution=16)
-        tr = shapely.Point(x + width - radius, y + radius).buffer(radius, resolution=16)
-        br = shapely.Point(x + width - radius, y + height - radius).buffer(radius, resolution=16)
-        bl = shapely.Point(x + radius, y + height - radius).buffer(radius, resolution=16)
+        tl = shapely.Point(radius, radius).buffer(radius, resolution=16)
+        tr = shapely.Point(width - radius, radius).buffer(radius, resolution=16)
+        br = shapely.Point(width - radius, height - radius).buffer(radius, resolution=16)
+        bl = shapely.Point(radius, height - radius).buffer(radius, resolution=16)
 
         # Create the straight edges as rectangles
-        top = shapely.box(x + radius, y, x + width - radius, y + radius)
-        bottom = shapely.box(x + radius, y + height - radius, x + width - radius, y + height)
-        left = shapely.box(x, y + radius, x + radius, y + height - radius)
-        right = shapely.box(x + width - radius, y + radius, x + width, y + height - radius)
+        top = shapely.box(radius, 0, width - radius, radius)
+        bottom = shapely.box(radius, height - radius, width - radius, height)
+        left = shapely.box(0, radius, radius, height - radius)
+        right = shapely.box(width - radius, radius, width, height - radius)
 
         # Combine all parts into a single polygon
         return shapely.ops.unary_union([tl, tr, br, bl, top, bottom, left, right])
@@ -189,8 +189,8 @@ class Rectangle(Shape):
         )
         # Follow original
         new.alpha.follow(self.alpha)
-        new.width.follow(self.width)
-        new.height.follow(self.height)
+        new._width.follow(self._width)
+        new._height.follow(self._height)
         new.radius.follow(self.radius)
         new.controls.follow(self.controls)
         return new
@@ -217,6 +217,8 @@ class Circle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
+        self.controls.delta_x.set(x)
+        self.controls.delta_y.set(y)
         self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color
@@ -234,23 +236,24 @@ class Circle(Shape):
 
     def _draw_shape(self, frame: int = 0) -> None:
         self.ctx.arc(
-            self.x,
-            self.y,
+            0,
+            0,
             self.radius.at(frame),
             0,
             2 * math.pi,
         )
 
     def animate(self, property: str, animation: Animation) -> None:
-        p = getattr(self, property)
+        if property in self.controls.animatable_properties:
+            p = getattr(self.controls, property)
+        else:
+            p = getattr(self, property)
         assert isinstance(p, Property)
         p.add_animation(animation)
 
     def _geom(self, frame: int = 0) -> shapely.Polygon:
-        x = self.x
-        y = self.y
         radius = self.radius.at(frame)
-        return shapely.Point(x, y).buffer(radius)
+        return shapely.Point(0, 0).buffer(radius)
 
     def __copy__(self) -> Self:
         new = type(self)(
