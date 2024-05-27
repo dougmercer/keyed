@@ -51,18 +51,31 @@ class HasGeometry(Protocol):
         pass
 
     def get_position_along_dim(
-        self, frame: int = 0, direction: Direction = ORIGIN, dim: Literal[0, 1] = 0
+        self,
+        frame: int = 0,
+        direction: Direction = ORIGIN,
+        dim: Literal[0, 1] = 0,
+        with_transforms: bool = True,
+        safe: bool = False,
     ) -> float:
         assert -1 <= direction[dim] <= 1
-        bounds = self.geom(frame, with_transforms=True).bounds
+        bounds = self.geom(frame, with_transforms=with_transforms, safe=safe).bounds
         magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
         return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
 
     def get_critical_point(
-        self, frame: int = 0, direction: Direction = ORIGIN
+        self,
+        frame: int = 0,
+        direction: Direction = ORIGIN,
+        with_transforms: bool = True,
+        safe: bool = True,
     ) -> tuple[float, float]:
-        x = self.get_position_along_dim(frame, direction, dim=0)
-        y = self.get_position_along_dim(frame, direction, dim=1)
+        x = self.get_position_along_dim(
+            frame, direction, dim=0, with_transforms=with_transforms, safe=safe
+        )
+        y = self.get_position_along_dim(
+            frame, direction, dim=1, with_transforms=with_transforms, safe=safe
+        )
         return x, y
 
     def left(self, frame: int = 0, with_transforms: bool = True) -> float:
@@ -194,12 +207,16 @@ class Transformable(HasGeometry, Protocol):
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
 
-    def rotate(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        self.add_transform(Rotation(self, animation, center))
+    def rotate(
+        self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
+    ) -> Self:
+        self.add_transform(Rotation(self, animation, center, direction))
         return self
 
-    def scale(self, animation: Animation, center: HasGeometry | None = None) -> Self:
-        self.add_transform(Scale(self, animation, center))
+    def scale(
+        self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
+    ) -> Self:
+        self.add_transform(Scale(self, animation, center, direction))
         return self
 
     def translate(
@@ -268,11 +285,13 @@ class Rotation(Transform):
         reference: Transformable,
         animation: Animation,
         center: HasGeometry | None = None,
+        direction: Direction = ORIGIN,
     ):
         super().__init__()
         self.reference = reference
         self.animation = animation
         self.center = center or copy(reference)
+        self.direction = direction
         self.safe = False
 
     def __repr__(self) -> str:
@@ -280,11 +299,14 @@ class Rotation(Transform):
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
             f"animation={self.animation}, "
-            f"center={self.center})"
+            f"center={self.center}, "
+            f"direction={self.direction})"
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
+        cx, cy = self.center.get_critical_point(
+            frame, direction=self.direction, with_transforms=True, safe=True
+        )
         rotation = self.animation.apply(frame, 0)
         matrix = cairo.Matrix()
         matrix.translate(cx, cy)
@@ -297,24 +319,32 @@ class Scale(Transform):
     priority = 2
 
     def __init__(
-        self, reference: Transformable, animation: Animation, center: HasGeometry | None = None
+        self,
+        reference: Transformable,
+        animation: Animation,
+        center: HasGeometry | None = None,
+        direction: Direction = ORIGIN,
     ):
         super().__init__()
         self.reference = reference
         self.animation = animation
         self.center = center or reference
         self.safe = False
+        self.direction = direction
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
             f"animation={self.animation}, "
-            f"center={self.center})"
+            f"center={self.center}, "
+            f"direction={self.direction})"
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
+        cx, cy = self.center.get_critical_point(
+            frame, direction=self.direction, with_transforms=True, safe=True
+        )
         scale = self.animation.apply(frame, 1)
         matrix = cairo.Matrix()
         matrix.translate(cx, cy)
