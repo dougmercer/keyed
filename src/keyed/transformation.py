@@ -42,7 +42,12 @@ __all__ = [
 
 @runtime_checkable
 class HasGeometry(Protocol):
-    def geom(self, frame: int = 0, with_transforms: bool = False) -> BaseGeometry:
+    def geom(
+        self,
+        frame: int = 0,
+        with_transforms: bool = False,
+        safe: bool = False,
+    ) -> BaseGeometry:
         pass
 
     def get_position_along_dim(
@@ -94,22 +99,7 @@ def left_of(lst: list[Transform], query: Transform | None) -> list[Transform]:
 
 
 def filter_transforms(frame: int, transforms: Sequence[Transform]) -> list[Transform]:
-    transforms = [t for t in transforms]
-    transforms = [t for t in transforms if t.animation.start_frame <= frame]
-    transforms = [t for t in transforms if isinstance(t, (TranslateX, TranslateY))]
-    # transforms = sorted(transforms, key=lambda t: t.animation.start_frame)
-    return transforms  # type: ignore[return-value]
-
-
-def get_geom(
-    center: Transformable | HasGeometry,
-    frame: int,
-) -> BaseGeometry:
-    # Get the geometry as it is from all transformations *before* this one.
-    geom = center.geom(frame)
-    if isinstance(center, Transformable):
-        geom = center.geom(frame, with_transforms=True, safe=True)
-    return geom
+    return [t for t in transforms if (t.animation.start_frame <= frame and t.safe)]
 
 
 class TransformControls:
@@ -186,6 +176,9 @@ class TransformControls:
 class Transformable(HasGeometry, Protocol):
     controls: TransformControls
 
+    def __init__(self) -> None:
+        self.controls = TransformControls(self)
+
     def _geom(self, frame: int = 0) -> shapely.Polygon:
         pass
 
@@ -194,7 +187,7 @@ class Transformable(HasGeometry, Protocol):
         frame: int = 0,
         with_transforms: bool = False,
         safe: bool = False,
-    ) -> shapely.Polygon:
+    ) -> BaseGeometry:
         g = self._geom(frame)
         return affine_transform(g, self.get_matrix(frame, safe=safe)) if with_transforms else g
 
@@ -257,21 +250,30 @@ class Transformable(HasGeometry, Protocol):
 class Transform(Protocol):
     reference: Transformable
     animation: Animation
+    safe: bool
+    priority: int
+
+    def __init__(self) -> None:
+        self.safe = True
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
         pass
 
 
-class Rotation:
+class Rotation(Transform):
+    priority = 3
+
     def __init__(
         self,
         reference: Transformable,
         animation: Animation,
         center: HasGeometry | None = None,
     ):
+        super().__init__()
         self.reference = reference
         self.animation = animation
         self.center = center or copy(reference)
+        self.safe = False
 
     def __repr__(self) -> str:
         return (
@@ -282,7 +284,7 @@ class Rotation:
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        cx, cy = get_geom(self.center, frame).centroid.coords[0]
+        cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
         rotation = self.animation.apply(frame, 0)
         matrix = cairo.Matrix()
         matrix.translate(cx, cy)
@@ -291,13 +293,17 @@ class Rotation:
         return matrix
 
 
-class Scale:
+class Scale(Transform):
+    priority = 2
+
     def __init__(
         self, reference: Transformable, animation: Animation, center: HasGeometry | None = None
     ):
+        super().__init__()
         self.reference = reference
         self.animation = animation
         self.center = center or reference
+        self.safe = False
 
     def __repr__(self) -> str:
         return (
@@ -308,7 +314,7 @@ class Scale:
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        cx, cy = get_geom(self.center, frame).centroid.coords[0]
+        cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
         scale = self.animation.apply(frame, 1)
         matrix = cairo.Matrix()
         matrix.translate(cx, cy)
@@ -317,7 +323,9 @@ class Scale:
         return matrix
 
 
-class TranslateX:
+class TranslateX(Transform):
+    priority = 0
+
     def __init__(
         self,
         reference: Transformable,
@@ -326,6 +334,7 @@ class TranslateX:
         delta: float,
         easing: type[EasingFunction],
     ):
+        super().__init__()
         self.reference = reference
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
@@ -343,7 +352,9 @@ class TranslateX:
         return matrix
 
 
-class TranslateY:
+class TranslateY(Transform):
+    priority = 1
+
     def __init__(
         self,
         reference: Transformable,
@@ -352,6 +363,7 @@ class TranslateY:
         delta: float,
         easing: type[EasingFunction],
     ):
+        super().__init__()
         self.reference = reference
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
@@ -369,7 +381,10 @@ class TranslateY:
         return matrix
 
 
-class Orbit:
+class Orbit(Transform):
+
+    priority = 4
+
     def __init__(
         self,
         reference: Transformable,
@@ -380,6 +395,7 @@ class Orbit:
         start_frame: int = 0,
         end_frame: int = 999,
     ):
+        super().__init__()
         self.reference = reference
         self.animation = Animation(start_frame, end_frame, 0, 0)  # values don't do anything.
         self.distance = Property(distance)
@@ -400,7 +416,7 @@ class Orbit:
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        cx, cy = get_geom(self.center, frame).centroid.coords[0]
+        cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
         angle = math.radians(self.initial_angle) + frame * math.radians(
             self.rotation_speed.at(frame)
         )
@@ -440,14 +456,12 @@ TransformFilter = Callable[[Sequence[Transform]], Sequence[Transform]]
 
 
 def sort_transforms(transforms: list[Transform]) -> list[Transform]:
-    d = {
-        TranslateX: 0,
-        TranslateY: 1,
-        Scale: 2,
-        Rotation: 3,
-        Orbit: 4,
-    }
-    return sorted(transforms, key=lambda t: d[type(t)])
+    return sorted(transforms, key=lambda t: t.priority)
+
+
+class HasXY(Protocol):
+    x: Property
+    y: Property
 
 
 class Point(HasGeometry):
@@ -455,9 +469,7 @@ class Point(HasGeometry):
         self.x = Property(x)
         self.y = Property(y)
 
-    def follow(self, other: Point) -> None:
-        # TODO - This is a bit jank to only be able to follow other points.
-        # Should be able to follow anything with x/y.
+    def follow(self, other: HasXY) -> None:
         self.x.follow(other.x)
         self.y.follow(other.y)
 
@@ -465,5 +477,7 @@ class Point(HasGeometry):
         self.x.set(x)
         self.y.set(y)
 
-    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Point:
+    def geom(
+        self, frame: int = 0, with_transforms: bool = False, safe: bool = False
+    ) -> shapely.Point:
         return shapely.Point(self.x.at(frame), self.y.at(frame))

@@ -19,7 +19,7 @@ import shapely
 import shapely.affinity
 
 from .animation import Animation, LambdaFollower
-from .transformation import Transform, TransformControls, Transformable
+from .transformation import Transform, Transformable
 
 if TYPE_CHECKING:
     from .code import Text, TextSelection
@@ -33,11 +33,10 @@ __all__ = ["Base", "BaseText", "Selection", "Composite"]
 
 @runtime_checkable
 class Base(Transformable, Protocol):
-    controls: TransformControls
     scene: Scene
 
     def __init__(self) -> None:
-        self.controls = TransformControls(self)
+        Transformable.__init__(self)
 
     def draw(self, frame: int = 0) -> None:
         pass

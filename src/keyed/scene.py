@@ -38,6 +38,7 @@ class Scene(Transformable):
         height: int = 2160,
         antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
     ) -> None:
+        Transformable.__init__(self)
         self.scene_name = scene_name
         self.num_frames = num_frames
         self.output_dir = output_dir
