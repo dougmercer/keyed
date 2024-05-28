@@ -87,9 +87,6 @@ def test_base_animations(
     snapshot: syrupy.SnapshotAssertion,
     request: pytest.FixtureRequest,
 ) -> None:
-    animation_name = method.func.__name__
-    if (drawable, animation_name) in [("polygon", "shift")]:
-        pytest.skip(f"{drawable} does not support {animation_name}.")
     obj = request.getfixturevalue(drawable)
     assert isinstance(obj, keyed.Base)
     scene.add(obj)
