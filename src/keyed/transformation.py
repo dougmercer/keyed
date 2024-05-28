@@ -68,7 +68,7 @@ class HasGeometry(Protocol):
         frame: int = 0,
         direction: Direction = ORIGIN,
         with_transforms: bool = True,
-        safe: bool = True,
+        safe: bool = False,
     ) -> tuple[float, float]:
         x = self.get_position_along_dim(
             frame, direction, dim=0, with_transforms=with_transforms, safe=safe
@@ -440,7 +440,7 @@ class Orbit(Transform):
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
             f"distance={self.distance}, "
-            f"distance={self.rotation_speed}, "
+            f"rotation_speed={self.rotation_speed}, "
             f"initial_angle={self.initial_angle}, "
             f"start_frame={self.animation.start_frame}, "
             f"end_frame={self.animation.end_frame}, "
