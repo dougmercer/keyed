@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import math
 from contextlib import contextmanager
 from copy import copy
@@ -206,6 +207,7 @@ class Transformable(HasGeometry, Protocol):
 
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
+        Transform.all_transforms.append(transform)
 
     def rotate(
         self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
@@ -265,13 +267,17 @@ class Transformable(HasGeometry, Protocol):
 
 @runtime_checkable
 class Transform(Protocol):
+    uid_maker: itertools.count = itertools.count()
+    all_transforms: list[Transform] = []
     reference: Transformable
     animation: Animation
     safe: bool
     priority: int
+    uid: int
 
     def __init__(self) -> None:
         self.safe = True
+        self.uid = next(self.uid_maker)
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
         pass
