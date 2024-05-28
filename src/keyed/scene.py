@@ -190,3 +190,9 @@ class Scene(Transformable):
             self._width,
             self._height,
         )
+
+    def show_compute_graph(self) -> None:
+        from .compute_graph import TransformDependencyGraph
+
+        graph = TransformDependencyGraph.from_transforms()
+        graph.draw()
