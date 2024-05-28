@@ -455,6 +455,14 @@ class Orbit(Transform):
         )
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
+        # Begin orbitting.
+        if frame < self.animation.start_frame:
+            return cairo.Matrix()
+
+        # Make sure we stop orbitting
+        frame = min(frame, self.animation.end_frame)
+
+        # Compute matrix
         cx, cy = self.center.geom(frame, with_transforms=True, safe=True).centroid.coords[0]
         angle = math.radians(self.initial_angle) + frame * math.radians(
             self.rotation_speed.at(frame)
