@@ -35,7 +35,7 @@ TRANSFORM_CACHE: dict[int, dict[int, cairo.Matrix]] = dict()
 
 @runtime_checkable
 class HasGeometry(Protocol):
-    def _geom_impl(
+    def _geom(
         self,
         frame: int = 0,
         with_transforms: bool = False,
@@ -48,7 +48,7 @@ class HasGeometry(Protocol):
         frame: int = 0,
         with_transforms: bool = False,
     ) -> BaseGeometry:
-        return self._geom_impl(frame, with_transforms=with_transforms)
+        return self._geom(frame, with_transforms=with_transforms)
 
     def _get_position_along_dim(
         self,
@@ -59,7 +59,7 @@ class HasGeometry(Protocol):
         before: Transform | None = None,
     ) -> float:
         assert -1 <= direction[dim] <= 1
-        bounds = self._geom_impl(frame, with_transforms=with_transforms, before=before).bounds
+        bounds = self._geom(frame, with_transforms=with_transforms, before=before).bounds
         magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
         return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
 
@@ -220,16 +220,16 @@ class Transformable(HasGeometry, Protocol):
     def __init__(self) -> None:
         self.controls = TransformControls(self)
 
-    def _geom(self, frame: int = 0) -> shapely.Polygon:
+    def raw_geom(self, frame: int = 0) -> shapely.Polygon:
         pass
 
-    def _geom_impl(
+    def _geom(
         self,
         frame: int = 0,
         with_transforms: bool = False,
         before: Transform | None = None,
     ) -> BaseGeometry:
-        g = self._geom(frame)
+        g = self.raw_geom(frame)
         return affine_transform(g, self._get_matrix(frame, before=before)) if with_transforms else g
 
     def geom(
@@ -237,7 +237,7 @@ class Transformable(HasGeometry, Protocol):
         frame: int = 0,
         with_transforms: bool = False,
     ) -> BaseGeometry:
-        return self._geom_impl(frame, with_transforms=with_transforms)
+        return self._geom(frame, with_transforms=with_transforms)
 
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
@@ -563,13 +563,13 @@ class Point(HasGeometry):
         self.x.set(x)
         self.y.set(y)
 
-    def _geom_impl(
+    def _geom(
         self, frame: int = 0, with_transforms: bool = False, before: Transform | None = None
     ) -> shapely.Point:
         return shapely.Point(self.x.at(frame), self.y.at(frame))
 
     def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Point:
-        return self._geom_impl(frame, with_transforms=with_transforms)
+        return self._geom(frame, with_transforms=with_transforms)
 
 
 def transform_sorter(t: Transform) -> tuple[int, int, int]:

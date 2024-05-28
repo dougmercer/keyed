@@ -153,19 +153,16 @@ class Composite(Base, list[T]):
         else:
             return super().__getitem__(key)
 
-    def _geom(self, frame: int = 0) -> shapely.Polygon:
+    def raw_geom(self, frame: int = 0) -> shapely.Polygon:
         # not really used
-        return shapely.GeometryCollection([obj.geom(frame) for obj in self])
+        return shapely.GeometryCollection([obj.raw_geom(frame) for obj in self])
 
-    def _geom_impl(
+    def _geom(
         self, frame: int = 0, with_transforms: bool = False, before: Transform | None = None
     ) -> shapely.Polygon:
         return shapely.GeometryCollection(
-            [obj._geom_impl(frame, with_transforms=with_transforms, before=before) for obj in self]
+            [obj._geom(frame, with_transforms=with_transforms, before=before) for obj in self]
         )
-
-    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Polygon:
-        return self._geom_impl(frame, with_transforms=with_transforms)
 
     def __copy__(self) -> Self:
         return type(self)(list(self))

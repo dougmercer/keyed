@@ -183,7 +183,7 @@ class Scene(Transformable):
     def get_context(self) -> cairo.Context:
         return cairo.Context(self.surface)
 
-    def _geom(self, frame: int = 0) -> BaseGeometry:
+    def raw_geom(self, frame: int = 0) -> BaseGeometry:
         return shapely.box(
             self.controls.delta_x.at(frame),
             self.controls.delta_y.at(frame),
