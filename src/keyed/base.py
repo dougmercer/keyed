@@ -171,6 +171,9 @@ class Composite(Base, list[T]):
         for obj in self:
             obj.add_transform(transform)
 
+    def __hash__(self) -> int:  # type: ignore[override]
+        return Base.__hash__(self)
+
 
 class Selection(Composite[T]):
     @property
