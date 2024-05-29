@@ -21,7 +21,7 @@ scene.add(trace)
 
 for i, obj in enumerate(trace.objects):
     obj.animate(
-        "y",
+        "delta_y",
         PingPong(
             SinusoidalAnimation(
                 i,

@@ -4,7 +4,7 @@ import bisect
 import itertools
 import math
 from contextlib import contextmanager
-from typing import Any, Generator, Iterator, Literal, Protocol, Self, runtime_checkable
+from typing import Any, Generator, Iterator, Literal, Protocol, Self, Sequence, runtime_checkable
 
 import cairo
 import shapely
@@ -124,21 +124,31 @@ def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
         yield lst[:i]
 
 
-def left_of(lst: list[Transform], query: Transform | None) -> list[Transform]:
+def left_of(lst: Sequence[Transform], query: Transform | None) -> list[Transform]:
+    """Get transforms before query transform.
+
+    Here, "before" means "before" in the global transforms list.
+
+    Paramters
+    ---------
+    lst: list[Transform]
+    query: query: Transform | None
+
+    Returns
+    -------
+    list[Transform]
+        Sorted list of transforms from input lst that are before query.
+    """
+    lst = sort_transforms(lst)
     if query is None:
         return lst
-    all_transforms = sorted(Transform.all_transforms, key=transform_sorter)
-    idx = bisect.bisect_left(all_transforms, transform_sorter(query), key=transform_sorter)
-    earlier_transforms = all_transforms[:idx]
-    lst = sorted(lst, key=transform_sorter)
-    return [t for t in lst if t in earlier_transforms]
 
+    # Find this transforms position in the global list of all transforms
+    all_transforms = sort_transforms(Transform.all_transforms)
+    idx = bisect.bisect_left(all_transforms, transform_sort_key(query), key=transform_sort_key)
 
-def filter_transforms(
-    frame: int, transforms: list[Transform], before: Transform | None = None
-) -> list[Transform]:
-    transforms = sorted(transforms, key=transform_sorter)
-    return left_of(transforms, before)
+    # Keep only transforms from input lst that are before the query transform
+    return [t for t in lst if t in all_transforms[:idx]]
 
 
 class TransformControls:
@@ -185,10 +195,7 @@ class TransformControls:
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = self.base_matrix(frame)
-        transforms = (
-            filter_transforms(frame, self.transforms, before=before) if before else self.transforms
-        )
-        return matrix.multiply(apply_transforms(frame, transforms, before=before))
+        return matrix.multiply(apply_transforms(frame, self.transforms, before=before))
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
         return self._get_matrix(frame)
@@ -533,7 +540,7 @@ def apply_transforms(
     frame: int, transforms: list[Transform], before: Transform | None = None
 ) -> cairo.Matrix:
     matrix = cairo.Matrix()
-    for t in left_of(transforms, before):
+    for t in left_of(sort_transforms(transforms), before):
         matrix = matrix.multiply(t._get_matrix(frame, before=t))
     return matrix
 
@@ -574,5 +581,9 @@ class Point(HasGeometry):
         return self._geom(frame)
 
 
-def transform_sorter(t: Transform) -> tuple[int, int, int]:
+def transform_sort_key(t: Transform) -> tuple[int, int, int]:
     return (t.animation.start_frame, t.priority, t.uid)
+
+
+def sort_transforms(transforms: Sequence[Transform]) -> list[Transform]:
+    return sorted(transforms, key=transform_sort_key)
