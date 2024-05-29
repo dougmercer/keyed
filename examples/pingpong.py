@@ -10,7 +10,7 @@ scene.add(code.lines[0])
 a = code.lines[0:1]
 
 a.animate(
-    "y",
+    "delta_y",
     PingPong(
         n=3,
         animation=Animation(
