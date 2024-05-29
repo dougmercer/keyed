@@ -14,7 +14,6 @@ class TransformDependencyGraph:
     def from_transforms(cls, transforms: Sequence[Transform] | None = None) -> Self:
         transforms = transforms or Transform.all_transforms
         new = cls()
-        print(len(transforms))
         for t in transforms:
             new.add_transform(t)
         return new
@@ -25,8 +24,6 @@ class TransformDependencyGraph:
             dependency: Transformable = transform.center
             self.graph.add_node(dependency, dependency=dependency)
             self.graph.add_edge(dependency, transform)
-            print(type(dependency), type(transform))
-            print()
 
     def sorted_transforms(self) -> list[Transform]:
         sorted_nodes = nx.topological_sort(self.graph)

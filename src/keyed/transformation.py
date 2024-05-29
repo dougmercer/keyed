@@ -181,7 +181,6 @@ class TransformControls:
         but allows self to add additional transforms after the fact.
         """
         self.transforms = ExtendedList(other.transforms)
-        # self.transforms = list(other.transforms)
 
     @contextmanager
     def transform(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
