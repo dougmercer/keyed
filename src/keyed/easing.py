@@ -1,5 +1,5 @@
 import math
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 easing_types = [
     "Quad",
@@ -60,6 +60,18 @@ class EasingFunction(Protocol):
 
     def __call__(self, frame: float) -> float:
         return self.ease(frame)
+
+    def _as_tuple(self) -> tuple[type, int, int, float, float]:
+        return (type(self), self.start_frame, self.end_frame, self.start, self.end)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+
+        return self._as_tuple() == other._as_tuple()
+
+    def __hash__(self) -> int:
+        return hash(self._as_tuple())
 
 
 class LinearInOut(EasingFunction):

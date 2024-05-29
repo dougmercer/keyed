@@ -62,6 +62,30 @@ class Animation:
             f"animation_type={self.animation_type.name})"
         )
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Animation):
+            return NotImplemented
+        return (
+            self.start_frame,
+            self.end_frame,
+            self.start_value,
+            self.end_value,
+            type(self.easing),
+            self.animation_type,
+        ) == (
+            (
+                other.start_frame,
+                other.end_frame,
+                other.start_value,
+                other.end_value,
+                type(other.easing),
+                other.animation_type,
+            )
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.easing, self.animation_type))
+
     def apply(self, current_frame: int, current_value: float) -> float:
         easing = self.easing(current_frame)
         match self.animation_type:
@@ -98,6 +122,19 @@ class SinusoidalAnimation(Animation):
         self.center = center
         super().__init__(start_frame, start_frame + period, 0, 0)
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SinusoidalAnimation):
+            return NotImplemented
+        return (self.period, self.phase, self.magnitude, self.center) == (
+            other.period,
+            other.phase,
+            self.magnitude,
+            self.center,
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.start_frame, self.period, self.phase, self.magnitude, self.center))
+
     def apply(self, current_frame: float, current_value: float | None) -> float:
         if current_frame < self.start_frame:
             current_frame = self.start_frame
@@ -121,6 +158,14 @@ class Loop(Animation):
     def __init__(self, animation: Animation, n: int):
         self.animation = animation
         self.n = n
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Loop):
+            return NotImplemented
+        return (self.animation, self.n) == (other.animation, other.n)
+
+    def __hash__(self) -> int:
+        return hash((self.animation, self.n))
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
@@ -149,6 +194,14 @@ class PingPong(Animation):
     def __init__(self, animation: Animation, n: int):
         self.animation = animation
         self.n = n  # Number of full back-and-forth cycles
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, PingPong):
+            return NotImplemented
+        return (self.animation, self.n) == (other.animation, other.n)
+
+    def __hash__(self) -> int:
+        return hash((self.animation, self.n))
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
@@ -203,6 +256,24 @@ class Property:
         self.value = value
         self.animations: list[Animation] = []
         self.following: None | Followable = None
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.value, self.animations, self.following) == (
+            self.value,
+            self.animations,
+            self.following,
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.value,
+                self.animations,
+                self.following,
+            )
+        )
 
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
