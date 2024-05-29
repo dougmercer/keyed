@@ -161,9 +161,7 @@ class Curve(Shape):
         self.line_join = cairo.LINE_JOIN_ROUND
 
     def points(self, frame: int = 0) -> VecArray:
-        return np.array(
-            [obj.geom(frame, with_transforms=True).centroid.coords[0] for obj in self.objects]
-        )
+        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
 
     def simplified_points(self, frame: int = 0) -> VecArray:
         line = (

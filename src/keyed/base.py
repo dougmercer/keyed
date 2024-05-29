@@ -66,8 +66,8 @@ class Base(Transformable, Protocol):
             dash=dash,
             operator=operator,
         )
-        x_follower = LambdaFollower(lambda frame: self.geom(frame, with_transforms=True).bounds[0])
-        y_follower = LambdaFollower(lambda frame: self.geom(frame, with_transforms=True).bounds[1])
+        x_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[0])
+        y_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[1])
 
         r.controls.delta_x.follow(x_follower).offset(-buffer)
         r.controls.delta_y.follow(y_follower).offset(-buffer)
@@ -157,12 +157,8 @@ class Composite(Base, list[T]):
         # not really used
         return shapely.GeometryCollection([obj.raw_geom(frame) for obj in self])
 
-    def _geom(
-        self, frame: int = 0, with_transforms: bool = False, before: Transform | None = None
-    ) -> shapely.Polygon:
-        return shapely.GeometryCollection(
-            [obj._geom(frame, with_transforms=with_transforms, before=before) for obj in self]
-        )
+    def _geom(self, frame: int = 0, before: Transform | None = None) -> shapely.Polygon:
+        return shapely.GeometryCollection([obj._geom(frame, before=before) for obj in self])
 
     def __copy__(self) -> Self:
         return type(self)(list(self))

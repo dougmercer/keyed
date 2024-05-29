@@ -52,9 +52,7 @@ class Curve2(Shape):
         self.buffer = Property(buffer)
 
     def raw_points(self, frame: int = 0) -> VecArray:
-        return np.array(
-            [obj.geom(frame, with_transforms=True).centroid.coords[0] for obj in self.objects]
-        )
+        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
 
     def points(self, frame: int = 0) -> VecArray:
         start = self.start.at(frame)
@@ -108,7 +106,7 @@ class Curve2(Shape):
         return np.array([p0_new] + pts[start_idx + 1 : end_idx + 1].tolist() + [p3_new])
 
     def _draw_shape(self, frame: int = 0) -> None:
-        geom = self.geom(frame)
+        geom = self.raw_geom(frame)
         coords = list(geom.exterior.coords)
         if not coords:
             return
@@ -230,7 +228,7 @@ class Polygon(Shape):
 
     def _draw_shape(self, frame: int = 0) -> None:
         ctx = self.ctx
-        polygon = self.geom(frame)
+        polygon = self.raw_geom(frame)
         ctx.set_fill_rule(cairo.FILL_RULE_WINDING)
         coords = list(polygon.exterior.coords)
         ctx.move_to(*coords[0])

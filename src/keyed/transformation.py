@@ -35,10 +35,15 @@ TRANSFORM_CACHE: dict[int, dict[int, cairo.Matrix]] = dict()
 
 @runtime_checkable
 class HasGeometry(Protocol):
+    def raw_geom(
+        self,
+        frame: int = 0,
+    ) -> BaseGeometry:
+        pass
+
     def _geom(
         self,
         frame: int = 0,
-        with_transforms: bool = False,
         before: Transform | None = None,
     ) -> BaseGeometry:
         pass
@@ -46,20 +51,18 @@ class HasGeometry(Protocol):
     def geom(
         self,
         frame: int = 0,
-        with_transforms: bool = False,
     ) -> BaseGeometry:
-        return self._geom(frame, with_transforms=with_transforms)
+        return self._geom(frame)
 
     def _get_position_along_dim(
         self,
         frame: int = 0,
         direction: Direction = ORIGIN,
         dim: Literal[0, 1] = 0,
-        with_transforms: bool = True,
         before: Transform | None = None,
     ) -> float:
         assert -1 <= direction[dim] <= 1
-        bounds = self._geom(frame, with_transforms=with_transforms, before=before).bounds
+        bounds = self._geom(frame, before=before).bounds
         magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
         return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
 
@@ -68,46 +71,45 @@ class HasGeometry(Protocol):
         frame: int = 0,
         direction: Direction = ORIGIN,
         dim: Literal[0, 1] = 0,
-        with_transforms: bool = True,
     ) -> float:
         return self._get_position_along_dim(
-            frame=frame, direction=direction, dim=dim, with_transforms=with_transforms
+            frame=frame,
+            direction=direction,
+            dim=dim,
         )
 
     def _get_critical_point(
         self,
         frame: int = 0,
         direction: Direction = ORIGIN,
-        with_transforms: bool = True,
         before: Transform | None = None,
     ) -> tuple[float, float]:
-        x = self._get_position_along_dim(
-            frame, direction, dim=0, with_transforms=with_transforms, before=before
-        )
-        y = self._get_position_along_dim(
-            frame, direction, dim=1, with_transforms=with_transforms, before=before
-        )
+        x = self._get_position_along_dim(frame, direction, dim=0, before=before)
+        y = self._get_position_along_dim(frame, direction, dim=1, before=before)
         return x, y
 
     def get_critical_point(
         self,
         frame: int = 0,
         direction: Direction = ORIGIN,
-        with_transforms: bool = True,
     ) -> tuple[float, float]:
-        return self._get_critical_point(frame, direction, with_transforms)
+        return self._get_critical_point(frame, direction)
 
     def left(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.geom(frame, with_transforms=with_transforms).bounds[0]
+        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+        return g.bounds[0]
 
     def right(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.geom(frame, with_transforms=with_transforms).bounds[2]
+        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+        return g.bounds[2]
 
     def down(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.geom(frame, with_transforms=with_transforms).bounds[1]
+        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+        return g.bounds[1]
 
     def up(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.geom(frame, with_transforms=with_transforms).bounds[3]
+        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+        return g.bounds[3]
 
     def width(self, frame: int = 0, with_transforms: bool = True) -> float:
         return self.right(frame, with_transforms) - self.left(frame, with_transforms)
@@ -123,12 +125,13 @@ def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
 
 
 def left_of(lst: list[Transform], query: Transform | None) -> list[Transform]:
-    try:
-        lst = sorted(lst, key=transform_sorter)
-        index = bisect.bisect_left(lst, transform_sorter(query), key=transform_sorter)
-        return lst[:index]
-    except (ValueError, AttributeError):
+    if query is None:
         return lst
+    all_transforms = sorted(Transform.all_transforms, key=transform_sorter)
+    idx = bisect.bisect_left(all_transforms, transform_sorter(query), key=transform_sorter)
+    earlier_transforms = all_transforms[:idx]
+    lst = sorted(lst, key=transform_sorter)
+    return [t for t in lst if t in earlier_transforms]
 
 
 def filter_transforms(
@@ -226,18 +229,16 @@ class Transformable(HasGeometry, Protocol):
     def _geom(
         self,
         frame: int = 0,
-        with_transforms: bool = False,
         before: Transform | None = None,
     ) -> BaseGeometry:
         g = self.raw_geom(frame)
-        return affine_transform(g, self._get_matrix(frame, before=before)) if with_transforms else g
+        return affine_transform(g, self._get_matrix(frame, before=before))
 
     def geom(
         self,
         frame: int = 0,
-        with_transforms: bool = False,
     ) -> BaseGeometry:
-        return self._geom(frame, with_transforms=with_transforms)
+        return self._geom(frame)
 
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
@@ -354,7 +355,7 @@ class Rotation(Transform):
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, with_transforms=True, before=before or self
+            frame, direction=self.direction, before=before or self
         )
         rotation = self.animation.apply(frame, 0)
         matrix = cairo.Matrix()
@@ -392,7 +393,7 @@ class Scale(Transform):
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, with_transforms=True, before=before or self
+            frame, direction=self.direction, before=before or self
         )
         scale = self.animation.apply(frame, 1)
         matrix = cairo.Matrix()
@@ -507,7 +508,7 @@ class Orbit(Transform):
 
         # Compute matrix
         cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, with_transforms=True, before=before or self
+            frame, direction=self.direction, before=before or self
         )
         angle = math.radians(self.initial_angle) + frame * math.radians(
             self.rotation_speed.at(frame)
@@ -563,13 +564,14 @@ class Point(HasGeometry):
         self.x.set(x)
         self.y.set(y)
 
-    def _geom(
-        self, frame: int = 0, with_transforms: bool = False, before: Transform | None = None
-    ) -> shapely.Point:
+    def raw_geom(self, frame: int = 0) -> shapely.Point:
         return shapely.Point(self.x.at(frame), self.y.at(frame))
 
-    def geom(self, frame: int = 0, with_transforms: bool = False) -> shapely.Point:
-        return self._geom(frame, with_transforms=with_transforms)
+    def _geom(self, frame: int = 0, before: Transform | None = None) -> shapely.Point:
+        return self.raw_geom(frame)
+
+    def geom(self, frame: int = 0) -> shapely.Point:
+        return self._geom(frame)
 
 
 def transform_sorter(t: Transform) -> tuple[int, int, int]:

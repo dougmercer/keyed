@@ -164,7 +164,7 @@ class Scene(Transformable):
                         continue
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
-                        distance = point.distance(obj.geom(frame, with_transforms=True))
+                        distance = point.distance(obj.geom(frame))
                     if distance < min_distance:
                         min_distance = distance
                         nearest = obj
