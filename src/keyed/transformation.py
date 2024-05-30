@@ -181,9 +181,9 @@ class TransformControls(Freezeable):
     @guard_frozen
     def _follow(self, property: str, other: TransformControls) -> None:
         us = getattr(self, property)
-        assert isinstance(us, Property | Point)
+        assert isinstance(us, Property)
         them = getattr(other, property)
-        assert isinstance(them, type(us))
+        assert isinstance(them, Property)
         us.follow(them)
 
     @guard_frozen
