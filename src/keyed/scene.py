@@ -13,9 +13,8 @@ from tqdm import tqdm
 
 from .animation import Property
 from .code import Selection
-from .constants import Previewer
 from .helpers import freeze, guard_frozen
-from .previewer import Quality
+from .previewer import Quality, create_animation_window
 from .transformation import Transform, TransformControls, Transformable
 
 if TYPE_CHECKING:
@@ -173,11 +172,10 @@ class Scene(Transformable):
     @freeze
     def preview(
         self,
-        previewer: Previewer = Previewer.qt,
         quality: Quality = Quality.high,
         frame_rate: int = 24,
     ) -> None:
-        previewer(self, quality=quality, frame_rate=frame_rate)  # type: ignore[operator]
+        create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
     def get_context(self) -> cairo.Context:
         return cairo.Context(self.surface)

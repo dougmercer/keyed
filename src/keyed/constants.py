@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Self, SupportsIndex
 
 import numpy as np
@@ -15,7 +14,6 @@ __all__ = [
     "DR",
     "UL",
     "UR",
-    "Previewer",
 ]
 
 
@@ -86,10 +84,3 @@ DL = DOWN + LEFT
 DR = DOWN + RIGHT
 UL = UP + LEFT
 UR = UP + RIGHT
-
-
-class Previewer(Enum):
-    from .previewer import qt_preview, tk_preview
-
-    qt = qt_preview.create_animation_window
-    tk = tk_preview.create_animation_window

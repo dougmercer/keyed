@@ -1,3 +1,2 @@
-from . import qt_preview  # noqa
-from . import tk_preview  # noqa
+from .qt_preview import *  # noqa
 from .quality import *  # noqa
