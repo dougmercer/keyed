@@ -314,7 +314,7 @@ class Transformable(HasGeometry, Protocol):
         easing: type[EasingFunction] = CubicEaseInOut,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
-    ) -> None:
+    ) -> Self:
         from_ = from_ or self
 
         to_point = to.get_critical_point(end_frame, direction)
@@ -330,6 +330,7 @@ class Transformable(HasGeometry, Protocol):
             end_frame=end_frame,
             easing=easing,
         )
+        return self
 
     def freeze(self) -> None:
         if not self.is_frozen:
