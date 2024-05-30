@@ -61,18 +61,35 @@ class Base(Transformable, Protocol):
         r = Rectangle(
             self.scene,
             color=color,
+            x=0,
+            y=0,
             fill_color=fill_color,
             alpha=alpha,
             dash=dash,
             operator=operator,
         )
-        x_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[0])
-        y_follower = LambdaFollower(lambda frame: self.geom(frame).bounds[1])
 
-        r.controls.delta_x.follow(x_follower).offset(-buffer)
-        r.controls.delta_y.follow(y_follower).offset(-buffer)
-        r._width.follow(LambdaFollower(lambda frame: self.width(frame, with_transforms=False)))
-        r._height.follow(LambdaFollower(lambda frame: self.height(frame, with_transforms=False)))
+        def get_geom(frame: int) -> shapely.Polygon:
+            return self.geom(frame).buffer(buffer)
+
+        def x(frame: int) -> float:
+            return get_geom(frame).bounds[0]
+
+        def y(frame: int) -> float:
+            return get_geom(frame).bounds[1]
+
+        def width(frame: int) -> float:
+            g = get_geom(frame)
+            return g.bounds[2] - g.bounds[0]
+
+        def height(frame: int) -> float:
+            g = get_geom(frame)
+            return g.bounds[3] - g.bounds[1]
+
+        r.controls.delta_x.follow(LambdaFollower(x))
+        r.controls.delta_y.follow(LambdaFollower(y))
+        r._width.follow(LambdaFollower(width))
+        r._height.follow(LambdaFollower(height))
         return r
 
 

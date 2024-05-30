@@ -48,8 +48,8 @@ class Text(BaseText):
         self.size = size
         self.x = x
         self.y = y
-        self.controls.delta_x.set(x)
-        self.controls.delta_y.set(y)
+        self.controls.delta_x.offset(x)
+        self.controls.delta_y.offset(y)
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
