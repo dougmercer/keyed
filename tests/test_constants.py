@@ -2,8 +2,8 @@ import warnings
 from functools import wraps
 from typing import Any, Callable, TypeVar, cast
 
-import pytest
 import numpy as np
+import pytest
 from hypothesis import given, strategies as st
 
 from keyed import Direction
