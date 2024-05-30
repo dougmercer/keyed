@@ -4,6 +4,7 @@ from typing import Generator, Protocol, Self, Sequence
 
 import cairo
 import shapely
+import shapely.geometry
 import shapely.ops
 
 from .animation import Animation, Property
@@ -66,11 +67,6 @@ class Shape(Base, Protocol):
         assert isinstance(p, Property)
         p.add_animation(animation)
 
-    # def follow(self, property: str, animation: Animation) -> None:
-    #     p = getattr(self, property)
-    #     assert isinstance(p, Property)
-    #     p.add_follower(animation)
-
 
 class Rectangle(Shape):
     def __init__(
@@ -90,6 +86,10 @@ class Rectangle(Shape):
         draw_stroke: bool = True,
         line_width: float = 2,
         rotation: float = 0,
+        round_tl: bool = True,
+        round_tr: bool = True,
+        round_br: bool = True,
+        round_bl: bool = True,
     ) -> None:
         super().__init__()
         self.scene = scene
@@ -112,6 +112,10 @@ class Rectangle(Shape):
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.controls.rotation.value = rotation
+        self.round_tl = round_tl
+        self.round_tr = round_tr
+        self.round_br = round_br
+        self.round_bl = round_bl
 
     def __repr__(self) -> str:
         return (
@@ -134,35 +138,66 @@ class Rectangle(Shape):
         r = self.radius.at(frame)
 
         self.ctx.new_sub_path()
-        self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
-        self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 0)
-        self.ctx.arc(w - r, h - r, r, 0, math.pi / 2)
-        self.ctx.arc(r, h - r, r, math.pi / 2, math.pi)
+        # Top-left corner
+        if self.round_tl:
+            self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
+        else:
+            self.ctx.move_to(0, r)
+            self.ctx.line_to(0, 0)
+
+        # Top-right corner
+        if self.round_tr:
+            self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 0)
+        else:
+            self.ctx.line_to(w, 0)
+
+        # Bottom-right corner
+        if self.round_br:
+            self.ctx.arc(w - r, h - r, r, 0, math.pi / 2)
+        else:
+            self.ctx.line_to(w, h)
+
+        # Bottom-left corner
+        if self.round_bl:
+            self.ctx.arc(r, h - r, r, math.pi / 2, math.pi)
+        else:
+            self.ctx.line_to(0, h)
+
         self.ctx.close_path()
 
-    def raw_geom(self, frame: int = 0) -> shapely.Polygon:
-        """Return the geometry of the rounded rectangle as a Shapely polygon."""
+    def raw_geom(self, frame: int = 0) -> shapely.geometry.Polygon:
+        """Return the geometry of the rectangle, selectively rounding corners."""
         width = self._width.at(frame)
         height = self._height.at(frame)
         radius = self.radius.at(frame)
 
-        if radius == 0:
-            return shapely.box(0, 0, width, height)
+        # Create a basic rectangle
+        rect = shapely.geometry.box(0, 0, width, height)
 
-        # Create the four corners using buffers
-        tl = shapely.Point(radius, radius).buffer(radius, resolution=16)
-        tr = shapely.Point(width - radius, radius).buffer(radius, resolution=16)
-        br = shapely.Point(width - radius, height - radius).buffer(radius, resolution=16)
-        bl = shapely.Point(radius, height - radius).buffer(radius, resolution=16)
+        if radius == 0 or (
+            not self.round_tl and not self.round_tr and not self.round_br and not self.round_bl
+        ):
+            # No rounding needed
+            return rect
 
-        # Create the straight edges as rectangles
-        top = shapely.box(radius, 0, width - radius, radius)
-        bottom = shapely.box(radius, height - radius, width - radius, height)
-        left = shapely.box(0, radius, radius, height - radius)
-        right = shapely.box(width - radius, radius, width, height - radius)
+        # Subtract corner squares where rounding is required
+        corners = {
+            "tl": shapely.geometry.Point(radius, radius),
+            "tr": shapely.geometry.Point(width - radius, radius),
+            "br": shapely.geometry.Point(width - radius, height - radius),
+            "bl": shapely.geometry.Point(radius, height - radius),
+        }
 
-        # Combine all parts into a single polygon
-        return shapely.ops.unary_union([tl, tr, br, bl, top, bottom, left, right])
+        # Buffer the corners that need to be rounded
+        for corner, point in corners.items():
+            if getattr(self, f"round_{corner}"):
+                circle = point.buffer(radius, resolution=16)
+                square = shapely.geometry.box(
+                    point.x - radius, point.y - radius, point.x + radius, point.y + radius
+                )
+                rect = rect.difference(square).union(circle)
+
+        return rect
 
     @staticmethod
     def _arc_points(
