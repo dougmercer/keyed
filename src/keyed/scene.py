@@ -80,6 +80,7 @@ class Scene(Transformable):
         for file in self.full_output_dir.glob("*.png"):
             file.unlink()
 
+    @freeze
     def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
@@ -93,11 +94,13 @@ class Scene(Transformable):
             filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
+    @freeze
     def draw_as_layers(self) -> None:
         self.delete_old_frames()
         for i, _ in enumerate(self.content):
             self.draw([i], delete=False)
 
+    @freeze
     def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
         self.clear()
         layers_to_render = (
@@ -108,6 +111,7 @@ class Scene(Transformable):
         for content in layers_to_render:
             content.draw(frame)
 
+    @freeze
     def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
         self.draw_frame(frame, layers=layers)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
@@ -122,6 +126,7 @@ class Scene(Transformable):
         ctx.restore()
         return raster
 
+    @freeze
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         return np.ndarray(
             shape=(self._height, self._width, 4),
@@ -129,6 +134,7 @@ class Scene(Transformable):
             buffer=self.rasterize(frame, tuple(layers) if layers is not None else None).get_data(),
         )
 
+    @freeze
     def find(self, x: float, y: float, frame: int = 0) -> Base | None:
         """Find the nearest object on the canvas to the given x, y coordinates.
 
