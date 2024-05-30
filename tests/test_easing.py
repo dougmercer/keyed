@@ -47,3 +47,15 @@ def test_easing_classes(EasingFunc: type[easing.EasingFunction], expected: list[
 
 def test_protocol_implementation() -> None:
     assert isinstance(easing.LinearInOut(), easing.EasingFunction)
+
+
+def test_eq() -> None:
+    assert easing.LinearInOut() == easing.LinearInOut()
+
+
+def test_eq_invalid() -> None:
+    assert not (easing.LinearInOut() == "a")
+
+
+def test_hash() -> None:
+    assert hash(easing.LinearInOut()) == hash(easing.LinearInOut())
