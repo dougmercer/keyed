@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from .shapes import Rectangle
 
 
-__all__ = ["Base", "BaseText", "Selection", "Composite"]
+__all__ = ["Base", "BaseText", "Selection"]
 
 
 @runtime_checkable
@@ -128,7 +128,7 @@ class BaseText(Base, Protocol):
 T = TypeVar("T", bound=Base)
 
 
-class Composite(Base, list[T]):  # type: ignore[misc]
+class Selection(Base, list[T]):  # type: ignore[misc]
     def __init__(self, *args: Iterable[T]) -> None:
         Base.__init__(self)
         list.__init__(self, *args)
@@ -184,8 +184,6 @@ class Composite(Base, list[T]):  # type: ignore[misc]
         for obj in self:
             obj.add_transform(transform)
 
-
-class Selection(Composite[T]):
     @property
     def scene(self) -> Scene:  # type: ignore[override]
         if not self:
