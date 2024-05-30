@@ -111,7 +111,7 @@ class BaseText(Base, Protocol):
 T = TypeVar("T", bound=Base)
 
 
-class Composite(Base, list[T]):
+class Composite(Base, list[T]):  # type: ignore[misc]
     def __init__(self, *args: Iterable[T]) -> None:
         Base.__init__(self)
         list.__init__(self, *args)
@@ -166,9 +166,6 @@ class Composite(Base, list[T]):
     def add_transform(self, transform: Transform) -> None:
         for obj in self:
             obj.add_transform(transform)
-
-    def __hash__(self) -> int:  # type: ignore[override]
-        return Base.__hash__(self)
 
 
 class Selection(Composite[T]):

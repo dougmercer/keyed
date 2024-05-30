@@ -137,7 +137,7 @@ class Text(BaseText):
 TextT = TypeVar("TextT", bound=BaseText)
 
 
-class TextSelection(BaseText, Selection[TextT]):
+class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
     @property
     def chars(self) -> TextSelection[Text]:
         return TextSelection(itertools.chain.from_iterable(item.chars for item in self))

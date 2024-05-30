@@ -92,6 +92,7 @@ def test_base_animations(
     scene.add(obj)
     method(obj)
     last = None
+    scene.freeze()
     for frame in range(6):
         val = scene.asarray(frame).tobytes()
         assert val == snapshot(include=props(f"{frame}", str(type(obj)), method.func.__name__))
@@ -123,6 +124,7 @@ def test_write_on(
         duration=1,
         start_frame=0,
     )
+    scene.freeze()
     last = None
     for frame in range(6):
         val = scene.asarray(frame).tobytes()

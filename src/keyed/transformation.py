@@ -15,7 +15,7 @@ from shapely.geometry.base import BaseGeometry
 from .animation import Animation, AnimationType, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .helpers import ExtendedList
+from .helpers import ExtendedList, Freezeable, guard_frozen
 
 __all__ = [
     "Transform",
@@ -36,7 +36,10 @@ TRANSFORM_CACHE: dict[int, dict[int, cairo.Matrix]] = dict()
 
 
 @runtime_checkable
-class HasGeometry(Protocol):
+class HasGeometry(Freezeable, Protocol):
+    def __init__(self) -> None:
+        super().__init__()
+
     def raw_geom(
         self,
         frame: int = 0,
@@ -119,6 +122,12 @@ class HasGeometry(Protocol):
     def height(self, frame: int = 0, with_transforms: bool = True) -> float:
         return self.up(frame, with_transforms) - self.down(frame, with_transforms)
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self._geom = cache(self._geom)  # type: ignore[method-assign]
+            self.geom = cache(self.geom)  # type: ignore[method-assign]
+            super().freeze()
+
 
 def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
     """Yields increasing subsets of the list."""
@@ -153,10 +162,11 @@ def left_of(lst: Sequence[Transform], query: Transform | None) -> list[Transform
     return [t for t in lst if t in all_transforms[:idx]]
 
 
-class TransformControls:
+class TransformControls(Freezeable):
     animatable_properties = ("rotation", "scale", "delta_x", "delta_y")
 
     def __init__(self, obj: Transformable) -> None:
+        super().__init__()
         self.rotation = Property(0)
         self.scale = Property(1)
         self.delta_x = Property(0)
@@ -164,40 +174,11 @@ class TransformControls:
         self.transforms: list[Transform] = []
         self.obj = obj
 
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.rotation,
-                self.scale,
-                self.delta_x,
-                self.delta_y,
-                self.transforms,
-                self.obj,
-            )
-        )
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (
-            self.rotation,
-            self.scale,
-            self.delta_x,
-            self.delta_y,
-            self.transforms,
-            self.obj,
-        ) == (
-            other.rotation,
-            other.scale,
-            other.delta_x,
-            other.delta_y,
-            other.transforms,
-            other.obj,
-        )
-
+    @guard_frozen
     def add(self, transform: Transform) -> None:
         self.transforms.append(transform)
 
+    @guard_frozen
     def _follow(self, property: str, other: TransformControls) -> None:
         us = getattr(self, property)
         assert isinstance(us, Property | Point)
@@ -205,6 +186,7 @@ class TransformControls:
         assert isinstance(them, type(us))
         us.follow(them)
 
+    @guard_frozen
     def follow(self, other: TransformControls) -> None:
         """Follow another transform control.
 
@@ -254,12 +236,20 @@ class TransformControls:
 
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.base_matrix = cache(self.base_matrix)  # type: ignore[method-assign]
+            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
+            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
+            super().freeze()
+
 
 @runtime_checkable
 class Transformable(HasGeometry, Protocol):
     controls: TransformControls
 
     def __init__(self) -> None:
+        super().__init__()
         self.controls = TransformControls(self)
 
     def raw_geom(self, frame: int = 0) -> shapely.Polygon:
@@ -341,9 +331,18 @@ class Transformable(HasGeometry, Protocol):
             easing=easing,
         )
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
+            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
+            self.geom = cache(self.geom)  # type: ignore[method-assign]
+            self._geom = cache(self._geom)  # type: ignore[method-assign]
+            self.controls.freeze()
+            super().freeze()
+
 
 @runtime_checkable
-class Transform(Protocol):
+class Transform(Freezeable, Protocol):
     uid_maker: itertools.count = itertools.count()
     all_transforms: list[Transform] = []
     reference: Transformable
@@ -352,20 +351,21 @@ class Transform(Protocol):
     uid: int
 
     def __init__(self) -> None:
+        super().__init__()
         self.uid = next(self.uid_maker)
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         pass
 
     def get_matrix(self, frame: int = 0) -> cairo.Matrix:
         return self._get_matrix(frame)
 
-    def __eq__(self, other: Any) -> bool:
-        pass
-
-    def __hash__(self) -> int:
-        pass
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            # Monkey patch functions to cache now that object is frozen
+            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
+            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
+            super().freeze()
 
 
 class Rotation(Transform):
@@ -384,19 +384,6 @@ class Rotation(Transform):
         self.center = center or reference
         self.direction = direction
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.reference, self.animation, self.uid, self.direction) == (
-            other.reference,
-            other.animation,
-            other.uid,
-            other.direction,
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.reference, self.animation, self.uid, self.direction))
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -406,7 +393,6 @@ class Rotation(Transform):
             f"direction={self.direction})"
         )
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         cx, cy = self.center._get_critical_point(
             frame, direction=self.direction, before=before or self
@@ -435,19 +421,6 @@ class Scale(Transform):
         self.center = center or reference
         self.direction = direction
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.reference, self.animation, self.uid, self.direction) == (
-            other.reference,
-            other.animation,
-            other.uid,
-            other.direction,
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.reference, self.animation, self.uid, self.direction))
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -457,7 +430,6 @@ class Scale(Transform):
             f"direction={self.direction})"
         )
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         cx, cy = self.center._get_critical_point(
             frame, direction=self.direction, before=before or self
@@ -485,18 +457,6 @@ class TranslateX(Transform):
         self.reference = reference
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.reference, self.animation, self.uid) == (
-            other.reference,
-            other.animation,
-            other.uid,
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.reference, self.animation, self.uid))
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -504,7 +464,6 @@ class TranslateX(Transform):
             f"animation={self.animation}"
         )
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
         delta_x = self.animation.apply(frame, 0)
@@ -527,18 +486,6 @@ class TranslateY(Transform):
         self.reference = reference
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.reference, self.animation, self.uid) == (
-            other.reference,
-            other.animation,
-            other.uid,
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.reference, self.animation, self.uid))
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -546,7 +493,6 @@ class TranslateY(Transform):
             f"animation={self.animation}"
         )
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
         delta_y = self.animation.apply(frame, 0)
@@ -578,28 +524,6 @@ class Orbit(Transform):
         self.initial_angle = initial_angle
         self.direction = direction
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.reference, self.animation, self.uid, self.distance, self.rotation_speed) == (
-            other.reference,
-            other.animation,
-            other.uid,
-            self.distance,
-            self.rotation_speed,
-        )
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.reference,
-                self.animation,
-                self.uid,
-                self.distance,
-                self.rotation_speed,
-            )
-        )
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -613,7 +537,6 @@ class Orbit(Transform):
             f"direction={self.direction})"
         )
 
-    @cache
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         # Begin orbitting.
         if frame < self.animation.start_frame:

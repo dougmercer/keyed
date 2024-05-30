@@ -14,8 +14,9 @@ from tqdm import tqdm
 from .animation import Property
 from .code import Selection
 from .constants import Previewer
+from .helpers import freeze, guard_frozen
 from .previewer import Quality
-from .transformation import TransformControls, Transformable
+from .transformation import Transform, TransformControls, Transformable
 
 if TYPE_CHECKING:
     from .base import Base
@@ -38,7 +39,7 @@ class Scene(Transformable):
         height: int = 2160,
         antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
     ) -> None:
-        Transformable.__init__(self)
+        super().__init__()
         self.scene_name = scene_name
         self.num_frames = num_frames
         self.output_dir = output_dir
@@ -65,6 +66,7 @@ class Scene(Transformable):
         assert self.scene_name is not None
         return self.output_dir / self.scene_name
 
+    @guard_frozen
     def add(self, *content: Base) -> None:
         self.content.extend(content)
 
@@ -106,7 +108,6 @@ class Scene(Transformable):
         for content in layers_to_render:
             content.draw(frame)
 
-    @cache
     def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
         self.draw_frame(frame, layers=layers)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
@@ -120,10 +121,6 @@ class Scene(Transformable):
         ctx.paint()
         ctx.restore()
         return raster
-
-    def _populate_raster_cache(self) -> None:
-        for frame in range(self.num_frames):
-            self.rasterize(frame)
 
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         return np.ndarray(
@@ -172,6 +169,7 @@ class Scene(Transformable):
         check_objects(self.content)
         return nearest
 
+    @freeze
     def preview(
         self,
         previewer: Previewer = Previewer.qt,
@@ -196,3 +194,12 @@ class Scene(Transformable):
 
         graph = TransformDependencyGraph.from_transforms()
         graph.draw()
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.rasterize = cache(self.rasterize)  # type: ignore[method-assign]
+            for layer in self.content:
+                layer.freeze()
+            for transform in Transform.all_transforms:
+                transform.freeze()
+            super().freeze()
