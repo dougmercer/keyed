@@ -172,7 +172,7 @@ class Composite(Base, list[T]):  # type: ignore[misc]
 
     def raw_geom(self, frame: int = 0) -> shapely.Polygon:
         # not really used
-        return shapely.GeometryCollection([obj.raw_geom(frame) for obj in self])
+        return shapely.GeometryCollection([obj.raw_geom(frame) for obj in self])  # pragma: no cover
 
     def _geom(self, frame: int = 0, before: Transform | None = None) -> shapely.Polygon:
         return shapely.GeometryCollection([obj._geom(frame, before=before) for obj in self])
