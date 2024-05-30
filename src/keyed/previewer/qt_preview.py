@@ -53,6 +53,7 @@ class InteractiveLabel(QLabel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
+        self.setStyleSheet("border: 2px solid white;")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         x, y = event.position().x(), event.position().y()
