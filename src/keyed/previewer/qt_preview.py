@@ -5,7 +5,7 @@ import time
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap
+from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -198,13 +198,24 @@ class MainWindow(QMainWindow):
         qimage = QImage(
             img_data, self.scene._width, self.scene._height, QImage.Format.Format_ARGB32
         )
-        qpixmap = QPixmap.fromImage(qimage)
-        qpixmap = qpixmap.scaled(
-            self.quality.width,
-            self.quality.height,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
+
+        # Create a QPixmap and fill it with black
+        qpixmap = QPixmap(self.quality.width, self.quality.height)
+        qpixmap.fill(Qt.GlobalColor.black)
+
+        # Use QPainter to draw the QImage onto the QPixmap
+        with QPainter(qpixmap) as painter:
+            painter.drawImage(
+                0,
+                0,
+                qimage.scaled(
+                    self.quality.width,
+                    self.quality.height,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                ),
+            )
+
         self.label.setPixmap(qpixmap)
 
     def update_frame_counter(self) -> None:
