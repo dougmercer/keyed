@@ -116,14 +116,9 @@ class Scene(Transformable):
         self.draw_frame(frame, layers=layers)
         raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
         ctx = cairo.Context(raster)
-
-        matrix = self.controls.get_matrix(frame)
-        ctx.save()
-        ctx.set_matrix(matrix)
         ctx.set_antialias(self.antialias)
         ctx.set_source_surface(self.surface, 0, 0)
         ctx.paint()
-        ctx.restore()
         return raster
 
     @freeze
@@ -205,6 +200,8 @@ class Scene(Transformable):
         if not self.is_frozen:
             self.rasterize = cache(self.rasterize)  # type: ignore[method-assign]
             for layer in self.content:
+                for t in self.controls.transforms:
+                    layer.add_transform(t)
                 layer.freeze()
             for transform in Transform.all_transforms:
                 transform.freeze()
