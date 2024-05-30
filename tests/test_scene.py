@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from keyed import Scene, Text, TextSelection
+from keyed import Animation, Rectangle, Scene, Text, TextSelection
 
 
 def test_text_drawing() -> None:
@@ -177,3 +177,25 @@ def test_asarray() -> None:
     arr = scene.asarray(0)
     assert isinstance(arr, np.ndarray)
     assert arr.shape == (scene._height, scene._width, 4)
+
+
+def test_scene_transform() -> None:
+    scene1 = Scene(width=5, height=5)
+    r1 = Rectangle(scene1, x=1, y=1, width=1, height=1)
+    scene1.add(r1)
+
+    rot = Animation(1, 2, 3, 4)
+    translate_args = (1, 2, 3, 4)
+    scene1.rotate(rot, scene1)
+    scene1.translate(*translate_args)
+    arr1 = scene1.asarray(6)
+
+    scene2 = Scene(width=5, height=5)
+    r2 = Rectangle(scene2, x=1, y=1, width=1, height=1)
+
+    scene2.add(r2)
+    r2.rotate(rot, scene2)
+    r2.translate(*translate_args)
+    arr2 = scene2.asarray(6)
+
+    assert (arr1 == arr2).all(), (arr1, arr2)
