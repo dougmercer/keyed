@@ -188,12 +188,6 @@ class Scene(Transformable):
             self._height,
         )
 
-    def show_compute_graph(self) -> None:
-        from .compute_graph import TransformDependencyGraph
-
-        graph = TransformDependencyGraph.from_transforms()
-        graph.draw()
-
     def freeze(self) -> None:
         if not self.is_frozen:
             self.rasterize = cache(self.rasterize)  # type: ignore[method-assign]
