@@ -11,7 +11,7 @@ import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
 
-from .animation import Animation, Property
+from .animation import Property
 from .base import Base
 from .scene import Scene
 from .shapes import Circle, Shape
@@ -38,16 +38,6 @@ def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.fl
     assert p2.shape == (2,)
     assert p3.shape == (2,)
     return np.linalg.norm(bezier_derivative(t, p0, p1, p2, p3))
-
-
-# Function to calculate the point on a Bezier curve for a given t
-def bezier_point(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
-    """Calculate the point on the Bezier curve at parameter t."""
-    assert p0.shape == (2,)
-    assert p1.shape == (2,)
-    assert p2.shape == (2,)
-    assert p3.shape == (2,)
-    return (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t**2 * p2 + t**3 * p3
 
 
 def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
@@ -200,10 +190,6 @@ class Curve(Shape):
         if end < 0 or end > 1:
             raise ValueError("Parameter end must be between 0 and 1.")
 
-        # If the peak-to-peak (ptp) distance is 0, then
-        # although we have more than two points they are all equal.
-        if tuple(pts.ptp(axis=0)) == (0.0, 0.0):
-            return None
         cp1, cp2 = self.control_points(pts, frame)
 
         # Compute lengths of each segment and their cumulative sum
@@ -283,18 +269,9 @@ class Curve(Shape):
             f"{self.__class__.__name__}("
             f"objects={self.objects!r}, "
             f"dash={self.dash}, "
-            f"operator={self.operator}, "
+            f"operator={self.operator}"
             ")"
         )
-
-    def animate(self, property: str, animation: Animation) -> None:
-        if property in ["x", "y"]:
-            for obj in self.objects:
-                obj.animate(property, animation)
-        else:
-            p = getattr(self, property)
-            assert isinstance(p, Property)
-            p.add_animation(animation)
 
     def __copy__(self) -> Self:
         new = type(self)(
