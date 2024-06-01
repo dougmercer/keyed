@@ -139,6 +139,12 @@ class Curve(Shape):
         simplify: float | None = None,
         tension: float = 1,
     ):
+        """Draw a curve through the object's centroids.
+
+        Differences from Curve 2:
+        1. If the centroid of all objects are equal, Curve will draw nothing, but
+           Curve2 will draw at the point.
+        """
         super().__init__()
         self.start = Property(0)
         self.end = Property(1)
@@ -183,13 +189,21 @@ class Curve(Shape):
     def _draw_shape(self, frame: int = 0) -> None:
         start = self.start.at(frame)
         end = self.end.at(frame)
-        if start == end and self.start.at(frame + 1) == self.end.at(frame + 1):
+        pts = self.simplified_points(frame)
+
+        if (start == end) and self.start.at(frame + 1) == self.end.at(frame + 1):
+            return
+        if tuple(pts.ptp(axis=0)) == (0, 0):
             return
         if start < 0 or start > 1:
             raise ValueError("Parameter start must be between 0 and 1.")
         if end < 0 or end > 1:
             raise ValueError("Parameter end must be between 0 and 1.")
-        pts = self.simplified_points(frame)
+
+        # If the peak-to-peak (ptp) distance is 0, then
+        # although we have more than two points they are all equal.
+        if tuple(pts.ptp(axis=0)) == (0.0, 0.0):
+            return None
         cp1, cp2 = self.control_points(pts, frame)
 
         # Compute lengths of each segment and their cumulative sum

@@ -110,6 +110,8 @@ class Curve2(Shape):
         coords = list(geom.exterior.coords)
         if not coords:
             return
+        if tuple(np.ptp(self.points(frame), axis=0)) == (0, 0):
+            return
         self.ctx.move_to(*coords[0])
         for coord in coords[1:]:
             self.ctx.line_to(*coord)
