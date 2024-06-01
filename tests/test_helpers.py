@@ -1,6 +1,6 @@
 import pytest
 
-from keyed.helpers import guard_frozen, ExtendedList, Freezeable
+from keyed.helpers import ExtendedList, Freezeable, guard_frozen
 
 
 def test_guard_frozen():
@@ -39,12 +39,13 @@ def test_extended_list():
 
     assert repr(b) == repr(list(range(8)))
 
+
 def test_freezeable():
     class Bleh(Freezeable):
         pass
 
     b = Bleh()
-    
+
     # This should be OK
     b.a = 1
 
