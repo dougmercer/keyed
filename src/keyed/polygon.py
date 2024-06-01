@@ -147,7 +147,7 @@ class Curve2(Shape):
         return shapely.LineString(self.points(frame)).buffer(self.buffer.at(frame))
 
     def simplified_points(self, frame: int = 0) -> VecArray:
-        line = shapely.LineString(self.raw_points)
+        line = shapely.LineString(self.raw_points(frame))
         line = line.simplify(self.simplify) if self.simplify is not None else line
         return np.array(list(line.coords))
 
