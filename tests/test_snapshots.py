@@ -1,5 +1,4 @@
 from functools import partial
-from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -28,7 +27,7 @@ METHODS = [
 
 @pytest.fixture
 def scene() -> keyed.Scene:
-    return keyed.Scene("test_scene", num_frames=6, output_dir=Path("/tmp"), width=100, height=100)
+    return keyed.Scene(num_frames=6, width=100, height=100)
 
 
 @pytest.fixture
