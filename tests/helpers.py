@@ -1,4 +1,22 @@
+import warnings
+from functools import wraps
+from typing import Any, Callable, TypeVar, cast
+
 import numpy as np
+
+__all__ = ["filter_runtime_warning", "to_intensity", "find_centroid"]
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def filter_runtime_warning(func: F) -> F:
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            return func(*args, **kwargs)
+
+    return cast(F, wrapper)
 
 
 def to_intensity(rgba: np.ndarray) -> np.ndarray:
