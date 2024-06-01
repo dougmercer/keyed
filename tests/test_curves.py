@@ -2,9 +2,12 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+import shapely
+from cairo import OPERATOR_CLEAR
+from hypothesis import assume, given, strategies as st
 
-from keyed import Circle, Scene
-from keyed.curve import Curve
+from helpers import filter_runtime_warning, to_intensity
+from keyed import Circle, Curve, Curve2, Scene
 
 
 @pytest.fixture
@@ -34,8 +37,11 @@ def trace(scene: Scene, test_points: Sequence[tuple[float, float]]) -> Curve:
     return Curve(scene, objects=objects, color=(1, 0, 0), alpha=1, tension=0.5)
 
 
-def test_curve_points_equal(curve: Curve, test_points: list[tuple[float, float]]) -> None:
-    points = curve.points(0)
+@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
+def test_curve_points_equal(
+    scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]
+) -> None:
+    points = CurveMaker.from_points(scene, points=test_points).points(0)
     for p, tp in zip(points, test_points):
         assert np.allclose(p, tp), (p, tp)
 
@@ -62,19 +68,72 @@ def test_trace_control_points(trace: Curve) -> None:
     assert cp2.shape == (2, 2)
 
 
-def test_curve_simplified_points(curve: Curve) -> None:
-    points = curve.simplified_points(0)
+@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
+def test_curve_simplified_points(
+    scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]
+) -> None:
+    points = CurveMaker.from_points(scene, test_points).simplified_points(0)
     assert points.shape == (3, 2)
 
 
-def test_curve_points(curve: Curve) -> None:
-    points = curve.points(0)
+def test_curve_points(scene: Scene, test_points: list[tuple[float, float]]) -> None:
+    points = Curve.from_points(scene, test_points).points(0)
     assert points.shape == (3, 2)
 
 
 def test_trace_points(trace: Curve) -> None:
     points = trace.points(0)
     assert points.shape == (3, 2)
+
+
+@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
+def test_points_same_display_nothing(CurveMaker: type[Curve] | type[Curve2]) -> None:
+    test_points_same = [(1, 1), (1, 1), (1, 1)]
+    scene = Scene(width=10, height=10)
+    c = CurveMaker.from_points(scene, test_points_same)
+    scene.add(c)
+    arr = scene.asarray(0)
+    assert (arr == 0).all(), arr
+
+
+typical_float = st.floats(min_value=20, max_value=80, allow_infinity=False, allow_nan=False)
+
+
+@filter_runtime_warning
+@given(
+    pts=st.lists(
+        st.tuples(
+            typical_float,
+            typical_float,
+        ),
+        min_size=2,
+        max_size=4,
+    )
+)
+@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
+def test_curve_contains_pts(
+    pts: list[tuple[float, float]], CurveMaker: type[Curve] | type[Curve2]
+) -> None:
+    assume((np.array(pts).ptp(axis=0) > 5).any())
+    scene = Scene(width=100, height=100)
+    curve = CurveMaker.from_points(scene, pts, line_width=3)
+    scene.add(curve)
+    total_intensity = to_intensity(scene.asarray(0)).sum()
+    for pt in pts:
+        scene = Scene(width=100, height=100)
+        curve = Curve.from_points(scene, pts, line_width=3)
+        assert (
+            curve.geom(0).distance(shapely.Point(*pt)) < 0.01
+        ), "Input point is not near the curve."
+
+        # Check that if we remove content near each of the input points we remove intensity
+        # from the scene.
+        circle = Circle(scene, pt[0], pt[1], operator=OPERATOR_CLEAR)
+        scene.add(curve, circle)
+        intensity = to_intensity(scene.asarray(0)).sum()
+        assert (
+            total_intensity > intensity
+        ), "Curve is not visibly near input point {total_intensity} {intensity}"
 
 
 # @pytest.mark.parametrize("t", [0, 0.5, 1])
