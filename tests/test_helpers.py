@@ -3,12 +3,12 @@ import pytest
 from keyed.helpers import ExtendedList, Freezeable, guard_frozen
 
 
-def test_guard_frozen():
+def test_guard_frozen() -> None:
     class Blah:
         is_frozen = False
 
         @guard_frozen
-        def blah(self):
+        def blah(self) -> None:
             pass
 
     b = Blah()
@@ -22,7 +22,7 @@ def test_guard_frozen():
         b.blah()
 
 
-def test_extended_list():
+def test_extended_list() -> None:
     a = [0, 1, 2, 3]
     b = ExtendedList(a)
     b.append(5)
@@ -40,7 +40,7 @@ def test_extended_list():
     assert repr(b) == repr(list(range(8)))
 
 
-def test_freezeable():
+def test_freezeable() -> None:
     class Bleh(Freezeable):
         pass
 
