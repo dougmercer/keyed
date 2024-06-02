@@ -37,6 +37,7 @@ class Text(BaseText):
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
         code: Code | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_ADD,
     ):
         super().__init__()
         self.text = text
@@ -54,6 +55,7 @@ class Text(BaseText):
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
+        self.operator = operator
 
     def __repr__(self) -> str:
         color_str = f"({self.color[0]:.2f}, {self.color[1]:.2f}, {self.color[2]:.2f})"
@@ -75,6 +77,7 @@ class Text(BaseText):
     def style(self, frame: int) -> Generator[None, None, None]:
         try:
             self.ctx.save()
+            self.ctx.set_operator(self.operator)
             self.ctx.select_font_face(self.font, self.slant, self.weight)
             self.ctx.set_font_size(self.size.at(frame))
             self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
@@ -208,6 +211,7 @@ class Token(TextSelection[Text]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_ADD,
     ):
         self._token = token
         objects: list[Text] = []
@@ -223,6 +227,7 @@ class Token(TextSelection[Text]):
                     font=font,
                     alpha=alpha,
                     code=code,
+                    operator=operator,
                 )
             )
             extents = objects[-1].extents()
@@ -271,6 +276,7 @@ class Line(TextSelection[Token]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_ADD,
     ):
         self._tokens = tokens
         objects: list[Token] = []
@@ -285,6 +291,7 @@ class Line(TextSelection[Token]):
                     font=font,
                     alpha=alpha,
                     code=code,
+                    operator=operator,
                 )
             )
             x += objects[-1].extents().x_advance
@@ -314,6 +321,7 @@ class Code(TextSelection[Line]):
         x: float = 10,
         y: float = 10,
         alpha: float = 1,
+        operator: cairo.Operator = cairo.OPERATOR_ADD,
     ) -> None:
         self._tokens = tokens
         self.font = font
@@ -346,6 +354,7 @@ class Code(TextSelection[Line]):
                     font_size=font_size,
                     alpha=alpha,
                     code=self,
+                    operator=operator,
                 )
             )
             y += line_height
