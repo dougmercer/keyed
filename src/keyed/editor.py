@@ -1,11 +1,10 @@
-from typing import Self
-
-from .animation import LambdaFollower
+from .animation import Animation, LambdaFollower
 from .base import Selection
-from .code import Code, Line, Text, Token
-from .constants import DR, LEFT, UP
+from .code import Code, Text
+from .constants import DOWN, DR, LEFT, UL, UP
 from .scene import Scene
 from .shapes import Circle, Rectangle
+from .transformation import Transform
 
 __all__ = ["Editor"]
 
@@ -27,6 +26,7 @@ class Editor(Selection):
         x: float = 10,
         y: float = 10,
         title: str = "",
+        code: Code | None = None,
         width: float = 1920,
         height: float = 1080,
         menu_height: float = 40,
@@ -45,6 +45,7 @@ class Editor(Selection):
         self.window_color = window_color
         self.bar_color = bar_color
         self.scroll_color = scroll_color
+        self.code = code
 
         main_window = Rectangle(
             scene,
@@ -76,21 +77,13 @@ class Editor(Selection):
 
         menu_text = Text(scene, x=0, y=0, text=title, color=WHITE)
 
-        def font_size(frame: int) -> float:
-            return menu_text.max_containing_font_size(
-                0.75 * (self._width.at(frame) - 3 * self.menu_height.at(frame)),
-                0.75 * self.menu_height.at(frame),
-            )
-
-        menu_text.size.follow(LambdaFollower(font_size))
-
         circles = self._make_circles(scene)
         scroll_bar = Rectangle(
             scene,
             x=0,
             y=0,
             width=scroll_width,
-            height=0,  # height - menu_height
+            height=0,
             fill_color=scroll_color,
             color=WHITE,
             round_bl=False,
@@ -112,21 +105,65 @@ class Editor(Selection):
         top_bar.lock_on(main_window, direction=UP, start_frame=-5)
 
         # Center the menu text in the menu bar
-        menu_text.lock_on(top_bar, start_frame=-4)
+        menu_text.lock_on(top_bar, start_frame=-1)
 
-        # Align the circles to the left of the menu bar. Translate over by
-        circle_offset = menu_height / 2
-        circles.lock_on(top_bar, start_frame=-3, direction=LEFT).translate(circle_offset, 0, -2, -2)
-        scroll_bar._height.follow(main_window._height).offset(-menu_height, frame=-10)
+        # Express font size relative to the menu_bar.
+        # Note: this can technically overflow into the circles, but it looks weird to
+        # center in the non-circles_container space.
+        def font_size(frame: int) -> float:
+            return menu_text.max_containing_font_size(
+                0.75 * self._width.at(frame) - 3 * self.menu_height.at(frame),
+                0.75 * self.menu_height.at(frame),
+            )
+
+        menu_text.size.follow(LambdaFollower(font_size))
+
+        # Position the circles within a non-visible container in the top bar.
+        circles_container = Rectangle(scene, x=0, y=0, alpha=0.5, fill_color=(1, 0, 0))
+        circles_container._width.follow(
+            LambdaFollower(lambda frame: 3 * self.menu_height.at(frame))
+        )
+        circles_container._height.follow(LambdaFollower(lambda frame: self.menu_height.at(frame)))
+        circles_container.lock_on(top_bar, start_frame=-3, direction=LEFT)
+        circles.lock_on(circles_container, start_frame=-2)
+
+        # Position the scrollbar.
         scroll_bar.lock_on(main_window, start_frame=-1, direction=DR)
 
+        # Put the objects into Self
         self.extend([main_window, scroll_bar, top_bar, circles, menu_text])
 
-        self.translate(x, y, -1, -1)
+        if self.code is not None:
+            text_extents = Rectangle(
+                scene,
+                round_tl=False,
+                round_tr=False,
+                round_bl=main_window.round_bl,
+                round_br=main_window.round_br,
+                alpha=0.5,
+                fill_color=(1, 0, 0),
+            )
+            text_extents._height.follow(scroll_bar._height)
+            text_extents._width.follow(main_window._width)
+            text_extents.radius = main_window.radius
+            text_extents.lock_on(main_window, direction=DOWN)
+            buffer = min(radius, 20)
+            buffered_text_extents = Rectangle(scene)
+            buffered_text_extents._height.follow(text_extents._height).offset(-buffer)
+            buffered_text_extents._width.follow(text_extents._width).offset(-buffer)
+            buffered_text_extents.lock_on(text_extents, direction=DOWN)
 
-    def add_text(self, text: Code | Line | Token | Text) -> Self:
-        self.text = text
-        return self
+            # Make all text objects share a common context
+            # NOTE: Maybe they should already share a context?
+            ctx = scene.get_context()
+            for char in self.code.chars:
+                char.ctx = ctx
+            text_extents.ctx = ctx
+            self.text_extents = text_extents
+            self.code.lock_on(buffered_text_extents, direction=UL)
+
+        # Apply x/y offset.
+        self.translate(x, y, -1, -1)
 
     def _make_circles(self, scene: Scene) -> Selection[Circle]:
         def radius(frame: int) -> float:
@@ -153,3 +190,22 @@ class Editor(Selection):
         green.controls.delta_x.follow(LambdaFollower(green_offset))
         green.radius.follow(LambdaFollower(radius))
         return Selection([red, yellow, green])
+
+    def draw(self, frame: int = 0) -> None:
+        # Define the clipping region to the bounds of the editor window
+        super().draw(frame)
+        if self.code:
+            with self.text_extents.clip(frame):
+                self.code.draw(frame)
+
+    def add_transform(self, transform: Transform) -> None:
+        super().add_transform(transform)
+        if self.code is not None:
+            self.code.add_transform(transform)
+            self.text_extents.add_transform(transform)
+
+    def animate(self, property: str, animation: Animation) -> None:
+        super().animate(property, animation)
+        if self.code is not None:
+            self.code.animate(property, animation)
+            self.text_extents.animate(property, animation)

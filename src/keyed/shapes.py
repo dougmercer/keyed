@@ -67,6 +67,23 @@ class Shape(Base, Protocol):
         assert isinstance(p, Property)
         p.add_animation(animation)
 
+    @contextmanager
+    def clip(self, frame: int = 0, ctx: cairo.Context | None = None) -> Generator[None, None, None]:
+        if ctx is not None:
+            raise NotImplementedError(
+                "Need to update _draw_shape another methods to support arbitrary context."
+            )
+
+        ctx = ctx or self.ctx
+        try:
+            ctx.save()
+            with self.controls.transform(self.ctx, frame):
+                self._draw_shape(frame)
+            ctx.clip()
+            yield
+        finally:
+            ctx.restore()
+
 
 class Rectangle(Shape):
     def __init__(
