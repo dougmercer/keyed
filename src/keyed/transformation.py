@@ -332,6 +332,17 @@ class Transformable(HasGeometry, Protocol):
         )
         return self
 
+    def lock_on(
+        self,
+        target: Transformable,
+        reference: Transformable | None = None,
+        start_frame: int = 0,
+        end_frame: int = 9999,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        self.add_transform(LockOn(self, target, reference, start_frame, end_frame, direction))
+        return self
+
     def freeze(self) -> None:
         if not self.is_frozen:
             self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
@@ -347,7 +358,8 @@ class Transform(Freezeable, Protocol):
     uid_maker: itertools.count = itertools.count()
     all_transforms: list[Transform] = []
     reference: Transformable
-    animation: Animation
+    start_frame: int
+    end_frame: int
     priority: int
     uid: int
 
@@ -384,6 +396,14 @@ class Rotation(Transform):
         self.animation = animation
         self.center = center or reference
         self.direction = direction
+
+    @property
+    def start_frame(self) -> int:  # type: ignore[override]
+        return self.animation.start_frame
+
+    @property
+    def end_frame(self) -> int:  # type: ignore[override]
+        return self.animation.end_frame
 
     def __repr__(self) -> str:
         return (
@@ -422,6 +442,14 @@ class Scale(Transform):
         self.center = center or reference
         self.direction = direction
 
+    @property
+    def start_frame(self) -> int:  # type: ignore[override]
+        return self.animation.start_frame
+
+    @property
+    def end_frame(self) -> int:  # type: ignore[override]
+        return self.animation.end_frame
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
@@ -456,6 +484,8 @@ class TranslateX(Transform):
     ):
         super().__init__()
         self.reference = reference
+        self.start_frame = start_frame
+        self.end_frame = end_frame
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
     def __repr__(self) -> str:
@@ -485,6 +515,8 @@ class TranslateY(Transform):
     ):
         super().__init__()
         self.reference = reference
+        self.start_frame = start_frame
+        self.end_frame = end_frame
         self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
 
     def __repr__(self) -> str:
@@ -524,6 +556,8 @@ class Orbit(Transform):
         self.center = center
         self.initial_angle = initial_angle
         self.direction = direction
+        self.start_frame = start_frame
+        self.end_frame = end_frame
 
     def __repr__(self) -> str:
         return (
@@ -567,6 +601,50 @@ class Orbit(Transform):
 
         matrix.translate(-(x + width / 2), -(y + height / 2))
         return matrix
+
+
+class LockOn(Transform):
+    priority: int = 5
+
+    def __init__(
+        self,
+        obj: Transformable,
+        target: Transformable,
+        reference: Transformable | None = None,
+        start_frame: int = 0,
+        end_frame: int = 9999,
+        direction: Direction = ORIGIN,
+    ):
+        super().__init__()
+        self.obj = obj
+        self.target = target
+        self.reference = reference or obj
+        self.start_frame = start_frame
+        self.end_frame = end_frame
+        self.direction = direction
+
+    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        if frame < self.start_frame:
+            return matrix
+        if frame > self.end_frame:
+            frame = self.end_frame
+
+        before = before or self
+        to_point = self.target._get_critical_point(frame, self.direction, before=before)
+        from_point = self.reference._get_critical_point(frame, self.direction, before=before)
+        delta_x = to_point[0] - from_point[0]
+        delta_y = to_point[1] - from_point[1]
+
+        matrix.translate(delta_x, delta_y)
+        return matrix
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"obj={self.obj}, target={self.target}, reference={self.reference}, "
+            f"start_frame={self.start_frame}, end_frame={self.end_frame})"
+        )
 
 
 def apply_transforms(
@@ -615,7 +693,7 @@ class Point(HasGeometry):
 
 
 def transform_sort_key(t: Transform) -> tuple[int, int, int]:
-    return (t.animation.start_frame, t.priority, t.uid)
+    return (t.start_frame, t.priority, t.uid)
 
 
 def sort_transforms(transforms: Sequence[Transform]) -> list[Transform]:
