@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import math
 from contextlib import contextmanager
 from copy import copy
 from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
@@ -45,7 +46,7 @@ class Text(BaseText):
         self.alpha = Property(value=alpha)
         self.slant = slant
         self.weight = weight
-        self.size = size
+        self.size = Property(size)
         self.x = x
         self.y = y
         self.controls.delta_x.offset(x)
@@ -75,7 +76,7 @@ class Text(BaseText):
         try:
             self.ctx.save()
             self.ctx.select_font_face(self.font, self.slant, self.weight)
-            self.ctx.set_font_size(self.size)
+            self.ctx.set_font_size(self.size.at(frame))
             self.ctx.set_source_rgba(*self.color, self.alpha.at(frame))
             yield None
         finally:
@@ -121,7 +122,6 @@ class Text(BaseText):
             x=self.x,
             y=self.y,
             text=self.text,
-            size=self.size,
             font=self.font,
             color=self.color,
             token_type=self.token_type,
@@ -130,8 +130,33 @@ class Text(BaseText):
             code=self.code,
         )
         new.alpha.follow(self.alpha)
+        new.size.follow(self.size)
         new.controls.follow(self.controls)
         return new
+
+    def max_containing_font_size(self, max_width: float, max_height: float) -> float:
+        # Set the font properties
+        self.ctx.save()
+        self.ctx.select_font_face(self.font, self.slant, self.weight)
+
+        # Initialize variables to determine the maximum fitting font size
+        min_size = 0.1
+        max_size: float = 200  # You might need to adjust this based on expectations of font size
+        precision = 0.1  # Precision for determining the max font size
+
+        while max_size - min_size > precision:
+            current_size = (max_size + min_size) / 2
+            self.ctx.set_font_size(current_size)
+            _, _, width, height, *_ = self.ctx.text_extents(self.text)
+
+            # Check if the text fits within the maximum dimensions
+            if width <= max_width and height <= max_height:
+                min_size = current_size  # Text fits, try a larger size
+            else:
+                max_size = current_size  # Too big, try a smaller size
+
+        # Round down to the nearest font size rounded to tenths place
+        return math.floor(min_size * 10) / 10
 
 
 TextT = TypeVar("TextT", bound=BaseText)

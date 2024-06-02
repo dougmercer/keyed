@@ -7,6 +7,7 @@ from .base import *  # noqa
 from .code import *  # noqa
 from .constants import *  # noqa
 from .curve import *  # noqa
+from .editor import *  # noqa
 from .highlight import *  # noqa
 from .polygon import *  # noqa
 from .scene import *  # noqa
