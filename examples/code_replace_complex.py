@@ -1,4 +1,14 @@
-from keyed import Animation, AnimationType, Code, Point, Scene, easing, lag_animation, tokenize
+from keyed import (
+    LEFT,
+    Animation,
+    AnimationType,
+    Code,
+    Point,
+    Scene,
+    easing,
+    lag_animation,
+    tokenize,
+)
 
 scene = Scene(scene_name="code_replace_complex", num_frames=90, width=1920, height=1080)
 
@@ -21,14 +31,7 @@ code1.chars[8].animate(
     ),
 )
 
-delta_x = code2.chars[-3].x - code1.chars[-3].x
-
-code1.chars[10:].translate(
-    delta_x=delta_x,
-    delta_y=0,
-    start_frame=12,
-    end_frame=36,
-)
+code1.chars[-3:].align_to(code2.chars[-3], start_frame=12, end_frame=36, direction=LEFT)
 
 code2.chars[8:18].write_on(
     "alpha",

@@ -288,3 +288,14 @@ class Curve(Shape):
         new.end.follow(self.end)
         new.line_width.follow(self.line_width)
         return new
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.alpha.freeze()
+            self.tension.freeze()
+            self.start.freeze()
+            self.end.freeze()
+            self.line_width.freeze()
+            for obj in self.objects:
+                obj.freeze()
+            super().freeze()

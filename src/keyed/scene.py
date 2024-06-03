@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from .animation import Property
 from .code import Selection
-from .helpers import freeze, guard_frozen
+from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
 from .transformation import Transform, TransformControls, Transformable
 
@@ -38,6 +38,7 @@ class Scene(Transformable):
         height: int = 2160,
         antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
     ) -> None:
+        Freezeable.__init__(self)
         super().__init__()
         self.scene_name = scene_name
         self.num_frames = num_frames
@@ -194,6 +195,7 @@ class Scene(Transformable):
             for layer in self.content:
                 for t in self.controls.transforms:
                     layer.add_transform(t)
+            for layer in self.content:
                 layer.freeze()
             for transform in Transform.all_transforms:
                 transform.freeze()

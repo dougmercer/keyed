@@ -4,6 +4,7 @@ import itertools
 import math
 from contextlib import contextmanager
 from copy import copy
+from functools import cache
 from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
 
 import cairo
@@ -161,6 +162,15 @@ class Text(BaseText):
         # Round down to the nearest font size rounded to tenths place
         return math.floor(min_size * 10) / 10
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.size.freeze()
+            self.alpha.freeze()
+            # self.extents = cache(self.extents)  # type: ignore[method-assign]
+            # self.raw_geom = cache(self.raw_geom)  # type: ignore[method-assign]
+            self.max_containing_font_size = cache(self.max_containing_font_size)  # type: ignore[method-assign]  # noqa[E501]
+            super().freeze()
+
 
 TextT = TypeVar("TextT", bound=BaseText)
 
@@ -198,6 +208,12 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
 
     def filter_whitespace(self) -> TextSelection:
         return TextSelection(obj for obj in self if not obj.is_whitespace())
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            for char in self.chars:
+                char.freeze()
+            super().freeze()
 
 
 class Token(TextSelection[Text]):

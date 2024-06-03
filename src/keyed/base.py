@@ -129,9 +129,9 @@ T = TypeVar("T", bound=Base)
 
 
 class Selection(Base, list[T]):  # type: ignore[misc]
-    def __init__(self, *args: Iterable[T]) -> None:
+    def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
         Base.__init__(self)
-        list.__init__(self, *args)
+        list.__init__(self, iterable)
 
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to all characters in the selection."""

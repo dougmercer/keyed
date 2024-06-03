@@ -3,10 +3,11 @@ from __future__ import annotations
 import math
 from copy import copy
 from enum import Enum, auto
-from functools import partial
+from functools import cache, partial
 from typing import Any, Callable, Protocol, Self, Type
 
 from .easing import EasingFunction, LinearInOut
+from .helpers import Freezeable
 
 __all__ = [
     "AnimationType",
@@ -30,7 +31,7 @@ class AnimationType(Enum):
     ADDITIVE = auto()
 
 
-class Animation:
+class Animation(Freezeable):
     def __init__(
         self,
         start_frame: int,
@@ -40,15 +41,18 @@ class Animation:
         easing: Type[EasingFunction] = LinearInOut,
         animation_type: AnimationType = AnimationType.ABSOLUTE,
     ) -> None:
+        super().__init__()
         if start_frame > end_frame:
             raise ValueError("Ending frame must be after starting frame.")
-        self.start_frame = start_frame
-        self.end_frame = end_frame
+        if not hasattr(self, "start_frame"):
+            self.start_frame = start_frame
+        if not hasattr(self, "end_frame"):
+            self.end_frame = end_frame
         self.start_value = start_value
         self.end_value = end_value
         self.easing = easing(
-            start_frame=self.start_frame,
-            end_frame=self.end_frame,
+            start_frame=start_frame,
+            end_frame=end_frame,
             start=self.start_value,
             end=self.end_value,
         )
@@ -61,30 +65,6 @@ class Animation:
             f"end_value={self.end_value}, easing={self.easing.__class__.__name__}, "
             f"animation_type={self.animation_type.name})"
         )
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Animation):
-            return NotImplemented
-        return (
-            self.start_frame,
-            self.end_frame,
-            self.start_value,
-            self.end_value,
-            type(self.easing),
-            self.animation_type,
-        ) == (
-            (
-                other.start_frame,
-                other.end_frame,
-                other.start_value,
-                other.end_value,
-                type(other.easing),
-                other.animation_type,
-            )
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.easing, self.animation_type))
 
     def apply(self, current_frame: int, current_value: float) -> float:
         easing = self.easing(current_frame)
@@ -104,6 +84,11 @@ class Animation:
     def __len__(self) -> int:
         return self.end_frame - self.start_frame + 1
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.apply = cache(self.apply)  # type: ignore[method-assign]
+            super().freeze()
+
 
 class SinusoidalAnimation(Animation):
     def __init__(
@@ -114,6 +99,7 @@ class SinusoidalAnimation(Animation):
         center: float = 0,
         phase: float = 0,
     ) -> None:
+        Freezeable.__init__(self)
         assert period > 0
         assert phase >= 0
         self.period = period
@@ -156,16 +142,10 @@ class SinusoidalAnimation(Animation):
 
 class Loop(Animation):
     def __init__(self, animation: Animation, n: int):
+        Freezeable.__init__(self)
         self.animation = animation
         self.n = n
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Loop):
-            return NotImplemented
-        return (self.animation, self.n) == (other.animation, other.n)
-
-    def __hash__(self) -> int:
-        return hash((self.animation, self.n))
+        super().__init__(self.start_frame, self.end_frame, 0, 0)
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
@@ -189,11 +169,18 @@ class Loop(Animation):
     def __repr__(self) -> str:
         return f"Loop(animation={self.animation}, n={self.n})"
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            super().freeze()
+
 
 class PingPong(Animation):
     def __init__(self, animation: Animation, n: int):
+        Freezeable.__init__(self)
         self.animation = animation
         self.n = n  # Number of full back-and-forth cycles
+        super().__init__(self.start_frame, self.end_frame, 0, 0)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, PingPong):
@@ -235,6 +222,11 @@ class PingPong(Animation):
     def __repr__(self) -> str:
         return f"PingPong(animation={self.animation}, n={self.n})"
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            super().freeze()
+
 
 def lag_animation(
     start_value: float = 0,
@@ -251,29 +243,12 @@ def lag_animation(
     )
 
 
-class Property:
+class Property(Freezeable):
     def __init__(self, value: float) -> None:
+        super().__init__()
         self.value = value
         self.animations: list[Animation] = []
         self.following: None | Followable = None
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return (self.value, self.animations, self.following) == (
-            self.value,
-            self.animations,
-            self.following,
-        )
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.value,
-                self.animations,
-                self.following,
-            )
-        )
 
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
@@ -297,7 +272,7 @@ class Property:
 
     @property
     def is_animated(self) -> bool:
-        return len(self.animations) > 0
+        return len(self.animations) > 0 or self.following is not None
 
     def follow(self, other: Followable) -> Self:
         self.following = other
@@ -327,10 +302,26 @@ class Property:
         )
         return self
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.at = cache(self.at)  # type: ignore[method-assign]
+            if self.following:
+                if isinstance(self.following, Freezeable):
+                    self.following.freeze()
+            for animation in self.animations:
+                animation.freeze()
+            super().freeze()
 
-class LambdaFollower:
+
+class LambdaFollower(Freezeable):
     def __init__(self, func: Callable[[int], float]) -> None:
+        super().__init__()
         self.func = func
 
     def at(self, frame: int) -> Any:
         return self.func(frame)
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.at = cache(self.at)  # type: ignore[method-assign]
+            super().freeze()

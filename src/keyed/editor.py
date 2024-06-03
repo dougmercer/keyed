@@ -4,7 +4,7 @@ from .code import Code, Text
 from .constants import DOWN, DR, LEFT, UL, UP
 from .scene import Scene
 from .shapes import Circle, Rectangle
-from .transformation import Transform
+from .transformation import Transform, Transformable
 
 __all__ = ["Editor"]
 
@@ -78,24 +78,13 @@ class Editor(Selection):
         menu_text = Text(scene, x=0, y=0, text=title, color=WHITE)
 
         circles = self._make_circles(scene)
-        scroll_bar = Rectangle(
+        scroll_bar = self._make_scroll_bar(
             scene,
-            x=0,
-            y=0,
-            width=scroll_width,
-            height=0,
-            fill_color=scroll_color,
-            color=WHITE,
-            round_bl=False,
-            round_tl=False,
-            round_tr=False,
-            round_br=True,
+            scroll_width=scroll_width,
+            scroll_color=scroll_color,
             radius=radius,
-        )
-
-        self.scroll_width = scroll_bar._width
-        scroll_bar._height.follow(
-            LambdaFollower(lambda frame: main_window._height.at(frame) - top_bar._height.at(frame))
+            main_window=main_window,
+            top_bar=top_bar,
         )
 
         # The top bar's width should always match the window's width
@@ -127,11 +116,9 @@ class Editor(Selection):
         circles_container.lock_on(top_bar, start_frame=-3, direction=LEFT)
         circles.lock_on(circles_container, start_frame=-2)
 
-        # Position the scrollbar.
-        scroll_bar.lock_on(main_window, start_frame=-1, direction=DR)
-
         # Put the objects into Self
-        self.extend([main_window, scroll_bar, top_bar, circles, menu_text])
+        self.extend([main_window, top_bar, circles, menu_text])
+        self.scroll_bar = scroll_bar
 
         if self.code is not None:
             text_extents = Rectangle(
@@ -195,6 +182,10 @@ class Editor(Selection):
         # Define the clipping region to the bounds of the editor window
         super().draw(frame)
         if self.code:
+            # We consider drawing the scroll bar if there is code
+            if self.code.height(frame) > self.text_extents.height(frame):
+                # Only draw if the code's height exceeds the available extents.
+                self.scroll_bar.draw(frame)
             with self.text_extents.clip(frame):
                 self.code.draw(frame)
 
@@ -202,10 +193,55 @@ class Editor(Selection):
         super().add_transform(transform)
         if self.code is not None:
             self.code.add_transform(transform)
+            self.scroll_bar.add_transform(transform)
             self.text_extents.add_transform(transform)
 
     def animate(self, property: str, animation: Animation) -> None:
         super().animate(property, animation)
         if self.code is not None:
             self.code.animate(property, animation)
+            self.scroll_bar.animate(property, animation)
             self.text_extents.animate(property, animation)
+
+    def _make_scroll_bar(
+        self,
+        scene: Scene,
+        scroll_width: float,
+        scroll_color: tuple[float, float, float],
+        radius: float,
+        main_window: Rectangle,
+        top_bar: Rectangle,
+    ) -> Rectangle:
+        scroll_bar = Rectangle(
+            scene,
+            x=0,
+            y=0,
+            width=scroll_width,
+            height=0,
+            fill_color=scroll_color,
+            color=WHITE,
+            round_bl=False,
+            round_tl=False,
+            round_tr=False,
+            round_br=True,
+            radius=radius,
+        )
+
+        self.scroll_width = scroll_bar._width
+        scroll_bar._height.follow(
+            LambdaFollower(lambda frame: main_window._height.at(frame) - top_bar._height.at(frame))
+        )
+
+        # Position the scrollbar.
+        scroll_bar.lock_on(main_window, start_frame=-1, direction=DR)
+        return scroll_bar
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.scroll_bar.freeze()
+            if self.code is not None:
+                self.code.freeze()
+            for obj in self:
+                assert isinstance(obj, Transformable)
+                obj.freeze()
+        super().freeze()

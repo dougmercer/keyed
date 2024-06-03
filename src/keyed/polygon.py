@@ -1,4 +1,5 @@
 from copy import copy
+from functools import cache
 from typing import Self, Sequence
 
 import cairo
@@ -184,6 +185,20 @@ class Curve2(Shape):
             buffer=buffer,
         )
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.alpha.freeze()
+            self.tension.freeze()
+            self.start.freeze()
+            self.end.freeze()
+            self.line_width.freeze()
+            self.raw_geom = cache(self.raw_geom)  # type: ignore[method-assign]
+            self.raw_points = cache(self.raw_points)  # type: ignore[method-assign]
+            self.simplified_points = cache(self.simplified_points)  # type: ignore[method-assign]
+            for obj in self.objects:
+                obj.freeze()
+            super().freeze()
+
 
 class Polygon(Shape):
     def __init__(
@@ -271,3 +286,9 @@ class Polygon(Shape):
 
     def raw_geom(self, frame: int = 0) -> shapely.Polygon:
         return self.polygon
+
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.alpha.freeze()
+            self.line_width.freeze()
+            super().freeze()

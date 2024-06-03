@@ -5,7 +5,18 @@ import itertools
 import math
 from contextlib import contextmanager
 from functools import cache
-from typing import Any, Generator, Iterator, Literal, Protocol, Self, Sequence, runtime_checkable
+from typing import (
+    Any,
+    Generator,
+    Iterable,
+    Iterator,
+    Literal,
+    Protocol,
+    Self,
+    SupportsIndex,
+    overload,
+    runtime_checkable,
+)
 
 import cairo
 import shapely
@@ -15,7 +26,7 @@ from shapely.geometry.base import BaseGeometry
 from .animation import Animation, AnimationType, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
-from .helpers import ExtendedList, Freezeable, guard_frozen
+from .helpers import Freezeable, guard_frozen
 
 __all__ = [
     "Transform",
@@ -35,28 +46,56 @@ __all__ = [
 TRANSFORM_CACHE: dict[int, dict[int, cairo.Matrix]] = dict()
 
 
+def transform_sort_key(t: Transform) -> int:
+    return t.uid
+
+
+class TransformManager(list["Transform"]):
+    def __init__(self, content: Iterable[Transform] = tuple(), /, is_dirty: bool = True) -> None:
+        super().__init__(content)
+        self.is_dirty = is_dirty
+        self.sort()
+
+    def append(self, item: Transform) -> None:
+        super().append(item)
+        self.is_dirty = True
+
+    def extend(self, items: Iterable[Transform]) -> None:
+        super().extend(items)
+        self.is_dirty = True
+
+    def sort(self) -> None:  # type: ignore[override]
+        if self.is_dirty:
+            super().sort(key=transform_sort_key)
+            self.is_dirty = False
+
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> Transform:
+        pass
+
+    @overload
+    def __getitem__(self, key: slice) -> TransformManager:
+        pass
+
+    def __getitem__(self, key: SupportsIndex | slice) -> Transform | TransformManager:
+        if isinstance(key, slice):
+            return TransformManager(super().__getitem__(key), is_dirty=self.is_dirty)
+        else:
+            return super().__getitem__(key)
+
+
 @runtime_checkable
 class HasGeometry(Freezeable, Protocol):
     def __init__(self) -> None:
         super().__init__()
 
-    def raw_geom(
-        self,
-        frame: int = 0,
-    ) -> BaseGeometry:
+    def raw_geom(self, frame: int = 0) -> BaseGeometry:
         pass
 
-    def _geom(
-        self,
-        frame: int = 0,
-        before: Transform | None = None,
-    ) -> BaseGeometry:
+    def _geom(self, frame: int = 0, before: Transform | None = None) -> BaseGeometry:
         pass
 
-    def geom(
-        self,
-        frame: int = 0,
-    ) -> BaseGeometry:
+    def geom(self, frame: int = 0) -> BaseGeometry:
         return self._geom(frame)
 
     def _get_position_along_dim(
@@ -126,16 +165,19 @@ class HasGeometry(Freezeable, Protocol):
         if not self.is_frozen:
             self._geom = cache(self._geom)  # type: ignore[method-assign]
             self.geom = cache(self.geom)  # type: ignore[method-assign]
+            self.get_critical_point = cache(self.get_critical_point)  # type: ignore[method-assign]  # noqa[E501
+            self._get_critical_point = cache(self._get_critical_point)  # type: ignore[method-assign]  # noqa[E501
+            self.left = cache(self.left)  # type: ignore[method-assign]
+            self.right = cache(self.right)  # type: ignore[method-assign]
+            self.down = cache(self.down)  # type: ignore[method-assign]
+            self.up = cache(self.up)  # type: ignore[method-assign]
+            self.width = cache(self.width)  # type: ignore[method-assign]
+            self.height = cache(self.height)  # type: ignore[method-assign]
+            self._get_position_along_dim = cache(self._get_position_along_dim)  # type: ignore[method-assign]  # noqa[E501
             super().freeze()
 
 
-def increasing_subsets(lst: list[Any]) -> Iterator[list[Any]]:
-    """Yields increasing subsets of the list."""
-    for i in range(1, len(lst) + 1):
-        yield lst[:i]
-
-
-def left_of(lst: Sequence[Transform], query: Transform | None) -> list[Transform]:
+def left_of(lst: TransformManager, query: Transform | None) -> TransformManager:
     """Get transforms before query transform.
 
     Here, "before" means "before" in the global transforms list.
@@ -150,16 +192,53 @@ def left_of(lst: Sequence[Transform], query: Transform | None) -> list[Transform
     list[Transform]
         Sorted list of transforms from input lst that are before query.
     """
-    lst = sort_transforms(lst)
+    assert isinstance(lst, TransformManager)
+    lst.sort()
     if query is None:
         return lst
 
+    if query in lst:
+        idx = bisect.bisect_left(lst, transform_sort_key(query), key=transform_sort_key)
+        return lst[:idx]
+
     # Find this transforms position in the global list of all transforms
-    all_transforms = sort_transforms(Transform.all_transforms)
-    idx = bisect.bisect_left(all_transforms, transform_sort_key(query), key=transform_sort_key)
+    Transform.all_transforms.sort()
+    idx = bisect.bisect_left(
+        Transform.all_transforms, transform_sort_key(query), key=transform_sort_key
+    )
 
     # Keep only transforms from input lst that are before the query transform
-    return [t for t in lst if t in all_transforms[:idx]]
+    return filter_transforms(lst, idx)
+
+
+class ExtendedTransformManager(TransformManager):
+    def __init__(self, original: TransformManager) -> None:
+        self.is_dirty = False
+        self.original = original
+        self.additional: TransformManager = TransformManager(original)
+
+    def append(self, item: Any) -> None:
+        self.additional.append(item)
+
+    def __repr__(self) -> str:
+        return repr(self.original + self.additional)
+
+    def __len__(self) -> int:
+        return len(self.original) + len(self.additional)
+
+    @overload
+    def __getitem__(self, index: SupportsIndex, /) -> Transform:
+        pass
+
+    @overload
+    def __getitem__(self, index: slice, /) -> TransformManager:
+        pass
+
+    def __getitem__(self, index: SupportsIndex | slice, /) -> Transform | TransformManager:
+        return TransformManager(self.original + self.additional)[index]
+
+    def __iter__(self) -> Iterator[Transform]:
+        return itertools.chain(self.original, self.additional)
 
 
 class TransformControls(Freezeable):
@@ -171,12 +250,13 @@ class TransformControls(Freezeable):
         self.scale = Property(1)
         self.delta_x = Property(0)
         self.delta_y = Property(0)
-        self.transforms: list[Transform] = []
+        self.transforms: TransformManager = TransformManager()
         self.obj = obj
 
     @guard_frozen
     def add(self, transform: Transform) -> None:
         self.transforms.append(transform)
+        self._dirty = True
 
     @guard_frozen
     def _follow(self, property: str, other: TransformControls) -> None:
@@ -195,7 +275,7 @@ class TransformControls(Freezeable):
         This has the effect of ensuring that self is transformed identically to other,
         but allows self to add additional transforms after the fact.
         """
-        self.transforms = ExtendedList(other.transforms)
+        self.transforms = TransformManager(other.transforms)
 
     @contextmanager
     def transform(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
@@ -241,6 +321,10 @@ class TransformControls(Freezeable):
             self.base_matrix = cache(self.base_matrix)  # type: ignore[method-assign]
             self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
             self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
+            for prop in self.animatable_properties:
+                p = getattr(self, prop)
+                assert isinstance(p, Property)
+                p.freeze()
             super().freeze()
 
 
@@ -356,11 +440,10 @@ class Transformable(HasGeometry, Protocol):
 @runtime_checkable
 class Transform(Freezeable, Protocol):
     uid_maker: itertools.count = itertools.count()
-    all_transforms: list[Transform] = []
+    all_transforms: TransformManager = TransformManager()
     reference: Transformable
     start_frame: int
     end_frame: int
-    priority: int
     uid: int
 
     def __init__(self) -> None:
@@ -382,8 +465,6 @@ class Transform(Freezeable, Protocol):
 
 
 class Rotation(Transform):
-    priority = 3
-
     def __init__(
         self,
         reference: Transformable,
@@ -425,10 +506,14 @@ class Rotation(Transform):
         matrix.translate(-cx, -cy)
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            # self.center.freeze()
+            super().freeze()
+
 
 class Scale(Transform):
-    priority = 2
-
     def __init__(
         self,
         reference: Transformable,
@@ -470,10 +555,14 @@ class Scale(Transform):
         matrix.translate(-cx, -cy)
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            # self.center.freeze()
+            super().freeze()
+
 
 class TranslateX(Transform):
-    priority = 0
-
     def __init__(
         self,
         reference: Transformable,
@@ -501,10 +590,13 @@ class TranslateX(Transform):
         matrix.translate(delta_x, 0)
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            super().freeze()
+
 
 class TranslateY(Transform):
-    priority = 1
-
     def __init__(
         self,
         reference: Transformable,
@@ -532,11 +624,14 @@ class TranslateY(Transform):
         matrix.translate(0, delta_y)
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            self.animation.freeze()
+            # self.reference.freeze()
+            super().freeze()
+
 
 class Orbit(Transform):
-
-    priority = 4
-
     def __init__(
         self,
         reference: Transformable,
@@ -602,10 +697,16 @@ class Orbit(Transform):
         matrix.translate(-(x + width / 2), -(y + height / 2))
         return matrix
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            # self.center.freeze()
+            self.distance.freeze()
+            self.rotation_speed.freeze()
+            self.animation.freeze()
+            super().freeze()
+
 
 class LockOn(Transform):
-    priority: int = 5
-
     def __init__(
         self,
         obj: Transformable,
@@ -646,12 +747,20 @@ class LockOn(Transform):
             f"start_frame={self.start_frame}, end_frame={self.end_frame})"
         )
 
+    def freeze(self) -> None:
+        if not self.is_frozen:
+            # self.target.freeze()
+            # self.reference.freeze()
+            super().freeze()
+
 
 def apply_transforms(
-    frame: int, transforms: list[Transform], before: Transform | None = None
+    frame: int, transforms: TransformManager, before: Transform | None = None
 ) -> cairo.Matrix:
+    """"""
+    transforms.sort()
     matrix = cairo.Matrix()
-    for t in left_of(sort_transforms(transforms), before):
+    for t in left_of(transforms, before):
         matrix = matrix.multiply(t._get_matrix(frame, before=t))
     return matrix
 
@@ -692,9 +801,12 @@ class Point(HasGeometry):
         return self._geom(frame)
 
 
-def transform_sort_key(t: Transform) -> tuple[int, int, int]:
-    return (t.start_frame, t.priority, t.uid)
-
-
-def sort_transforms(transforms: Sequence[Transform]) -> list[Transform]:
-    return sorted(transforms, key=transform_sort_key)
+def filter_transforms(lst: TransformManager, idx: int) -> TransformManager:
+    allowed_transforms = Transform.all_transforms[:idx]
+    out = TransformManager()
+    for t in lst:
+        if t in allowed_transforms:
+            out.append(t)
+        else:
+            break
+    return out

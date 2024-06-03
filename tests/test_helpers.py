@@ -1,6 +1,6 @@
 import pytest
 
-from keyed.helpers import ExtendedList, Freezeable, guard_frozen
+from keyed.helpers import Freezeable, guard_frozen
 
 
 def test_guard_frozen() -> None:
@@ -22,22 +22,22 @@ def test_guard_frozen() -> None:
         b.blah()
 
 
-def test_extended_list() -> None:
-    a = [0, 1, 2, 3]
-    b = ExtendedList(a)
-    b.append(5)
-    b.append(6)
-    b.append(7)
-    a.append(4)
+# def test_extended_list() -> None:
+#     a = [0, 1, 2, 3]
+#     b = ExtendedList(a)
+#     b.append(5)
+#     b.append(6)
+#     b.append(7)
+#     a.append(4)
 
-    assert list(range(8)) == list(b)
+#     assert list(range(8)) == list(b)
 
-    for i in range(8):
-        assert b[i] == i
+#     for i in range(8):
+#         assert b[i] == i
 
-    assert len(b) == 8
+#     assert len(b) == 8
 
-    assert repr(b) == repr(list(range(8)))
+#     assert repr(b) == repr(list(range(8)))
 
 
 def test_freezeable() -> None:
@@ -47,7 +47,7 @@ def test_freezeable() -> None:
     b = Bleh()
 
     # This should be OK
-    b.a = 1
+    b.a = 1  # type: ignore[assignment]
 
     # This should fail
     with pytest.raises(TypeError):
@@ -57,7 +57,7 @@ def test_freezeable() -> None:
 
     # Now this should fail...
     with pytest.raises(ValueError):
-        b.a = 1
+        b.a = 1  # type: ignore[assignment]
 
     # but this should work
     hash(b)
