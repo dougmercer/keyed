@@ -1,3 +1,5 @@
+import shapely
+
 from .animation import Animation, LambdaFollower
 from .base import Selection
 from .code import Code, Text
@@ -245,3 +247,11 @@ class Editor(Selection):
                 assert isinstance(obj, Transformable)
                 obj.freeze()
         super().freeze()
+
+    def _geom(
+        self,
+        frame: int = 0,
+        before: Transform | None = None,
+    ) -> shapely.Polygon:
+        main_window: Rectangle = self[0]
+        return main_window._geom(frame, before)

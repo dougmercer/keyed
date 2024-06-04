@@ -51,7 +51,9 @@ def transform_sort_key(t: Transform) -> int:
 
 
 class TransformManager(list["Transform"]):
-    def __init__(self, content: Iterable[Transform] = tuple(), /, is_dirty: bool = True) -> None:
+    def __init__(self, content: Iterable[Transform] = tuple(), /, is_dirty: bool | None = None) -> None:
+        if is_dirty is None:
+            raise ValueError("Must set is_dirty.")
         super().__init__(content)
         self.is_dirty = is_dirty
         self.sort()
@@ -192,7 +194,6 @@ def left_of(lst: TransformManager, query: Transform | None) -> TransformManager:
     list[Transform]
         Sorted list of transforms from input lst that are before query.
     """
-    assert isinstance(lst, TransformManager)
     lst.sort()
     if query is None:
         return lst
@@ -215,7 +216,7 @@ class ExtendedTransformManager(TransformManager):
     def __init__(self, original: TransformManager) -> None:
         self.is_dirty = False
         self.original = original
-        self.additional: TransformManager = TransformManager(original)
+        self.additional: TransformManager = TransformManager(original, is_dirty=False)
 
     def append(self, item: Any) -> None:
         self.additional.append(item)
@@ -235,7 +236,7 @@ class ExtendedTransformManager(TransformManager):
         pass
 
     def __getitem__(self, index: SupportsIndex | slice, /) -> Transform | TransformManager:
-        return TransformManager(self.original + self.additional)[index]
+        return TransformManager(self.original + self.additional, is_dirty=self.is_dirty)[index]
 
     def __iter__(self) -> Iterator[Transform]:
         return itertools.chain(self.original, self.additional)
@@ -250,7 +251,7 @@ class TransformControls(Freezeable):
         self.scale = Property(1)
         self.delta_x = Property(0)
         self.delta_y = Property(0)
-        self.transforms: TransformManager = TransformManager()
+        self.transforms: TransformManager = TransformManager(is_dirty=False)
         self.obj = obj
 
     @guard_frozen
@@ -275,7 +276,7 @@ class TransformControls(Freezeable):
         This has the effect of ensuring that self is transformed identically to other,
         but allows self to add additional transforms after the fact.
         """
-        self.transforms = TransformManager(other.transforms)
+        self.transforms = TransformManager(other.transforms, is_dirty=other.transforms.is_dirty)
 
     @contextmanager
     def transform(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
@@ -440,7 +441,7 @@ class Transformable(HasGeometry, Protocol):
 @runtime_checkable
 class Transform(Freezeable, Protocol):
     uid_maker: itertools.count = itertools.count()
-    all_transforms: TransformManager = TransformManager()
+    all_transforms: TransformManager = TransformManager(is_dirty=False)
     reference: Transformable
     start_frame: int
     end_frame: int
@@ -803,10 +804,10 @@ class Point(HasGeometry):
 
 def filter_transforms(lst: TransformManager, idx: int) -> TransformManager:
     allowed_transforms = Transform.all_transforms[:idx]
-    out = TransformManager()
+    out = []
     for t in lst:
         if t in allowed_transforms:
             out.append(t)
         else:
             break
-    return out
+    return TransformManager(out, is_dirty=False)
