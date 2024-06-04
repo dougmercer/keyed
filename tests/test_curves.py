@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import shapely
 from cairo import OPERATOR_CLEAR
-from hypothesis import assume, given, strategies as st, settings
+from hypothesis import assume, given, settings, strategies as st
 
 from helpers import filter_runtime_warning, to_intensity
 from keyed import Circle, Curve, Curve2, Scene

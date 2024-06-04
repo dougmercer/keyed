@@ -37,6 +37,7 @@ class Editor(Selection):
         window_color: tuple[float, float, float] = WINDOW_COLOR,
         bar_color: tuple[float, float, float] = BAR_COLOR,
         scroll_color: tuple[float, float, float] = SCROLL_COLOR,
+        draw_scroll_bar: bool = True,
     ):
         if 2 * radius > menu_height:
             raise ValueError(
@@ -80,14 +81,15 @@ class Editor(Selection):
         menu_text = Text(scene, x=0, y=0, text=title, color=WHITE)
 
         circles = self._make_circles(scene)
-        scroll_bar = self._make_scroll_bar(
-            scene,
-            scroll_width=scroll_width,
-            scroll_color=scroll_color,
-            radius=radius,
-            main_window=main_window,
-            top_bar=top_bar,
-        )
+        if draw_scroll_bar:
+            scroll_bar = self._make_scroll_bar(
+                scene,
+                scroll_width=scroll_width,
+                scroll_color=scroll_color,
+                radius=radius,
+                main_window=main_window,
+                top_bar=top_bar,
+            )
 
         # The top bar's width should always match the window's width
         top_bar._width.follow(main_window._width)
@@ -183,11 +185,8 @@ class Editor(Selection):
     def draw(self, frame: int = 0) -> None:
         # Define the clipping region to the bounds of the editor window
         super().draw(frame)
+        self.scroll_bar.draw(frame)
         if self.code:
-            # We consider drawing the scroll bar if there is code
-            if self.code.height(frame) > self.text_extents.height(frame):
-                # Only draw if the code's height exceeds the available extents.
-                self.scroll_bar.draw(frame)
             with self.text_extents.clip(frame):
                 self.code.draw(frame)
 

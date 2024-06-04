@@ -452,14 +452,15 @@ class Rotation(Transform):
         )
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, before=before or self
-        )
-        rotation = self.animation.apply(frame, 0)
         matrix = cairo.Matrix()
-        matrix.translate(cx, cy)
-        matrix.rotate(math.radians(rotation))
-        matrix.translate(-cx, -cy)
+        rotation = math.radians(self.animation.apply(frame, 0))
+        if rotation:
+            cx, cy = self.center._get_critical_point(
+                frame, direction=self.direction, before=before or self
+            )
+            matrix.translate(cx, cy)
+            matrix.rotate(rotation)
+            matrix.translate(-cx, -cy)
         return matrix
 
     def freeze(self) -> None:
@@ -500,15 +501,17 @@ class Scale(Transform):
             f"direction={self.direction})"
         )
 
+    # @profile
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, before=before or self
-        )
-        scale = self.animation.apply(frame, 1)
         matrix = cairo.Matrix()
-        matrix.translate(cx, cy)
-        matrix.scale(scale, scale)
-        matrix.translate(-cx, -cy)
+        scale = self.animation.apply(frame, 1)
+        if scale:
+            cx, cy = self.center._get_critical_point(
+                frame, direction=self.direction, before=before or self
+            )
+            matrix.translate(cx, cy)
+            matrix.scale(scale, scale)
+            matrix.translate(-cx, -cy)
         return matrix
 
     def freeze(self) -> None:
@@ -543,7 +546,8 @@ class TranslateX(Transform):
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
         delta_x = self.animation.apply(frame, 0)
-        matrix.translate(delta_x, 0)
+        if delta_x:
+            matrix.translate(delta_x, 0)
         return matrix
 
     def freeze(self) -> None:
@@ -577,7 +581,8 @@ class TranslateY(Transform):
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
         delta_y = self.animation.apply(frame, 0)
-        matrix.translate(0, delta_y)
+        if delta_y:
+            matrix.translate(0, delta_y)
         return matrix
 
     def freeze(self) -> None:
@@ -693,7 +698,8 @@ class LockOn(Transform):
         delta_x = to_point[0] - from_point[0]
         delta_y = to_point[1] - from_point[1]
 
-        matrix.translate(delta_x, delta_y)
+        if delta_x or delta_y:
+            matrix.translate(delta_x, delta_y)
         return matrix
 
     def __repr__(self) -> str:

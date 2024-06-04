@@ -93,9 +93,11 @@ class Text(BaseText):
                 self.ctx.show_text(self.text)
 
     def extents(self, frame: int = 0) -> cairo.TextExtents:
-        with self.style(frame):
-            extents = self.ctx.text_extents(self.text)
-        return extents
+        if self.size.is_animated or frame == 0:
+            with self.style(frame):
+                return self.ctx.text_extents(self.text)
+        else:
+            return self.extents(frame=0)
 
     def is_whitespace(self) -> bool:
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
@@ -115,10 +117,13 @@ class Text(BaseText):
         return TextSelection([self])
 
     def raw_geom(self, frame: int = 0) -> shapely.Polygon:
-        e = self.extents(frame)
-        x = e.x_bearing
-        y = e.y_bearing
-        return shapely.box(x, y, x + e.width, y + e.height)
+        if self.size.is_animated or frame==0:
+            e = self.extents(frame)
+            x = e.x_bearing
+            y = e.y_bearing
+            return shapely.box(x, y, x + e.width, y + e.height)
+        else:
+            return self.raw_geom(frame=0)
 
     def __copy__(self) -> Self:
         new = type(self)(
@@ -139,14 +144,12 @@ class Text(BaseText):
         return new
 
     def max_containing_font_size(self, max_width: float, max_height: float) -> float:
-        # Set the font properties
-        self.ctx.save()
         self.ctx.select_font_face(self.font, self.slant, self.weight)
 
         # Initialize variables to determine the maximum fitting font size
-        min_size = 0.1
-        max_size: float = 200  # You might need to adjust this based on expectations of font size
-        precision = 0.1  # Precision for determining the max font size
+        min_size = 12
+        max_size: float = 200
+        precision = 0.1
 
         while max_size - min_size > precision:
             current_size = (max_size + min_size) / 2
@@ -166,8 +169,8 @@ class Text(BaseText):
         if not self.is_frozen:
             self.size.freeze()
             self.alpha.freeze()
-            # self.extents = cache(self.extents)  # type: ignore[method-assign]
-            # self.raw_geom = cache(self.raw_geom)  # type: ignore[method-assign]
+            self.extents = cache(self.extents)  # type: ignore[method-assign]
+            self.raw_geom = cache(self.raw_geom)  # type: ignore[method-assign]
             self.max_containing_font_size = cache(self.max_containing_font_size)  # type: ignore[method-assign]  # noqa[E501]
             super().freeze()
 
