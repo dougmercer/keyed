@@ -216,16 +216,6 @@ class Rectangle(Shape):
 
         return rect
 
-    @staticmethod
-    def _arc_points(
-        cx: float, cy: float, r: float, start_angle: float, end_angle: float
-    ) -> list[tuple[float, float]]:
-        """Generate points along a circular arc."""
-        return [
-            (cx + r * math.cos(angle), cy + r * math.sin(angle))
-            for angle in [start_angle + (end_angle - start_angle) * i / 20 for i in range(21)]
-        ]
-
     def __copy__(self) -> Self:
         new = type(self)(
             scene=self.scene,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import time
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
@@ -79,7 +78,6 @@ class MainWindow(QMainWindow):
         self.current_frame = 0
         self.playing = False
         self.looping = False
-        self.last_frame_time = time.perf_counter()
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -178,9 +176,6 @@ class MainWindow(QMainWindow):
             self.update_frame_counter()
 
     def play_animation(self) -> None:
-        current_time = time.perf_counter()
-        self.last_frame_time = current_time
-
         self.current_frame += 1
         if self.current_frame >= self.scene.num_frames:
             if self.looping:

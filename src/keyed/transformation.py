@@ -9,7 +9,6 @@ from typing import (
     Any,
     Generator,
     Iterable,
-    Iterator,
     Literal,
     Protocol,
     Self,
@@ -198,48 +197,8 @@ def left_of(lst: TransformManager, query: Transform | None) -> TransformManager:
     if query is None:
         return lst
 
-    if query in lst:
-        idx = bisect.bisect_left(lst, transform_sort_key(query), key=transform_sort_key)
-        return lst[:idx]
-
-    # Find this transforms position in the global list of all transforms
-    Transform.all_transforms.sort()
-    idx = bisect.bisect_left(
-        Transform.all_transforms, transform_sort_key(query), key=transform_sort_key
-    )
-
-    # Keep only transforms from input lst that are before the query transform
-    return filter_transforms(lst, idx)
-
-
-class ExtendedTransformManager(TransformManager):
-    def __init__(self, original: TransformManager) -> None:
-        self.is_dirty = False
-        self.original = original
-        self.additional: TransformManager = TransformManager(original, is_dirty=False)
-
-    def append(self, item: Any) -> None:
-        self.additional.append(item)
-
-    def __repr__(self) -> str:
-        return repr(self.original + self.additional)
-
-    def __len__(self) -> int:
-        return len(self.original) + len(self.additional)
-
-    @overload
-    def __getitem__(self, index: SupportsIndex, /) -> Transform:
-        pass
-
-    @overload
-    def __getitem__(self, index: slice, /) -> TransformManager:
-        pass
-
-    def __getitem__(self, index: SupportsIndex | slice, /) -> Transform | TransformManager:
-        return TransformManager(self.original + self.additional, is_dirty=self.is_dirty)[index]
-
-    def __iter__(self) -> Iterator[Transform]:
-        return itertools.chain(self.original, self.additional)
+    idx = bisect.bisect_left(lst, transform_sort_key(query), key=transform_sort_key)
+    return lst[:idx]
 
 
 class TransformControls(Freezeable):
@@ -257,15 +216,6 @@ class TransformControls(Freezeable):
     @guard_frozen
     def add(self, transform: Transform) -> None:
         self.transforms.append(transform)
-        self._dirty = True
-
-    @guard_frozen
-    def _follow(self, property: str, other: TransformControls) -> None:
-        us = getattr(self, property)
-        assert isinstance(us, Property)
-        them = getattr(other, property)
-        assert isinstance(them, Property)
-        us.follow(them)
 
     @guard_frozen
     def follow(self, other: TransformControls) -> None:
@@ -361,7 +311,6 @@ class Transformable(HasGeometry, Protocol):
 
     def add_transform(self, transform: Transform) -> None:
         self.controls.add(transform)
-        Transform.all_transforms.append(transform)
 
     def rotate(
         self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
@@ -455,6 +404,7 @@ class Transform(Freezeable, Protocol):
     def __init__(self) -> None:
         super().__init__()
         self.uid = next(self.uid_maker)
+        Transform.all_transforms.append(self)
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         pass
@@ -805,14 +755,3 @@ class Point(HasGeometry):
 
     def geom(self, frame: int = 0) -> shapely.Point:
         return self._geom(frame)
-
-
-def filter_transforms(lst: TransformManager, idx: int) -> TransformManager:
-    allowed_transforms = Transform.all_transforms[:idx]
-    out = []
-    for t in lst:
-        if t in allowed_transforms:
-            out.append(t)
-        else:
-            break
-    return TransformManager(out, is_dirty=False)

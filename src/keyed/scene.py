@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Protocol, Sequence
+from typing import TYPE_CHECKING, Iterable, Sequence
 
 import cairo
 import numpy as np
@@ -22,10 +22,6 @@ if TYPE_CHECKING:
 
 
 __all__ = ["Scene"]
-
-
-class Drawable(Protocol):
-    def draw(self, frame: int) -> None: ...
 
 
 class Scene(Transformable):
