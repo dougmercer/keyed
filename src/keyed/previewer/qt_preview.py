@@ -219,7 +219,7 @@ class MainWindow(QMainWindow):
 
 
 def create_animation_window(
-    scene: Scene, frame_rate: int = 24, quality: Quality = Quality.high
+    scene: Scene, frame_rate: int = 24, quality: Quality = Quality.very_high
 ) -> None:
     app = QApplication(sys.argv)
     window = MainWindow(scene, quality=quality.value, frame_rate=frame_rate)
