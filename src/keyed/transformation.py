@@ -302,19 +302,24 @@ class TransformControls(Freezeable):
         pivot_y = self.obj.height(frame, with_transforms=False) / 2
 
         # Translate
-        matrix.translate(self.delta_x.at(frame), self.delta_y.at(frame))
+        delta_x = self.delta_x.at(frame)
+        delta_y = self.delta_y.at(frame)
+        if delta_x or delta_y:
+            matrix.translate(delta_x, delta_y)
 
         # Rotate
-        matrix.translate(pivot_x, pivot_y)
-        matrix.rotate(math.radians(self.rotation.at(frame)))
-        matrix.translate(-pivot_x, -pivot_y)
+        radians = math.radians(self.rotation.at(frame))
+        if radians:
+            matrix.translate(pivot_x, pivot_y)
+            matrix.rotate(radians)
+            matrix.translate(-pivot_x, -pivot_y)
 
         # Scale
         scale = self.scale.at(frame)
-        matrix.translate(pivot_x, pivot_y)
-        matrix.scale(scale, scale)
-        matrix.translate(-pivot_x, -pivot_y)
-
+        if scale:
+            matrix.translate(pivot_x, pivot_y)
+            matrix.scale(scale, scale)
+            matrix.translate(-pivot_x, -pivot_y)
         return matrix
 
     def freeze(self) -> None:
