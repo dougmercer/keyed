@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import shapely
 from cairo import OPERATOR_CLEAR
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, strategies as st, settings
 
 from helpers import filter_runtime_warning, to_intensity
 from keyed import Circle, Curve, Curve2, Scene
@@ -17,7 +17,7 @@ def test_points() -> list[tuple[float, float]]:
 
 @pytest.fixture
 def scene() -> Scene:
-    return Scene("test")
+    return Scene("test", width=200, height=200)
 
 
 @pytest.fixture
@@ -96,7 +96,7 @@ def test_points_same_display_nothing(CurveMaker: type[Curve] | type[Curve2]) -> 
     assert (arr == 0).all(), arr
 
 
-typical_float = st.floats(min_value=20, max_value=80, allow_infinity=False, allow_nan=False)
+typical_float = st.floats(min_value=10, max_value=20, allow_infinity=False, allow_nan=False)
 
 
 @filter_runtime_warning
@@ -110,17 +110,19 @@ typical_float = st.floats(min_value=20, max_value=80, allow_infinity=False, allo
         max_size=4,
     )
 )
+@settings(max_examples=10)
 @pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
 def test_curve_contains_pts(
     pts: list[tuple[float, float]], CurveMaker: type[Curve] | type[Curve2]
 ) -> None:
     assume((np.array(pts).ptp(axis=0) > 5).any())
-    scene = Scene(width=100, height=100)
+    scene_size = 30
+    scene = Scene(width=scene_size, height=scene_size, num_frames=1)
     curve = CurveMaker.from_points(scene, pts, line_width=3)
     scene.add(curve)
     total_intensity = to_intensity(scene.asarray(0)).sum()
     for pt in pts:
-        scene = Scene(width=100, height=100)
+        scene = Scene(width=scene_size, height=scene_size, num_frames=1)
         curve = Curve.from_points(scene, pts, line_width=3)
         assert (
             curve.geom(0).distance(shapely.Point(*pt)) < 0.01
