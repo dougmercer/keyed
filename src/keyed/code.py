@@ -117,7 +117,7 @@ class Text(BaseText):
         return TextSelection([self])
 
     def raw_geom(self, frame: int = 0) -> shapely.Polygon:
-        if self.size.is_animated or frame==0:
+        if self.size.is_animated or frame == 0:
             e = self.extents(frame)
             x = e.x_bearing
             y = e.y_bearing
@@ -147,9 +147,9 @@ class Text(BaseText):
         self.ctx.select_font_face(self.font, self.slant, self.weight)
 
         # Initialize variables to determine the maximum fitting font size
-        min_size = 12
+        min_size: float = 12
         max_size: float = 200
-        precision = 0.1
+        precision: float = 0.1
 
         while max_size - min_size > precision:
             current_size = (max_size + min_size) / 2
