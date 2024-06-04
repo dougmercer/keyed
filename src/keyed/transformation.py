@@ -42,15 +42,15 @@ __all__ = [
     "Scale",
 ]
 
-TRANSFORM_CACHE: dict[int, dict[int, cairo.Matrix]] = dict()
-
 
 def transform_sort_key(t: Transform) -> int:
     return t.uid
 
 
 class TransformManager(list["Transform"]):
-    def __init__(self, content: Iterable[Transform] = tuple(), /, is_dirty: bool | None = None) -> None:
+    def __init__(
+        self, content: Iterable[Transform] = tuple(), /, is_dirty: bool | None = None
+    ) -> None:
         if is_dirty is None:
             raise ValueError("Must set is_dirty.")
         super().__init__(content)
