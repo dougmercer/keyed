@@ -4,7 +4,7 @@ import math
 from copy import copy
 from enum import Enum, auto
 from functools import cache, partial
-from typing import Any, Callable, Protocol, Self, Type
+from typing import Any, Callable, Protocol, Self, Type, runtime_checkable
 
 from .easing import EasingFunction, LinearInOut
 from .helpers import Freezeable
@@ -21,6 +21,7 @@ __all__ = [
 ]
 
 
+@runtime_checkable
 class Followable(Protocol):
     def at(self, frame: int) -> Any: ...
 
@@ -66,8 +67,10 @@ class Animation(Freezeable):
             f"animation_type={self.animation_type.name})"
         )
 
-    def apply(self, current_frame: int, current_value: float) -> float:
-        easing = self.easing(current_frame)
+    def apply(self, frame: int, current_value: float) -> float:
+        if not self.is_active(frame):
+            return current_value
+        easing = self.easing(frame)
         match self.animation_type:
             case AnimationType.ABSOLUTE:
                 return easing
@@ -243,7 +246,94 @@ def lag_animation(
     )
 
 
-class Property(Freezeable):
+class Variable(Protocol):
+    def at(self, frame: int) -> float:
+        pass
+
+    def __add__(self, other: float | Followable) -> LambdaFollower:
+        if isinstance(other, float | int):
+
+            def func(frame: int) -> float:
+                return self.at(frame) + other
+
+            return LambdaFollower(func)
+        elif isinstance(other, Followable):
+
+            def func(frame: int) -> float:
+                return self.at(frame) + other.at(frame)
+
+            return LambdaFollower(func)
+        else:
+            raise TypeError(f"Unsupported type {type(other)}")
+
+    def __sub__(self, other: float | Followable) -> LambdaFollower:
+        if isinstance(other, float | int):
+
+            def func(frame: int) -> float:
+                return self.at(frame) - other
+
+            return LambdaFollower(func)
+        elif isinstance(other, Followable):
+
+            def func(frame: int) -> float:
+                return self.at(frame) - other.at(frame)
+
+            return LambdaFollower(func)
+        else:
+            raise TypeError(f"Unsupported type {type(other)}")
+
+    def __truediv__(self, other: float | Followable) -> LambdaFollower:
+        if isinstance(other, float | int):
+
+            def func(frame: int) -> float:
+                return self.at(frame) / other
+
+            return LambdaFollower(func)
+        elif isinstance(other, Followable):
+
+            def func(frame: int) -> float:
+                return self.at(frame) / other.at(frame)
+
+            return LambdaFollower(func)
+        else:
+            raise TypeError(f"Unsupported type {type(other)}")
+
+    def __mul__(self, other: float | Followable) -> LambdaFollower:
+        if isinstance(other, float | int):
+
+            def func(frame: int) -> float:
+                return self.at(frame) * other
+
+            return LambdaFollower(func)
+        elif isinstance(other, Followable):
+
+            def func(frame: int) -> float:
+                return self.at(frame) * other.at(frame)
+
+            return LambdaFollower(func)
+        else:
+            raise TypeError(f"Unsupported type {type(other)}")
+
+    def __radd__(self, other: float | Followable) -> LambdaFollower:
+        return self.__add__(other)
+
+    def __rsub__(self, other: float | Followable) -> LambdaFollower:
+        return self.__sub__(other)
+
+    def __rmul__(self, other: float | Followable) -> LambdaFollower:
+        return self.__mul__(other)
+
+    def __rtruediv__(self, other: float | Followable) -> LambdaFollower:
+        return self.__truediv__(other)
+
+    def __neg__(self) -> LambdaFollower:
+        def func(frame: int) -> float:
+            return -self.at(frame)
+
+        return LambdaFollower(func)
+
+
+class Property(Freezeable, Variable):
     def __init__(self, value: float) -> None:
         super().__init__()
         self.value = value
@@ -260,8 +350,7 @@ class Property(Freezeable):
     def at(self, frame: int) -> float:
         current_value = self.following.at(frame) if self.following else self.value
         for animation in self.animations:
-            if animation.is_active(frame):
-                current_value = animation.apply(frame, current_value)
+            current_value = animation.apply(frame, current_value)
         return current_value
 
     def __copy__(self) -> Self:
@@ -313,7 +402,7 @@ class Property(Freezeable):
             super().freeze()
 
 
-class LambdaFollower(Freezeable):
+class LambdaFollower(Freezeable, Variable):
     def __init__(self, func: Callable[[int], float]) -> None:
         super().__init__()
         self.func = func

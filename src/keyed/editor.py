@@ -1,9 +1,11 @@
+from copy import copy
+
 import shapely
 
 from .animation import Animation, LambdaFollower
 from .base import Selection
 from .code import Code, Text
-from .constants import DOWN, DR, LEFT, UL, UP
+from .constants import DOWN, DR, LEFT, UL, UP, DL
 from .scene import Scene
 from .shapes import Circle, Rectangle
 from .transformation import Transform, Transformable
@@ -44,13 +46,9 @@ class Editor(Selection):
                 f"Corner radius must be less than 1/2 menu height ({radius=}, {menu_height})"
             )
         super().__init__()
-        self.title = title
-        self.window_color = window_color
-        self.bar_color = bar_color
-        self.scroll_color = scroll_color
         self.code = code
 
-        main_window = Rectangle(
+        self.main_window = Rectangle(
             scene,
             x=0,
             y=0,
@@ -60,9 +58,9 @@ class Editor(Selection):
             color=WHITE,
             radius=radius,
         )
-        self._width = main_window._width
-        self._height = main_window._height
-        self.radius = main_window.radius
+        self._width = self.main_window._width
+        self._height = self.main_window._height
+        self.radius = self.main_window.radius
 
         top_bar = Rectangle(
             scene,
@@ -87,15 +85,15 @@ class Editor(Selection):
                 scroll_width=scroll_width,
                 scroll_color=scroll_color,
                 radius=radius,
-                main_window=main_window,
+                main_window=self.main_window,
                 top_bar=top_bar,
             )
 
         # The top bar's width should always match the window's width
-        top_bar._width.follow(main_window._width)
+        top_bar._width.follow(self.main_window._width)
 
         # The top bar should always be on aligned on top of the window.
-        top_bar.lock_on(main_window, direction=UP, start_frame=-5)
+        top_bar.lock_on(self.main_window, direction=UP, start_frame=-5)
 
         # Center the menu text in the menu bar
         menu_text.lock_on(top_bar, start_frame=-1)
@@ -113,15 +111,13 @@ class Editor(Selection):
 
         # Position the circles within a non-visible container in the top bar.
         circles_container = Rectangle(scene, x=0, y=0, alpha=0.5, fill_color=(1, 0, 0))
-        circles_container._width.follow(
-            LambdaFollower(lambda frame: 3 * self.menu_height.at(frame))
-        )
-        circles_container._height.follow(LambdaFollower(lambda frame: self.menu_height.at(frame)))
+        circles_container._width.follow(3 * self.menu_height)
+        circles_container._height.follow(self.menu_height)
         circles_container.lock_on(top_bar, start_frame=-3, direction=LEFT)
         circles.lock_on(circles_container, start_frame=-2)
 
         # Put the objects into Self
-        self.extend([main_window, top_bar, circles, menu_text])
+        self.extend([self.main_window, top_bar, circles, menu_text])
         self.scroll_bar = scroll_bar
 
         if self.code is not None:
@@ -129,19 +125,19 @@ class Editor(Selection):
                 scene,
                 round_tl=False,
                 round_tr=False,
-                round_bl=main_window.round_bl,
-                round_br=main_window.round_br,
+                round_br=False,
+                round_bl=self.main_window.round_bl,
                 alpha=0.5,
                 fill_color=(1, 0, 0),
             )
             text_extents._height.follow(scroll_bar._height)
-            text_extents._width.follow(main_window._width)
-            text_extents.radius = main_window.radius
-            text_extents.lock_on(main_window, direction=DOWN)
+            text_extents._width.follow(self.main_window._width - self.scroll_bar._width)
+            text_extents.radius = self.main_window.radius
+            text_extents.lock_on(self.main_window, direction=DL)
             buffer = min(radius, 20)
             buffered_text_extents = Rectangle(scene)
-            buffered_text_extents._height.follow(text_extents._height).offset(-buffer)
-            buffered_text_extents._width.follow(text_extents._width).offset(-buffer)
+            buffered_text_extents._height.follow(text_extents._height - buffer)
+            buffered_text_extents._width.follow(text_extents._width - buffer)
             buffered_text_extents.lock_on(text_extents, direction=DOWN)
 
             # Make all text objects share a common context
@@ -157,33 +153,25 @@ class Editor(Selection):
         self.translate(x, y, -1, -1)
 
     def _make_circles(self, scene: Scene) -> Selection[Circle]:
-        def radius(frame: int) -> float:
-            return self.menu_height.at(frame) / 4
-
-        def x_offset(frame: int) -> float:
-            return self.menu_height.at(frame) / 2
-
-        def yellow_offset(frame: int) -> float:
-            return x_offset(frame) + 3 * radius(frame)
-
-        def green_offset(frame: int) -> float:
-            return x_offset(frame) + 6 * radius(frame)
+        radius = self.menu_height / 4
+        x_offset = self.menu_height / 2
+        yellow_offset = x_offset + 3 * radius
+        green_offset = x_offset + 6 * radius
 
         red = Circle(scene, x=0, y=0, fill_color=MAC_RED)
-        red.controls.delta_x.follow(LambdaFollower(x_offset))
-        red.radius.follow(LambdaFollower(radius))
+        red.controls.delta_x.follow(x_offset)
+        red.radius.follow(radius)
 
         yellow = Circle(scene, x=0, y=0, fill_color=MAC_YELLOW)
-        yellow.controls.delta_x.follow(LambdaFollower(yellow_offset))
-        yellow.radius.follow(LambdaFollower(radius))
+        yellow.controls.delta_x.follow(yellow_offset)
+        yellow.radius.follow(radius)
 
         green = Circle(scene, x=0, y=0, fill_color=MAC_GREEN)
-        green.controls.delta_x.follow(LambdaFollower(green_offset))
-        green.radius.follow(LambdaFollower(radius))
+        green.controls.delta_x.follow(green_offset)
+        green.radius.follow(radius)
         return Selection([red, yellow, green])
 
     def draw(self, frame: int = 0) -> None:
-        # Define the clipping region to the bounds of the editor window
         super().draw(frame)
         self.scroll_bar.draw(frame)
         if self.code:
@@ -192,16 +180,18 @@ class Editor(Selection):
 
     def add_transform(self, transform: Transform) -> None:
         super().add_transform(transform)
+        if self.scroll_bar is not None:
+            self.scroll_bar.add_transform(transform)
         if self.code is not None:
             self.code.add_transform(transform)
-            self.scroll_bar.add_transform(transform)
             self.text_extents.add_transform(transform)
 
     def animate(self, property: str, animation: Animation) -> None:
         super().animate(property, animation)
+        if self.scroll_bar is not None:
+            self.scroll_bar.animate(property, animation)
         if self.code is not None:
             self.code.animate(property, animation)
-            self.scroll_bar.animate(property, animation)
             self.text_extents.animate(property, animation)
 
     def _make_scroll_bar(
@@ -229,9 +219,7 @@ class Editor(Selection):
         )
 
         self.scroll_width = scroll_bar._width
-        scroll_bar._height.follow(
-            LambdaFollower(lambda frame: main_window._height.at(frame) - top_bar._height.at(frame))
-        )
+        scroll_bar._height.follow(main_window._height - top_bar._height)
 
         # Position the scrollbar.
         scroll_bar.lock_on(main_window, start_frame=-1, direction=DR)
@@ -252,5 +240,4 @@ class Editor(Selection):
         frame: int = 0,
         before: Transform | None = None,
     ) -> shapely.Polygon:
-        main_window: Rectangle = self[0]
-        return main_window._geom(frame, before)
+        return self.main_window._geom(frame, before)
