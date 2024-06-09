@@ -1,4 +1,5 @@
-from typing import Any
+import itertools
+from typing import Any, Iterable
 
 from pydantic import BaseModel, TypeAdapter, field_serializer, field_validator
 from pygments.formatter import Formatter
@@ -79,12 +80,46 @@ class KeyedFormatter(Formatter):
         outfile.write(formatted_output)
 
 
+def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenType, str]]:
+    """Splits a multiline token into multiple tokens."""
+    token_type, text = token
+    if token_type is not Token.Literal.String.Doc:
+        return [token]
+
+    parts = []
+    current_part = []
+    i = 0
+    while i < len(text):
+        if i < len(text) - 1 and text[i : i + 2] == "\\n":
+            current_part.append("\\n")
+            i += 1
+        elif text[i] == "\n":
+            if current_part:
+                parts.append((Token.Literal.String.Doc, "".join(current_part)))
+                current_part = []
+            parts.append((Token.Text.Whitespace, "\n"))
+        else:
+            current_part.append(text[i])
+        i += 1
+
+    if current_part:
+        parts.append((Token.Literal.String.Doc, "".join(current_part)))
+
+    return parts
+
+
+def split_multiline_tokens(
+    tokens: Iterable[tuple[_TokenType, str]]
+) -> list[tuple[_TokenType, str]]:
+    return list(itertools.chain(*(split_multiline_token(token) for token in tokens)))
+
+
 def tokenize(text: str, lexer: Lexer = None, formatter: Formatter = None) -> list[StyledToken]:
     from pygments import format, lex
     from pygments.lexers import PythonLexer
 
     lexer = lexer or PythonLexer()
     formatter = formatter or KeyedFormatter(style=DEFAULT_STYLE)
-    tokens = lex(text, lexer)
+    tokens = split_multiline_tokens(lex(text, lexer))
     json_str = format(tokens, formatter)
     return StyledTokens.validate_json(json_str)
