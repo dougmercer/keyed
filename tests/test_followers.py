@@ -2,7 +2,7 @@ from keyed import LambdaFollower, Property
 
 
 class SimpleFollower:
-    def at(self, frame: int) -> float:
+    def at(self, frame: float) -> float:
         return frame * 10
 
 
