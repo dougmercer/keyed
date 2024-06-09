@@ -31,8 +31,7 @@ editor.scroll_bar.progress.add_animation(
     Animation(12, 36, 0, 1, easing=easing.CubicEaseInOut, animation_type=AnimationType.ABSOLUTE)
 )
 
-for char in code.chars[1635:]:
-    char.alpha.set(0)
+code.chars[1635:].set("alpha", 0)
 
 code.lines[62:].write_on("alpha", lag_animation(animation_type=AnimationType.ADDITIVE), 16, 6, 6)
 

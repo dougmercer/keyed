@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import copy
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterable,
     Protocol,
@@ -18,7 +19,7 @@ import cairo
 import shapely
 import shapely.affinity
 
-from .animation import Animation, LambdaFollower
+from .animation import Animation, LambdaFollower, Property
 from .transformation import Transform, Transformable
 
 if TYPE_CHECKING:
@@ -189,3 +190,14 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         if not self:
             raise ValueError("Cannot retrieve 'scene': Selection is empty.")
         return self[0].scene
+
+    def set(self, property: str, value: Any) -> None:
+        for obj in self:
+            if isinstance(obj, Selection):
+                obj.set(property, value)
+            else:
+                prop = getattr(obj, property)
+                if isinstance(prop, Property):
+                    prop.set(value)
+                else:
+                    setattr(obj, property, value)

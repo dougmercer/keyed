@@ -112,7 +112,9 @@ class Editor(Selection):
                 f"Corner radius must be less than 1/2 menu height ({radius=}, {menu_height})"
             )
         super().__init__()
+        self.ctx = scene.get_context()
         self.code = code
+        self.other_code: list[Code] = []
 
         self.main_window = Rectangle(
             scene,
@@ -217,10 +219,8 @@ class Editor(Selection):
 
             # Make all text objects share a common context
             # NOTE: Maybe they should already share a context?
-            ctx = scene.get_context()
-            for char in self.code.chars:
-                char.ctx = ctx
-            text_extents.ctx = ctx
+            self.code.set("ctx", self.ctx)
+            text_extents.ctx = self.ctx
             self.text_extents = text_extents
             self.buffered_text_extents = buffered_text_extents
 
@@ -280,6 +280,12 @@ class Editor(Selection):
         if self.code:
             with self.text_extents.clip(frame):
                 self.code.draw(frame)
+                for code in self.other_code:
+                    code.draw(frame)
+
+    def add_code(self, code: Code) -> None:
+        code.set("ctx", self.ctx)
+        self.other_code.append(code)
 
     def add_transform(self, transform: Transform) -> None:
         super().add_transform(transform)
