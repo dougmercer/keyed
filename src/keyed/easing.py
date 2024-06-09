@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 import math
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from .animation import Followable
 
 easing_types = [
     "Quad",
@@ -25,8 +30,8 @@ del easing_types, modifiers
 
 @runtime_checkable
 class EasingFunction(Protocol):
-    start: float
-    end: float
+    start: float | Followable
+    end: float | Followable
     start_frame: int
     end_frame: int
 
@@ -56,12 +61,22 @@ class EasingFunction(Protocol):
 
         # Apply the easing function
         a = self.func(t)
-        return self.end * a + self.start * (1 - a)
+        start = (
+            self.start
+            if isinstance(self.start, float | int)
+            else self.start.at(frame)  # type: ignore[arg-type]
+        )
+        end = (
+            self.end
+            if isinstance(self.end, float | int)
+            else self.end.at(frame)  # type: ignore[arg-type]
+        )
+        return end * a + start * (1 - a)
 
     def __call__(self, frame: float) -> float:
         return self.ease(frame)
 
-    def _as_tuple(self) -> tuple[type, int, int, float, float]:
+    def _as_tuple(self) -> tuple[type, int, int, float | Followable, float | Followable]:
         return (type(self), self.start_frame, self.end_frame, self.start, self.end)
 
     def __eq__(self, other: Any) -> bool:
