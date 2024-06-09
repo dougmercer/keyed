@@ -142,6 +142,8 @@ class Scene(Transformable):
         -------
         Base | None
         """
+        from .editor import Editor
+
         point = shapely.Point(x, y)
         nearest: Base | None = None
         min_distance = float("inf")
@@ -149,7 +151,10 @@ class Scene(Transformable):
         def check_objects(objects: Iterable[Base]) -> None:
             nonlocal nearest, min_distance
             for obj in objects:
-                if isinstance(obj, Selection):
+                if isinstance(obj, Editor):
+                    if obj.code is not None:
+                        check_objects(list(obj.code))
+                elif isinstance(obj, Selection):
                     check_objects(list(obj))
                 else:
                     assert hasattr(obj, "alpha"), obj
