@@ -22,7 +22,7 @@ import shapely
 import shapely.affinity
 from shapely.geometry.base import BaseGeometry
 
-from .animation import Animation, AnimationType, Property
+from .animation import Animation, AnimationType, Followable, Property
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
 from .helpers import Freezeable, guard_frozen
@@ -326,8 +326,8 @@ class Transformable(HasGeometry, Protocol):
 
     def translate(
         self,
-        delta_x: float,
-        delta_y: float,
+        delta_x: float | Followable,
+        delta_y: float | Followable,
         start_frame: int,
         end_frame: int,
         easing: type[EasingFunction] = CubicEaseInOut,
@@ -378,8 +378,10 @@ class Transformable(HasGeometry, Protocol):
         start_frame: int = 0,
         end_frame: int = 9999,
         direction: Direction = ORIGIN,
+        x: bool = True,
+        y: bool = True,
     ) -> Self:
-        self.add_transform(LockOn(self, target, reference, start_frame, end_frame, direction))
+        self.add_transform(LockOn(self, target, reference, start_frame, end_frame, direction, x, y))
         return self
 
     def freeze(self) -> None:
@@ -527,32 +529,43 @@ class TranslateX(Transform):
         reference: Transformable,
         start_frame: int,
         end_frame: int,
-        delta: float,
+        delta: float | Followable,
         easing: type[EasingFunction] = CubicEaseInOut,
     ):
         super().__init__()
         self.reference = reference
         self.start_frame = start_frame
         self.end_frame = end_frame
-        self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
+        self.delta = delta
+        self.easing = easing
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
-            f"animation={self.animation}"
+            f"start_frame={self.start_frame}, "
+            f"end_frame={self.end_frame}, "
+            f"delta={self.delta}, "
+            f"easing={self.easing})"
         )
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
-        delta_x = self.animation.apply(frame, 0)
+        animation = Animation(
+            self.start_frame,
+            self.end_frame,
+            0,
+            self.delta if isinstance(self.delta, int | float) else self.delta.at(frame),
+            self.easing,
+            AnimationType.ADDITIVE,
+        )
+        delta_x = animation.apply(frame, 0)
         if delta_x:
             matrix.translate(delta_x, 0)
         return matrix
 
     def freeze(self) -> None:
         if not self.is_frozen:
-            self.animation.freeze()
             super().freeze()
 
 
@@ -562,33 +575,43 @@ class TranslateY(Transform):
         reference: Transformable,
         start_frame: int,
         end_frame: int,
-        delta: float,
+        delta: float | Followable,
         easing: type[EasingFunction] = CubicEaseInOut,
     ):
         super().__init__()
         self.reference = reference
         self.start_frame = start_frame
         self.end_frame = end_frame
-        self.animation = Animation(start_frame, end_frame, 0, delta, easing, AnimationType.ADDITIVE)
+        self.delta = delta
+        self.easing = easing
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
             f"reference={self.reference}, "
-            f"animation={self.animation}"
+            f"start_frame={self.start_frame}, "
+            f"end_frame={self.end_frame}, "
+            f"delta={self.delta}, "
+            f"easing={self.easing})"
         )
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
-        delta_y = self.animation.apply(frame, 0)
+        animation = Animation(
+            self.start_frame,
+            self.end_frame,
+            0,
+            self.delta if isinstance(self.delta, int | float) else self.delta.at(frame),
+            self.easing,
+            AnimationType.ADDITIVE,
+        )
+        delta_y = animation.apply(frame, 0)
         if delta_y:
             matrix.translate(0, delta_y)
         return matrix
 
     def freeze(self) -> None:
         if not self.is_frozen:
-            self.animation.freeze()
-            # self.reference.freeze()
             super().freeze()
 
 
@@ -676,6 +699,8 @@ class LockOn(Transform):
         start_frame: int = 0,
         end_frame: int = 9999,
         direction: Direction = ORIGIN,
+        x: bool = True,
+        y: bool = True,
     ):
         super().__init__()
         self.obj = obj
@@ -684,6 +709,8 @@ class LockOn(Transform):
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.direction = direction
+        self.x = x
+        self.y = y
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
         matrix = cairo.Matrix()
@@ -695,8 +722,8 @@ class LockOn(Transform):
         before = before or self
         to_point = self.target._get_critical_point(frame, self.direction, before=before)
         from_point = self.reference._get_critical_point(frame, self.direction, before=before)
-        delta_x = to_point[0] - from_point[0]
-        delta_y = to_point[1] - from_point[1]
+        delta_x = to_point[0] - from_point[0] if self.x else 0
+        delta_y = to_point[1] - from_point[1] if self.y else 0
 
         if delta_x or delta_y:
             matrix.translate(delta_x, delta_y)
