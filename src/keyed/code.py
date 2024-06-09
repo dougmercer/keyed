@@ -341,6 +341,7 @@ class Code(TextSelection[Line]):
         y: float = 10,
         alpha: float = 1,
         operator: cairo.Operator = cairo.OPERATOR_ADD,
+        _ascent_correction: bool = True,
     ) -> None:
         self._tokens = tokens
         self.font = font
@@ -349,7 +350,7 @@ class Code(TextSelection[Line]):
         ctx = scene.get_context()
         self.set_default_font(ctx)
         ascent, _, height, *_ = ctx.font_extents()
-        y += ascent
+        y += ascent if _ascent_correction else 0
         line_height = 1.2 * height
 
         lines = []
