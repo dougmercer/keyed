@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import warnings
 from functools import cache
 from pathlib import Path
@@ -201,3 +202,20 @@ class Scene(Transformable):
             for transform in Transform.all_transforms:
                 transform.freeze()
             super().freeze()
+
+    def to_video(self, frame_rate: int = 24, redraw: bool = True) -> None:
+        if redraw:
+            self.draw()
+        command = [
+            "ffmpeg",
+            "-framerate",
+            str(frame_rate),
+            "-i",
+            str(self.full_output_dir / r"all_%03d.png"),
+            "-c:v",
+            "prores_ks",
+            "-pix_fmt",
+            "yuva444p10le",
+            str(self.full_output_dir / "all.mov"),
+        ]
+        subprocess.run(command)
