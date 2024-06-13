@@ -379,11 +379,11 @@ class Property(Freezeable, Variable):
         )
         return self
 
-    def set(self, value: float) -> Self:
+    def set(self, value: float, frame: int = 0) -> Self:
         self.add_animation(
             Animation(
-                start_frame=0,
-                end_frame=0,
+                start_frame=frame,
+                end_frame=frame,
                 start_value=value,
                 end_value=value,
                 animation_type=AnimationType.ABSOLUTE,
