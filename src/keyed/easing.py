@@ -21,7 +21,7 @@ easing_types = [
 modifiers = ["EaseIn", "EaseOut", "EaseInOut"]
 
 # Generate the list for __all__
-__all__ = ["EasingFunction", "LinearInOut"] + [
+__all__ = ["EasingFunction", "LinearInOut", "Discretize"] + [
     f"{ease_type}{modifier}" for ease_type in easing_types for modifier in modifiers
 ]
 
@@ -283,3 +283,28 @@ class BounceEaseInOut(EasingFunction):
         if t < 0.5:
             return 0.5 * BounceEaseIn().func(t * 2)
         return 0.5 * BounceEaseOut().func(t * 2 - 1) + 0.5
+
+
+class Discretize:
+    def __init__(self, easing_cls: type[EasingFunction] = LinearInOut, n: int = 10):
+        self.easing_cls = easing_cls
+        self.steps = n
+
+    def __call__(
+        self, start: float = 0, end: float = 1, start_frame: int = 0, end_frame: int = 1
+    ) -> EasingFunction:
+        easing_cls = self.easing_cls
+        n = self.steps
+
+        class DiscreteEasingFunction(EasingFunction):
+            def __init__(
+                self, start: float = 0, end: float = 1, start_frame: int = 0, end_frame: int = 1
+            ):
+                super().__init__(start, end, start_frame, end_frame)
+                self.original = easing_cls(start, end, start_frame, end_frame)
+
+            def func(self, t: float) -> float:
+                step_index = min(int(t * (n - 1)), n - 1)
+                return self.original.func(step_index / (n - 1))
+
+        return DiscreteEasingFunction(start, end, start_frame, end_frame)
