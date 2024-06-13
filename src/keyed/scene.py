@@ -4,6 +4,7 @@ import subprocess
 import warnings
 from functools import cache
 from pathlib import Path
+from subprocess import PIPE, Popen
 from typing import TYPE_CHECKING, Iterable, Sequence
 
 import cairo
@@ -208,14 +209,48 @@ class Scene(Transformable):
             self.draw()
         command = [
             "ffmpeg",
+            "-y",
             "-framerate",
             str(frame_rate),
             "-i",
             str(self.full_output_dir / r"all_%03d.png"),
             "-c:v",
             "prores_ks",
+            "-profile:v",
+            "4444",
             "-pix_fmt",
             "yuva444p10le",
             str(self.full_output_dir / "all.mov"),
         ]
         subprocess.run(command)
+
+    def to_video_direct(self, frame_rate: int = 24) -> None:
+        command = [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-vcodec",
+            "rawvideo",
+            "-s",
+            f"{self._width}x{self._height}",
+            "-pix_fmt",
+            "bgra",
+            "-r",
+            str(frame_rate),
+            "-i",
+            "-",
+            "-vcodec",
+            "prores_ks",
+            "-profile:v",
+            "4444",
+            "-pix_fmt",
+            "yuva444p10le",
+            "-r",
+            str(frame_rate),
+            str(self.full_output_dir / "all.mov"),
+        ]
+
+        with Popen(command, stdin=PIPE) as ffmpeg:
+            for frame in range(self.num_frames):
+                ffmpeg.stdin.write(self.asarray(frame).tobytes())
