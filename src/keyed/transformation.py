@@ -326,16 +326,16 @@ class Transformable(HasGeometry, Protocol):
 
     def translate(
         self,
-        delta_x: float | Followable,
-        delta_y: float | Followable,
+        x: float | Followable,
+        y: float | Followable,
         start_frame: int,
         end_frame: int,
         easing: type[EasingFunction] = CubicEaseInOut,
     ) -> Self:
-        if delta_x:
-            self.add_transform(TranslateX(self, start_frame, end_frame, delta_x, easing))
-        if delta_y:
-            self.add_transform(TranslateY(self, start_frame, end_frame, delta_y, easing))
+        if x:
+            self.add_transform(TranslateX(self, start_frame, end_frame, x, easing))
+        if y:
+            self.add_transform(TranslateY(self, start_frame, end_frame, y, easing))
         return self
 
     def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
@@ -363,8 +363,8 @@ class Transformable(HasGeometry, Protocol):
         delta_y = (to_point[1] - from_point[1]) if center_on_zero or direction[1] != 0 else 0
 
         self.translate(
-            delta_x=delta_x,
-            delta_y=delta_y,
+            x=delta_x,
+            y=delta_y,
             start_frame=start_frame,
             end_frame=end_frame,
             easing=easing,
