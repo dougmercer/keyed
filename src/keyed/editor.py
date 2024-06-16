@@ -1,7 +1,7 @@
 import shapely
 import shapely.geometry
 
-from .animation import Animation, LambdaFollower, Property
+from .animation import Animation, Expression, Property
 from .base import Selection
 from .code import Code, Text
 from .constants import DL, DR, LEFT, UL, UP
@@ -179,7 +179,7 @@ class Editor(Selection):
                 0.75 * self.menu_height.at(frame),
             )
 
-        menu_text.size.follow(LambdaFollower(font_size))
+        menu_text.size.follow(Expression(font_size))
 
         # Position the circles within a non-visible container in the top bar.
         circles_container = Rectangle(scene, x=0, y=0, alpha=0.5, fill_color=(1, 0, 0))
@@ -243,7 +243,7 @@ class Editor(Selection):
                 return g.bounds[3] - g.bounds[1]
 
             self.code.align_to(buffered_text_extents, -5, -5, direction=UL)
-            code_height = LambdaFollower(code_height_func)
+            code_height = Expression(code_height_func)
 
             self.code.translate(
                 0,

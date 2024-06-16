@@ -1,4 +1,4 @@
-from keyed import LambdaFollower, Property
+from keyed import Expression, Property
 
 
 class SimpleFollower:
@@ -17,7 +17,7 @@ def test_property_following() -> None:
 
 
 def test_lambda_follower() -> None:
-    follower = LambdaFollower(lambda frame: frame * 10)
+    follower = Expression(lambda frame: frame * 10)
     prop = Property(value=0)
     prop.follow(follower)
 

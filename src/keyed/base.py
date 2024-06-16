@@ -19,7 +19,7 @@ import cairo
 import shapely
 import shapely.affinity
 
-from .animation import Animation, LambdaFollower, Property
+from .animation import Animation, Expression, Property
 from .transformation import Transform, Transformable
 
 if TYPE_CHECKING:
@@ -87,10 +87,10 @@ class Base(Transformable, Protocol):
             g = get_geom(frame)
             return g.bounds[3] - g.bounds[1]
 
-        r.controls.delta_x.follow(LambdaFollower(x))
-        r.controls.delta_y.follow(LambdaFollower(y))
-        r._width.follow(LambdaFollower(width))
-        r._height.follow(LambdaFollower(height))
+        r.controls.delta_x.follow(Expression(x))
+        r.controls.delta_y.follow(Expression(y))
+        r._width.follow(Expression(width))
+        r._height.follow(Expression(height))
         return r
 
 

@@ -17,7 +17,7 @@ __all__ = [
     "Property",
     "Loop",
     "PingPong",
-    "LambdaFollower",
+    "Expression",
 ]
 
 
@@ -250,87 +250,87 @@ class Variable(Protocol):
     def at(self, frame: int) -> float:
         pass
 
-    def __add__(self, other: float | Followable) -> LambdaFollower:
+    def __add__(self, other: float | Followable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) + other
 
-            return LambdaFollower(func)
+            return Expression(func)
         elif isinstance(other, Followable):
 
             def func(frame: int) -> float:
                 return self.at(frame) + other.at(frame)
 
-            return LambdaFollower(func)
+            return Expression(func)
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __sub__(self, other: float | Followable) -> LambdaFollower:
+    def __sub__(self, other: float | Followable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) - other
 
-            return LambdaFollower(func)
+            return Expression(func)
         elif isinstance(other, Followable):
 
             def func(frame: int) -> float:
                 return self.at(frame) - other.at(frame)
 
-            return LambdaFollower(func)
+            return Expression(func)
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __truediv__(self, other: float | Followable) -> LambdaFollower:
+    def __truediv__(self, other: float | Followable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) / other
 
-            return LambdaFollower(func)
+            return Expression(func)
         elif isinstance(other, Followable):
 
             def func(frame: int) -> float:
                 return self.at(frame) / other.at(frame)
 
-            return LambdaFollower(func)
+            return Expression(func)
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __mul__(self, other: float | Followable) -> LambdaFollower:
+    def __mul__(self, other: float | Followable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) * other
 
-            return LambdaFollower(func)
+            return Expression(func)
         elif isinstance(other, Followable):
 
             def func(frame: int) -> float:
                 return self.at(frame) * other.at(frame)
 
-            return LambdaFollower(func)
+            return Expression(func)
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __radd__(self, other: float | Followable) -> LambdaFollower:
+    def __radd__(self, other: float | Followable) -> Expression:
         return self.__add__(other)
 
-    def __rsub__(self, other: float | Followable) -> LambdaFollower:
+    def __rsub__(self, other: float | Followable) -> Expression:
         return self.__sub__(other)
 
-    def __rmul__(self, other: float | Followable) -> LambdaFollower:
+    def __rmul__(self, other: float | Followable) -> Expression:
         return self.__mul__(other)
 
-    def __rtruediv__(self, other: float | Followable) -> LambdaFollower:
+    def __rtruediv__(self, other: float | Followable) -> Expression:
         return self.__truediv__(other)
 
-    def __neg__(self) -> LambdaFollower:
+    def __neg__(self) -> Expression:
         def func(frame: int) -> float:
             return -self.at(frame)
 
-        return LambdaFollower(func)
+        return Expression(func)
 
 
 class Property(Freezeable, Variable):
@@ -402,7 +402,7 @@ class Property(Freezeable, Variable):
             super().freeze()
 
 
-class LambdaFollower(Freezeable, Variable):
+class Expression(Freezeable, Variable):
     def __init__(self, func: Callable[[int], float]) -> None:
         super().__init__()
         self.func = func
