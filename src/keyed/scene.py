@@ -253,4 +253,4 @@ class Scene(Transformable):
 
         with Popen(command, stdin=PIPE) as ffmpeg:
             for frame in range(self.num_frames):
-                ffmpeg.stdin.write(self.asarray(frame).tobytes())
+                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
