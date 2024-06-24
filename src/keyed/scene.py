@@ -78,11 +78,14 @@ class Scene(Transformable):
         for file in self.full_output_dir.glob("*.png"):
             file.unlink()
 
-    @freeze
-    def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
+    def _create_folder(self) -> None:
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
+
+    @freeze
+    def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
+        self._create_folder()
         if delete:
             self.delete_old_frames()
 
@@ -205,6 +208,7 @@ class Scene(Transformable):
             super().freeze()
 
     def to_video(self, frame_rate: int = 24, redraw: bool = True) -> None:
+        self._create_folder()
         if redraw:
             self.draw()
         command = [
@@ -225,6 +229,7 @@ class Scene(Transformable):
         subprocess.run(command)
 
     def to_video_direct(self, frame_rate: int = 24) -> None:
+        self._create_folder()
         command = [
             "ffmpeg",
             "-y",

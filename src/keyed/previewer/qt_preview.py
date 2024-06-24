@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
+from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -81,12 +81,29 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self) -> None:
-        self.setWindowTitle("Manic Preview")
+        self.setWindowTitle("Preview")
         self.setGeometry(100, 100, self.quality.width, self.quality.height)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout()
         self.central_widget.setLayout(layout)
+
+        # Menu bar
+        menu_bar = self.menuBar()
+        file_menu = menu_bar.addMenu("File")
+
+        # Adding actions to the File menu
+        save_images_action = QAction("Save As Images", self)
+        save_images_action.triggered.connect(self.save_as_images)
+        file_menu.addAction(save_images_action)
+
+        save_layers_action = QAction("Save Layers As Images", self)
+        save_layers_action.triggered.connect(self.save_layers_as_images)
+        file_menu.addAction(save_layers_action)
+
+        save_video_action = QAction("Save as Video", self)
+        save_video_action.triggered.connect(self.save_as_video)
+        file_menu.addAction(save_video_action)
 
         # Image display
         self.label = InteractiveLabel()
@@ -136,6 +153,15 @@ class MainWindow(QMainWindow):
 
         # Enable looping
         self.toggle_loop()
+
+    def save_as_images(self) -> None:
+        self.scene.draw()
+
+    def save_layers_as_images(self) -> None:
+        self.scene.draw_as_layers()
+
+    def save_as_video(self) -> None:
+        self.scene.to_video_direct(self.frame_rate)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Right:
