@@ -288,13 +288,13 @@ class BounceEaseInOut(EasingFunction):
 class Discretize:
     def __init__(self, easing_cls: type[EasingFunction] = LinearInOut, n: int = 10):
         self.easing_cls = easing_cls
-        self.steps = n
+        self.n = n
 
     def __call__(
         self, start: float = 0, end: float = 1, start_frame: int = 0, end_frame: int = 1
     ) -> EasingFunction:
         easing_cls = self.easing_cls
-        n = self.steps
+        steps = self.n - 1
 
         class DiscreteEasingFunction(EasingFunction):
             def __init__(
@@ -304,7 +304,6 @@ class Discretize:
                 self.original = easing_cls(start, end, start_frame, end_frame)
 
             def func(self, t: float) -> float:
-                step_index = min(int(t * (n - 1)), n - 1)
-                return self.original.func(step_index / (n - 1))
+                return self.original.func(min(round(t * steps), steps) / steps)
 
         return DiscreteEasingFunction(start, end, start_frame, end_frame)
