@@ -23,21 +23,23 @@ class Freezeable(Protocol):
 
     def freeze(self) -> None:
         self.is_frozen = True
-        # Extend to implement any additional behavior you want.
 
 
 T = TypeVar("T", bound=Callable[..., Any])
 
 
 def guard_frozen(method: T) -> T:
-    """
-    A decorator to check if the object is frozen before allowing method execution.
+    """A decorator to check if the object is frozen before allowing method execution.
 
-    Args:
-    - method (Callable[..., Any]): The method to be decorated.
+    Parameters
+    ----------
+    method: Callable[..., Any]
+        The method to be decorated.
 
-    Returns:
-    - Callable[..., Any]: The decorated method.
+    Returns
+    -------
+    Callable[..., Any]
+        The decorated method.
     """
 
     @wraps(method)
@@ -50,14 +52,17 @@ def guard_frozen(method: T) -> T:
 
 
 def freeze(method: T) -> T:
-    """
-    A decorator that calls self.freeze() on the object before executing the method.
+    """A decorator that calls self.freeze() on the object before executing the method.
 
-    Args:
-    - method (Callable[..., Any]): The method to be decorated.
+    Parameters
+    ----------
+    method: Callable[..., Any]
+        The method to be decorated.
 
-    Returns:
-    - Callable[..., Any]: The decorated method.
+    Returns
+    -------
+    Callable[..., Any]
+        The decorated method.
     """
 
     @wraps(method)
