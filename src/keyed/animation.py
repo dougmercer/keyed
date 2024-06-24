@@ -6,7 +6,7 @@ from enum import Enum, auto
 from functools import cache, partial
 from typing import Any, Callable, Protocol, Self, Type, runtime_checkable
 
-from .easing import EasingFunction, LinearInOut
+from .easing import Discretize, EasingFunction, LinearInOut
 from .helpers import Freezeable
 
 __all__ = [
@@ -18,12 +18,8 @@ __all__ = [
     "Loop",
     "PingPong",
     "Expression",
+    "Variable",
 ]
-
-
-@runtime_checkable
-class Followable(Protocol):
-    def at(self, frame: int) -> Any: ...
 
 
 class AnimationType(Enum):
@@ -39,7 +35,7 @@ class Animation(Freezeable):
         end_frame: int,
         start_value: float,
         end_value: float,
-        easing: Type[EasingFunction] = LinearInOut,
+        easing: Type[EasingFunction] | Discretize = LinearInOut,
         animation_type: AnimationType = AnimationType.ABSOLUTE,
     ) -> None:
         super().__init__()
@@ -246,18 +242,19 @@ def lag_animation(
     )
 
 
+@runtime_checkable
 class Variable(Protocol):
     def at(self, frame: int) -> float:
         pass
 
-    def __add__(self, other: float | Followable) -> Expression:
+    def __add__(self, other: float | Variable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) + other
 
             return Expression(func)
-        elif isinstance(other, Followable):
+        elif isinstance(other, Variable):
 
             def func(frame: int) -> float:
                 return self.at(frame) + other.at(frame)
@@ -266,14 +263,14 @@ class Variable(Protocol):
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __sub__(self, other: float | Followable) -> Expression:
+    def __sub__(self, other: float | Variable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) - other
 
             return Expression(func)
-        elif isinstance(other, Followable):
+        elif isinstance(other, Variable):
 
             def func(frame: int) -> float:
                 return self.at(frame) - other.at(frame)
@@ -282,14 +279,14 @@ class Variable(Protocol):
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __truediv__(self, other: float | Followable) -> Expression:
+    def __truediv__(self, other: float | Variable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) / other
 
             return Expression(func)
-        elif isinstance(other, Followable):
+        elif isinstance(other, Variable):
 
             def func(frame: int) -> float:
                 return self.at(frame) / other.at(frame)
@@ -298,14 +295,14 @@ class Variable(Protocol):
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __mul__(self, other: float | Followable) -> Expression:
+    def __mul__(self, other: float | Variable) -> Expression:
         if isinstance(other, float | int):
 
             def func(frame: int) -> float:
                 return self.at(frame) * other
 
             return Expression(func)
-        elif isinstance(other, Followable):
+        elif isinstance(other, Variable):
 
             def func(frame: int) -> float:
                 return self.at(frame) * other.at(frame)
@@ -314,16 +311,16 @@ class Variable(Protocol):
         else:
             raise TypeError(f"Unsupported type {type(other)}")
 
-    def __radd__(self, other: float | Followable) -> Expression:
+    def __radd__(self, other: float | Variable) -> Expression:
         return self.__add__(other)
 
-    def __rsub__(self, other: float | Followable) -> Expression:
+    def __rsub__(self, other: float | Variable) -> Expression:
         return self.__sub__(other)
 
-    def __rmul__(self, other: float | Followable) -> Expression:
+    def __rmul__(self, other: float | Variable) -> Expression:
         return self.__mul__(other)
 
-    def __rtruediv__(self, other: float | Followable) -> Expression:
+    def __rtruediv__(self, other: float | Variable) -> Expression:
         return self.__truediv__(other)
 
     def __neg__(self) -> Expression:
@@ -338,7 +335,7 @@ class Property(Freezeable, Variable):
         super().__init__()
         self.value = value
         self.animations: list[Animation] = []
-        self.following: None | Followable = None
+        self.following: None | Variable = None
 
     def __repr__(self) -> str:
         return f"Property(value={self.value}, animations={self.animations!r})"
@@ -363,7 +360,7 @@ class Property(Freezeable, Variable):
     def is_animated(self) -> bool:
         return len(self.animations) > 0 or self.following is not None
 
-    def follow(self, other: Followable) -> Self:
+    def follow(self, other: Variable) -> Self:
         self.following = other
         return self
 

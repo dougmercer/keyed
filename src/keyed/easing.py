@@ -4,7 +4,7 @@ import math
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from .animation import Followable
+    from .animation import Variable
 
 easing_types = [
     "Quad",
@@ -30,15 +30,15 @@ del easing_types, modifiers
 
 @runtime_checkable
 class EasingFunction(Protocol):
-    start: float | Followable
-    end: float | Followable
+    start: float | Variable
+    end: float | Variable
     start_frame: int
     end_frame: int
 
     def __init__(
         self,
-        start: float = 0,
-        end: float = 1,
+        start: float | Variable = 0,
+        end: float | Variable = 1,
         start_frame: int = 0,
         end_frame: int = 1,
     ):
@@ -76,7 +76,7 @@ class EasingFunction(Protocol):
     def __call__(self, frame: float) -> float:
         return self.ease(frame)
 
-    def _as_tuple(self) -> tuple[type, int, int, float | Followable, float | Followable]:
+    def _as_tuple(self) -> tuple[type, int, int, float | Variable, float | Variable]:
         return (type(self), self.start_frame, self.end_frame, self.start, self.end)
 
     def __eq__(self, other: Any) -> bool:

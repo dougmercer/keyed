@@ -1,7 +1,7 @@
-from keyed import Expression, Property
+from keyed import Expression, Property, Variable
 
 
-class SimpleFollower:
+class SimpleFollower(Variable):
     def at(self, frame: float) -> float:
         return frame * 10
 

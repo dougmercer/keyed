@@ -22,7 +22,7 @@ import shapely
 import shapely.affinity
 from shapely.geometry.base import BaseGeometry
 
-from .animation import Animation, AnimationType, Followable, Property
+from .animation import Animation, AnimationType, Property, Variable
 from .constants import ORIGIN, Direction
 from .easing import CubicEaseInOut, EasingFunction
 from .helpers import Freezeable, guard_frozen
@@ -326,8 +326,8 @@ class Transformable(HasGeometry, Protocol):
 
     def translate(
         self,
-        x: float | Followable,
-        y: float | Followable,
+        x: float | Variable,
+        y: float | Variable,
         start_frame: int,
         end_frame: int,
         easing: type[EasingFunction] = CubicEaseInOut,
@@ -529,7 +529,7 @@ class TranslateX(Transform):
         reference: Transformable,
         start_frame: int,
         end_frame: int,
-        delta: float | Followable,
+        delta: float | Variable,
         easing: type[EasingFunction] = CubicEaseInOut,
     ):
         super().__init__()
@@ -575,7 +575,7 @@ class TranslateY(Transform):
         reference: Transformable,
         start_frame: int,
         end_frame: int,
-        delta: float | Followable,
+        delta: float | Variable,
         easing: type[EasingFunction] = CubicEaseInOut,
     ):
         super().__init__()
