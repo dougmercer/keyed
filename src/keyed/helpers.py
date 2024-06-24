@@ -6,7 +6,7 @@ __all__ = ["Freezeable", "guard_frozen", "freeze"]
 
 @runtime_checkable
 class Freezeable(Protocol):
-    is_frozen: bool = False
+    is_frozen: bool
 
     def __init__(self) -> None:
         self.is_frozen = False
@@ -17,7 +17,7 @@ class Freezeable(Protocol):
         return id(self)
 
     def __setattr__(self, name: str, value: "Freezeable", /) -> None:
-        if self.is_frozen:
+        if hasattr(self, "is_frozen") and self.is_frozen:
             raise ValueError("Cannot set attribute. Object has been frozen.")
         object.__setattr__(self, name, value)
 
