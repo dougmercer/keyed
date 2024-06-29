@@ -115,6 +115,7 @@ class Editor(Selection):
         self.ctx = scene.get_context()
         self.code = code
         self.other_code: list[Code] = []
+        self.draw_scroll_bar = draw_scroll_bar
 
         self.main_window = Rectangle(
             scene,
@@ -147,19 +148,21 @@ class Editor(Selection):
         menu_text = Text(scene, x=0, y=0, text=title, color=WHITE)
 
         circles = self._make_circles(scene)
-        if draw_scroll_bar:
-            scroll_bar = ScrollBar(
-                scene,
-                scroll_width=scroll_width,
-                color=scroll_color,
-                fill_color=scroll_fill_color,
-                radius=radius,
-                main_window=self.main_window,
-                top_bar=top_bar,
-                indicator_height=scroll_indicator_height,
-                indicator_color=scroll_indicator_color,
-                indicator_fill_color=scroll_indicator_fill_color,
-            )
+
+        # TODO, don't tie sizing to scroll bar so we can avoid creating this
+        scroll_bar = ScrollBar(
+            scene,
+            scroll_width=scroll_width,
+            color=scroll_color,
+            fill_color=scroll_fill_color,
+            radius=radius,
+            main_window=self.main_window,
+            top_bar=top_bar,
+            indicator_height=scroll_indicator_height,
+            indicator_color=scroll_indicator_color,
+            indicator_fill_color=scroll_indicator_fill_color,
+        )
+        self.scroll_bar = scroll_bar
 
         # The top bar's width should always match the window's width
         top_bar._width.follow(self.main_window._width)
@@ -190,7 +193,6 @@ class Editor(Selection):
 
         # Put the objects into Self
         self.extend([self.main_window, top_bar, circles, menu_text])
-        self.scroll_bar = scroll_bar
 
         if self.code is not None:
             text_extents = Rectangle(
@@ -276,7 +278,8 @@ class Editor(Selection):
 
     def draw(self, frame: int = 0) -> None:
         super().draw(frame)
-        self.scroll_bar.draw(frame)
+        if self.draw_scroll_bar:
+            self.scroll_bar.draw(frame)
         if self.code:
             with self.text_extents.clip(frame):
                 self.code.draw(frame)
