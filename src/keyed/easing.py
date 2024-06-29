@@ -14,7 +14,7 @@ easing_types = [
     "Sine",
     "Circular",
     "Elastic",
-    "Exponential",
+    "Expo",
     "Back",
     "Bounce",
 ]
@@ -197,21 +197,21 @@ class CircularEaseInOut(EasingFunction):
         return 0.5 * (math.sqrt(-((2 * t) - 3) * ((2 * t) - 1)) + 1)
 
 
-class ExponentialEaseIn(EasingFunction):
+class ExpoEaseIn(EasingFunction):
     def func(self, t: float) -> float:
         if t == 0:
             return 0
         return math.pow(2, 10 * (t - 1))
 
 
-class ExponentialEaseOut(EasingFunction):
+class ExpoEaseOut(EasingFunction):
     def func(self, t: float) -> float:
         if t == 1:
             return 1
         return 1 - math.pow(2, -10 * t)
 
 
-class ExponentialEaseInOut(EasingFunction):
+class ExpoEaseInOut(EasingFunction):
     def func(self, t: float) -> float:
         if t == 0 or t == 1:
             return t
