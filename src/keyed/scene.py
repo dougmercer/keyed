@@ -83,8 +83,13 @@ class Scene(Transformable):
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
 
+    def _open_folder(self) -> None:
+        subprocess.run(["open", str(self.full_output_dir)])
+
     @freeze
-    def draw(self, layers: Sequence[int] | None = None, delete: bool = True) -> None:
+    def draw(
+        self, layers: Sequence[int] | None = None, delete: bool = True, open_dir: bool = False
+    ) -> None:
         self._create_folder()
         if delete:
             self.delete_old_frames()
@@ -95,11 +100,17 @@ class Scene(Transformable):
             filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
             raster.write_to_png(filename)  # type: ignore[arg-type]
 
+        if open_dir:
+            self._open_folder()
+
     @freeze
-    def draw_as_layers(self) -> None:
+    def draw_as_layers(self, open_dir: bool = False) -> None:
+        self._create_folder()
         self.delete_old_frames()
         for i, _ in enumerate(self.content):
             self.draw([i], delete=False)
+        if open_dir:
+            self._open_folder()
 
     @freeze
     def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
@@ -228,7 +239,7 @@ class Scene(Transformable):
         ]
         subprocess.run(command)
 
-    def to_video_direct(self, frame_rate: int = 24) -> None:
+    def to_video_direct(self, frame_rate: int = 24, open_dir: bool = False) -> None:
         self._create_folder()
         command = [
             "ffmpeg",
@@ -253,9 +264,12 @@ class Scene(Transformable):
             "yuva444p10le",
             "-r",
             str(frame_rate),
-            str(self.full_output_dir / "all.mov"),
+            str(self.full_output_dir / f"{self.scene_name}.mov"),
         ]
 
         with Popen(command, stdin=PIPE) as ffmpeg:
             for frame in range(self.num_frames):
                 ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
+
+        if open_dir:
+            self._open_folder()

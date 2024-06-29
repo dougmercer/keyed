@@ -155,13 +155,13 @@ class MainWindow(QMainWindow):
         self.toggle_loop()
 
     def save_as_images(self) -> None:
-        self.scene.draw()
+        self.scene.draw(open_dir=True)
 
     def save_layers_as_images(self) -> None:
-        self.scene.draw_as_layers()
+        self.scene.draw_as_layers(open_dir=True)
 
     def save_as_video(self) -> None:
-        self.scene.to_video_direct(self.frame_rate)
+        self.scene.to_video_direct(self.frame_rate, open_dir=True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Right:
