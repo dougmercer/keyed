@@ -99,6 +99,13 @@ class Base(Transformable, Protocol):
         r._height.follow(Expression(height))
         return r
 
+    def set(self, property: str, value: Any) -> None:
+        prop = getattr(self, property)
+        if isinstance(prop, Property):
+            prop.set(value)
+        else:
+            setattr(self, property, value)
+
 
 class BaseText(Base, Protocol):
     @property
@@ -140,14 +147,21 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         Base.__init__(self)
         list.__init__(self, iterable)
 
+    def add_transform(self, transform: Transform) -> None:
+        for item in self:
+            item.add_transform(transform)
+
     def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to all characters in the selection."""
         for item in self:
             item.animate(property, animation)
 
     def draw(self, frame: int = 0) -> None:
-        for object in self:
-            object.draw(frame)
+        for item in self:
+            item.draw(frame)
+
+    def set(self, property: str, value: Any) -> None:
+        for item in self:
+            item.set(property, value)
 
     def write_on(
         self,
@@ -187,23 +201,8 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     def __copy__(self) -> Self:
         return type(self)(list(self))
 
-    def add_transform(self, transform: Transform) -> None:
-        for obj in self:
-            obj.add_transform(transform)
-
     @property
     def scene(self) -> Scene:  # type: ignore[override]
         if not self:
             raise ValueError("Cannot retrieve 'scene': Selection is empty.")
         return self[0].scene
-
-    def set(self, property: str, value: Any) -> None:
-        for obj in self:
-            if isinstance(obj, Selection):
-                obj.set(property, value)
-            else:
-                prop = getattr(obj, property)
-                if isinstance(prop, Property):
-                    prop.set(value)
-                else:
-                    setattr(obj, property, value)
