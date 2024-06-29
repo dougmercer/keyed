@@ -52,3 +52,8 @@ def style_to_color_map(style: StyleMeta) -> ColorMap:
 def as_rgb(color: str) -> tuple[float, ...]:
     """Convert hexcolor to RGB."""
     return tuple(int(color[i : i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def normalize(color: tuple[float, float, float]) -> tuple[float, float, float]:
+    r, g, b = color
+    return r / 255, g / 255, b / 255
