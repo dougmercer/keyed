@@ -55,6 +55,9 @@ class Base(Transformable, Protocol):
         color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
+        line_width: float = 2,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
         operator: cairo.Operator = cairo.OPERATOR_SCREEN,
     ) -> Rectangle:
         from .shapes import Rectangle
@@ -68,6 +71,9 @@ class Base(Transformable, Protocol):
             alpha=alpha,
             dash=dash,
             operator=operator,
+            line_width=line_width,
+            draw_fill=draw_fill,
+            draw_stroke=draw_stroke,
         )
 
         def get_geom(frame: int) -> shapely.Polygon:
