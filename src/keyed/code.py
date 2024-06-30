@@ -318,11 +318,11 @@ class Line(TextSelection[Token]):
 
     @property
     def chars(self) -> TextSelection[Text]:
-        return TextSelection(list(itertools.chain(*self)))
+        return TextSelection(itertools.chain(*self))
 
     @property
-    def tokens(self) -> list[Token]:
-        return list(self)
+    def tokens(self) -> TextSelection[Token]:
+        return TextSelection(self)
 
     def __copy__(self) -> Self:
         new = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
