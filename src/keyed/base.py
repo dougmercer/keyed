@@ -99,10 +99,10 @@ class Base(Transformable, Protocol):
         r._height.follow(Expression(height))
         return r
 
-    def set(self, property: str, value: Any) -> None:
+    def set(self, property: str, value: Any, frame: int = 0) -> None:
         prop = getattr(self, property)
         if isinstance(prop, Property):
-            prop.set(value)
+            prop.set(value, frame=frame)
         else:
             setattr(self, property, value)
 
@@ -159,9 +159,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         for item in self:
             item.draw(frame)
 
-    def set(self, property: str, value: Any) -> None:
+    def set(self, property: str, value: Any, frame: int = 0) -> None:
         for item in self:
-            item.set(property, value)
+            item.set(property, value, frame)
 
     def write_on(
         self,
