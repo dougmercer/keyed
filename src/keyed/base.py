@@ -51,6 +51,7 @@ class Base(Transformable, Protocol):
     def emphasize(
         self,
         buffer: float = 5,
+        radius: float = 0,
         fill_color: tuple[float, float, float] = (1, 1, 1),
         color: tuple[float, float, float] = (1, 1, 1),
         alpha: float = 1,
@@ -74,6 +75,7 @@ class Base(Transformable, Protocol):
             line_width=line_width,
             draw_fill=draw_fill,
             draw_stroke=draw_stroke,
+            radius=radius,
         )
 
         def get_geom(frame: int) -> shapely.Polygon:
