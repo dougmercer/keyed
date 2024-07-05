@@ -36,8 +36,6 @@ class ScrollBar(Selection):
         indicator_color: tuple[float, float, float] = BLACK,
         indicator_fill_color: tuple[float, float, float] = WHITE,
     ) -> None:
-        self.progress = Property(0)
-
         scroll_bar = Rectangle(
             scene,
             x=0,
@@ -60,8 +58,7 @@ class ScrollBar(Selection):
         scroll_bar.lock_on(main_window, start_frame=-13, direction=DR)
 
         # Create the scroll_indicator within the scroll bar
-
-        indicator = Rectangle(
+        scroll_indicator = Rectangle(
             scene,
             x=0,
             y=0,
@@ -71,15 +68,16 @@ class ScrollBar(Selection):
             color=indicator_color,
             radius=radius,
         )
-        indicator._width.follow(scroll_bar._width)
-        indicator.lock_on(scroll_bar, start_frame=-12, x=True, y=False)
-        indicator.align_to(scroll_bar, -11, -11, direction=UP)
+        scroll_indicator._width.follow(scroll_bar._width)
+        scroll_indicator.lock_on(scroll_bar, start_frame=-12, x=True, y=False)
+        scroll_indicator.align_to(scroll_bar, -11, -11, direction=UP)
 
-        indicator.controls.delta_y.follow((scroll_bar._height - indicator_height) * self.progress)
+        self.progress = Property(0)
+        scroll_indicator.controls.delta_y.follow((scroll_bar._height - indicator_height) * self.progress)
 
         self._width = scroll_bar._width
         self._height = scroll_bar._height
-        super().__init__([scroll_bar, indicator])
+        super().__init__([scroll_bar, scroll_indicator])
 
 
 class Editor(Selection):
