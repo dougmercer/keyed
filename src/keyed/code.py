@@ -361,6 +361,8 @@ class Code(TextSelection[Line]):
                 line = []
             else:
                 line.append(token)
+        if line:
+            lines.append(line)
 
         objects: TextSelection[Line] = TextSelection()
         for line in lines:
