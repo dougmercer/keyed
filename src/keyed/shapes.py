@@ -259,8 +259,8 @@ class Circle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
-        self.controls.delta_x.offset(x)
-        self.controls.delta_y.offset(y)
+        self.controls.delta_x.offset(x, frame=-9999)
+        self.controls.delta_y.offset(y, frame=-9999)
         self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color
