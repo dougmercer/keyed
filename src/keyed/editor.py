@@ -248,8 +248,8 @@ class Editor(Selection):
             self.code.translate(
                 0,
                 (buffered_text_extents._height - code_height - buffer) * scroll_bar.progress,
-                0,
-                0,
+                -1,
+                -1,
             )
 
         # Apply x/y offset.
