@@ -121,7 +121,8 @@ class Scene(Transformable):
             else self.content
         )
         for content in layers_to_render:
-            content.draw(frame)
+            if content.lifetime.alive(frame):
+                content.draw(frame)
 
     @freeze
     def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:

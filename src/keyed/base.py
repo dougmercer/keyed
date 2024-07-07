@@ -32,12 +32,25 @@ if TYPE_CHECKING:
 __all__ = ["Base", "BaseText", "Selection"]
 
 
+class Lifetime:
+    def __init__(self, start: float | None = None, end: float | None = None):
+        self.start = start
+        self.end = end
+
+    def alive(self, frame: int) -> bool:
+        valid_start = self.start is None or self.start <= frame
+        valid_end = self.end is None or self.end >= frame
+        return valid_start and valid_end
+
+
 @runtime_checkable
 class Base(Transformable, Protocol):
     scene: Scene
+    lifetime: Lifetime
 
     def __init__(self) -> None:
         Transformable.__init__(self)
+        self.lifetime = Lifetime()
 
     def draw(self, frame: int = 0) -> None:
         pass
