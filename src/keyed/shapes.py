@@ -113,8 +113,8 @@ class Rectangle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
-        self.controls.delta_x.offset(x)
-        self.controls.delta_y.offset(y)
+        self.controls.delta_x.offset(x, -1000)
+        self.controls.delta_y.offset(y, -1000)
         self._width = Property(width)
         self._height = Property(height)
         self.radius = Property(radius)
