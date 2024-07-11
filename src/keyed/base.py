@@ -20,6 +20,7 @@ import shapely
 import shapely.affinity
 
 from .animation import Animation, Expression, Property
+from .constants import ALWAYS, ORIGIN
 from .transformation import Transform, Transformable
 
 if TYPE_CHECKING:
@@ -121,6 +122,8 @@ class Base(Transformable, Protocol):
         else:
             setattr(self, property, value)
 
+    def center(self, frame: int=ALWAYS) -> Self:
+        self.align_to(self.scene, start_frame=frame, end_frame=frame, direction=ORIGIN, center_on_zero=True)
 
 class BaseText(Base, Protocol):
     @property

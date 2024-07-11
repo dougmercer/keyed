@@ -9,6 +9,7 @@ import shapely.ops
 
 from .animation import Animation, Property
 from .base import Base
+from .constants import ALWAYS
 from .scene import Scene
 
 __all__ = ["Circle", "Rectangle"]
@@ -113,8 +114,8 @@ class Rectangle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
-        self.controls.delta_x.offset(x, -1000)
-        self.controls.delta_y.offset(y, -1000)
+        self.controls.delta_x.offset(x, ALWAYS)
+        self.controls.delta_y.offset(y, ALWAYS)
         self._width = Property(width)
         self._height = Property(height)
         self.radius = Property(radius)
@@ -265,8 +266,8 @@ class Circle(Shape):
         self.ctx = scene.get_context()
         self.x = x
         self.y = y
-        self.controls.delta_x.offset(x, frame=-9999)
-        self.controls.delta_y.offset(y, frame=-9999)
+        self.controls.delta_x.offset(x, frame=ALWAYS)
+        self.controls.delta_y.offset(y, frame=ALWAYS)
         self.radius = Property(radius)
         self.alpha = Property(alpha)
         self.color = color

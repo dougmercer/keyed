@@ -14,6 +14,7 @@ __all__ = [
     "DR",
     "UL",
     "UR",
+    "ALWAYS",
 ]
 
 
@@ -84,3 +85,5 @@ DL = DOWN + LEFT
 DR = DOWN + RIGHT
 UL = UP + LEFT
 UR = UP + RIGHT
+
+ALWAYS = -9999

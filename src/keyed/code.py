@@ -14,6 +14,7 @@ from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenT
 
 from .animation import Animation, Property
 from .base import BaseText, Selection
+from .constants import ALWAYS
 from .highlight import StyledToken
 
 if TYPE_CHECKING:
@@ -51,8 +52,8 @@ class Text(BaseText):
         self.size = Property(size)
         self.x = x
         self.y = y
-        self.controls.delta_x.offset(x, frame=-9999)
-        self.controls.delta_y.offset(y, frame=-9999)
+        self.controls.delta_x.offset(x, frame=ALWAYS)
+        self.controls.delta_y.offset(y, frame=ALWAYS)
         self.scene = scene
         self.ctx = scene.get_context()
         self.code = code
