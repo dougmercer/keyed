@@ -148,38 +148,44 @@ class Rectangle(Shape):
         )
 
     def _draw_shape(self, frame: int) -> None:
-        self.ctx.set_line_cap(cairo.LINE_CAP_BUTT)
-        self.ctx.set_line_join(cairo.LINE_JOIN_MITER)
         w = self._width.at(frame)
         h = self._height.at(frame)
         r = self.radius.at(frame)
 
-        self.ctx.new_sub_path()
-        # Top-left corner
-        if self.round_tl:
-            self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
+        # Start at the top-left corner
+        if self.round_tl and r > 0:
+            start_x, start_y = r, 0
         else:
-            self.ctx.move_to(0, r)
-            self.ctx.line_to(0, 0)
+            start_x, start_y = 0, 0
+        self.ctx.move_to(start_x, start_y)
 
         # Top-right corner
-        if self.round_tr:
-            self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 0)
+        if self.round_tr and r > 0:
+            self.ctx.line_to(w - r, 0)
+            self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 2 * math.pi)  # Draw arc clockwise
         else:
             self.ctx.line_to(w, 0)
 
         # Bottom-right corner
-        if self.round_br:
+        if self.round_br and r > 0:
+            self.ctx.line_to(w, h - r)
             self.ctx.arc(w - r, h - r, r, 0, math.pi / 2)
         else:
             self.ctx.line_to(w, h)
 
         # Bottom-left corner
-        if self.round_bl:
+        if self.round_bl and r > 0:
+            self.ctx.line_to(r, h)
             self.ctx.arc(r, h - r, r, math.pi / 2, math.pi)
         else:
             self.ctx.line_to(0, h)
 
+        # Closing the path back to the start
+        self.ctx.line_to(0, r)  # Explicit line to the start of the arc if rounding
+        if self.round_tl and r > 0:
+            self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
+
+        # Explicitly close the path to ensure there is no gap
         self.ctx.close_path()
 
     def raw_geom(self, frame: int = 0) -> shapely.geometry.Polygon:
@@ -277,6 +283,7 @@ class Circle(Shape):
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"
 
     def _draw_shape(self, frame: int = 0) -> None:
+        self.ctx.move_to(self.radius.at(frame), 0)
         self.ctx.arc(
             0,
             0,

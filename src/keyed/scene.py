@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from .animation import Property
 from .code import Selection
+from .freehand import FreeHandContext
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
 from .transformation import Transform, TransformControls, Transformable
@@ -35,6 +36,7 @@ class Scene(Transformable):
         width: int = 3840,
         height: int = 2160,
         antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
+        freehand: bool = False,
     ) -> None:
         Freezeable.__init__(self)
         super().__init__()
@@ -47,6 +49,7 @@ class Scene(Transformable):
         self.ctx = cairo.Context(self.surface)
         self.content: list[Base] = []
         self.antialias = antialias
+        self.freehand = freehand
         self.controls = TransformControls(self)
 
     def __repr__(self) -> str:
@@ -196,8 +199,9 @@ class Scene(Transformable):
     ) -> None:
         create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
-    def get_context(self) -> cairo.Context:
-        return cairo.Context(self.surface)
+    def get_context(self) -> cairo.Context | FreeHandContext:
+        ctx = cairo.Context(self.surface)
+        return FreeHandContext(ctx) if self.freehand else ctx
 
     def raw_geom(self, frame: int = 0) -> BaseGeometry:
         return shapely.box(
