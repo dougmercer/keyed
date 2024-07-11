@@ -11,6 +11,8 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1)
 
 scene.add(code)
 
+code.chars.translate(100, 0, 0, 12)
+
 r = code.lines[0].emphasize(
     operator=cairo.OPERATOR_SCREEN,
     fill_color=(0.5, 0.1, 0),
@@ -21,6 +23,5 @@ scene.add(r)
 # emphs = [c.emphasize() for c in code.chars]
 # scene.add(*emphs)
 
-code.chars.translate(100, 0, 0, 12)
 
 scene.preview()

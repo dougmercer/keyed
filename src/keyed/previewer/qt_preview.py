@@ -1,7 +1,9 @@
+"""PySide6 Previewer."""
+
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
@@ -27,9 +29,7 @@ if TYPE_CHECKING:
 __all__ = ["create_animation_window"]
 
 
-def get_object_info(
-    scene: Scene, quality: QualitySetting, frame: int, point: tuple[float, float]
-) -> Base | None:
+def get_object_info(scene: Scene, quality: QualitySetting, frame: int, point: tuple[float, float]) -> Base | None:
     scale_x = quality.width / scene._width
     scale_y = quality.height / scene._height
 
@@ -39,28 +39,47 @@ def get_object_info(
     y = y / scale_y
 
     # Transform point based on scene's transformation matrix
-    matrix = scene.get_matrix(frame)
+    matrix = scene.controls.matrix.value
     if matrix is None or (invert := matrix.invert()) is None:
         scene_x, scene_y = x, y
     else:
-        scene_x, scene_y = affine_transform(Point(x, y), invert).coords[0]
+        # fmt: off
+        scene_x, scene_y = affine_transform(Point(x, y), invert).coords[0]  # pyright: ignore[reportArgumentType] # noqa: E501
 
     return scene.find(scene_x, scene_y, frame)
 
 
 class InteractiveLabel(QLabel):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        quality: QualitySetting,
+        scene: Scene,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
         self.setStyleSheet("border: 2px solid white;")
+        self.coordinates_label: QLabel | None = None
+        self.quality = quality
+        self.scene = scene
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        x, y = event.position().x(), event.position().y()
+    def set_coordinates_label(self, label: QLabel) -> None:
+        self.coordinates_label = label
+
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
+        x, y = ev.position().x(), ev.position().y()
         info = self.get_object_info(x, y)
         if info:
-            QToolTip.showText(event.globalPosition().toPoint(), info, self)
+            QToolTip.showText(ev.globalPosition().toPoint(), info, self)
         else:
             QToolTip.hideText()
+
+    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
+        x, y = ev.position().x(), ev.position().y()
+        transformed_x = x * (self.scene._width / self.quality.width)
+        transformed_y = y * (self.scene._height / self.quality.height)
+        if self.coordinates_label:
+            self.coordinates_label.setText(f"({transformed_x:.1f}, {transformed_y:.1f})")
 
     def get_object_info(self, x: float, y: float) -> str:
         window = self.window()
@@ -106,7 +125,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(save_video_action)
 
         # Image display
-        self.label = InteractiveLabel()
+        self.label = InteractiveLabel(self.quality, self.scene)
         self.pixmap = QPixmap(self.quality.width, self.quality.height)
         self.label.setPixmap(self.pixmap)
         layout.addWidget(self.label)
@@ -146,6 +165,11 @@ class MainWindow(QMainWindow):
         # Object information display
         self.object_info = QLabel("")
         layout.addWidget(self.object_info)
+
+        # Coordinates display
+        self.coordinates_label = QLabel("(0, 0)")
+        layout.addWidget(self.coordinates_label)
+        self.label.set_coordinates_label(self.coordinates_label)
 
         # Initialize with frame 0 visible
         self.update_canvas(0)
@@ -217,9 +241,7 @@ class MainWindow(QMainWindow):
     def update_canvas(self, frame_number: int) -> None:
         self.current_frame = frame_number
         img_data = self.scene.rasterize(frame_number).get_data()
-        qimage = QImage(
-            img_data, self.scene._width, self.scene._height, QImage.Format.Format_ARGB32
-        )
+        qimage = QImage(img_data, self.scene._width, self.scene._height, QImage.Format.Format_ARGB32)
 
         # Create a QPixmap and fill it with black
         qpixmap = QPixmap(self.quality.width, self.quality.height)
@@ -244,9 +266,15 @@ class MainWindow(QMainWindow):
         self.frame_counter_label.setText(f"Frame: {self.current_frame}/{self.scene.num_frames - 1}")
 
 
-def create_animation_window(
-    scene: Scene, frame_rate: int = 24, quality: Quality = Quality.very_high
-) -> None:
+def create_animation_window(scene: Scene, frame_rate: int = 24, quality: Quality = Quality.very_high) -> NoReturn:
+    """Create the animation preview window for the provided scene.
+
+    Parameters
+    ----------
+    scene
+    frame_rate
+    quality
+    """
     app = QApplication(sys.argv)
     window = MainWindow(scene, quality=quality.value, frame_rate=frame_rate)
     window.show()

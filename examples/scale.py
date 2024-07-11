@@ -12,10 +12,10 @@ s.translate(200, 200, -1, -1)
 
 scene.add(s)
 
-s.scale(Animation(0, 6, 1, 2, animation_type=AnimationType.ABSOLUTE))
+s.scale(2, 0, 6)
 s.translate(100, 0, 12, 24)
 
 t = Code(scene, tokens=tokenize("import this"), x=500, y=500)
-t.scale(Animation(0, 6, 1, 10, animation_type=AnimationType.ABSOLUTE))
+t.scale(10, 0, 6)
 scene.add(t)
 scene.preview()

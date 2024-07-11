@@ -1,3 +1,5 @@
+"""Syntax highlighting."""
+
 import itertools
 from typing import Any, Iterable
 
@@ -15,6 +17,8 @@ __all__ = ["tokenize", "KeyedFormatter"]
 
 
 class StyledToken(BaseModel, arbitrary_types_allowed=True):
+    """A pydantic model for serializing pygments output."""
+
     text: str
     token_type: _TokenType
     color: tuple[float, float, float]
@@ -45,26 +49,6 @@ class StyledToken(BaseModel, arbitrary_types_allowed=True):
 StyledTokens = TypeAdapter(list[StyledToken])
 
 
-def format_code(
-    tokens: list[tuple[_TokenType, str]],
-    style: StyleMeta,
-) -> str:
-    colors = style_to_color_map(style)
-    styled_tokens: list[StyledToken] = []
-    for token_type, token in tokens:
-        token_style = colors.get(token_type, Style(r=1, g=1, b=1))
-        styled_tokens.append(
-            StyledToken(
-                text=token,
-                token_type=token_type,
-                color=token_style.rgb,
-                italic=token_style.italic,
-                bold=token_style.bold,
-            )
-        )
-    return StyledTokens.dump_json(styled_tokens).decode()
-
-
 class KeyedFormatter(Formatter):
     """Format syntax highlighted text as JSON with color, slant, and weight metadata."""
 
@@ -73,15 +57,44 @@ class KeyedFormatter(Formatter):
     filenames: list[str] = []
 
     def __init__(self, **options: Any) -> None:
-        super(KeyedFormatter, self).__init__(**options)
+        super().__init__(**options)
+
+    @staticmethod
+    def format_code(tokens: list[tuple[_TokenType, str]], style: StyleMeta) -> str:
+        """Convert code into styled tokens.
+
+        Parameters
+        ----------
+        tokens
+        style
+
+        Returns
+        -------
+        str
+        """
+        colors = style_to_color_map(style)
+        styled_tokens: list[StyledToken] = []
+        for token_type, token in tokens:
+            token_style = colors.get(token_type, Style(r=1, g=1, b=1))
+            styled_tokens.append(
+                StyledToken(
+                    text=token,
+                    token_type=token_type,
+                    color=token_style.rgb,
+                    italic=token_style.italic,
+                    bold=token_style.bold,
+                )
+            )
+        return StyledTokens.dump_json(styled_tokens).decode()
 
     def format_unencoded(self, tokensource, outfile) -> None:  # type: ignore[no-untyped-def]
-        formatted_output = format_code(list(tokensource), style=self.style)
+        """Format the tokens are write to output."""
+        formatted_output = self.format_code(list(tokensource), style=self.style)
         outfile.write(formatted_output)
 
 
 def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenType, str]]:
-    """Splits a multiline token into multiple tokens."""
+    """Split a multiline token into multiple tokens."""
     token_type, text = token
     if token_type not in (
         Token.Literal.String.Doc,
@@ -113,18 +126,40 @@ def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenTyp
     return parts
 
 
-def split_multiline_tokens(
-    tokens: Iterable[tuple[_TokenType, str]]
-) -> list[tuple[_TokenType, str]]:
+def split_multiline_tokens(tokens: Iterable[tuple[_TokenType, str]]) -> list[tuple[_TokenType, str]]:
     return list(itertools.chain(*(split_multiline_token(token) for token in tokens)))
 
 
-def tokenize(text: str, lexer: Lexer = None, formatter: Formatter = None) -> list[StyledToken]:
-    from pygments import format, lex
-    from pygments.lexers import PythonLexer
+def tokenize(
+    text: str, lexer: Lexer | None = None, formatter: Formatter | None = None, filename: str = "<unknown>"
+) -> list[StyledToken]:
+    """Tokenize code text into styled tokens.
 
-    lexer = lexer or PythonLexer()
+    Parameters
+    ----------
+    text : str
+        The code text to tokenize.
+    lexer : Lexer | None, optional
+        The Pygments lexer to use. If None, PythonLexer is used.
+    formatter : Formatter | None, optional
+        The Pygments formatter to use. If None, KeyedFormatter is used.
+    filename : str, optional
+        The filename of the code, used for more accurate Jedi analysis. Default is '<unknown>'.
+
+    Returns
+    -------
+    list[StyledTokens]
+    """
+    from pygments import format, lex
+    from pygments.lexers.python import PythonLexer
+
     formatter = formatter or KeyedFormatter(style=DEFAULT_STYLE)
-    tokens = split_multiline_tokens(lex(text, lexer))
-    json_str = format(tokens, formatter)
+    raw_tokens = split_multiline_tokens(lex(text, lexer or PythonLexer()))
+
+    # Apply post-processor to enhance token types
+    from .extras import post_process_tokens
+
+    processed_tokens = post_process_tokens(text, raw_tokens, filename)
+
+    json_str = format(processed_tokens, formatter)
     return StyledTokens.validate_json(json_str)

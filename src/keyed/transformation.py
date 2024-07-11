@@ -1,760 +1,575 @@
+"""Transform objects by rotations, translations, scale, and more."""
+
 from __future__ import annotations
 
-import bisect
-import itertools
 import math
-from contextlib import contextmanager
-from functools import cache
-from typing import (
-    Any,
-    Generator,
-    Iterable,
-    Literal,
-    Protocol,
-    Self,
-    SupportsIndex,
-    overload,
-    runtime_checkable,
-)
+from typing import Any, Literal, Protocol, Self, cast, runtime_checkable
 
 import cairo
 import shapely
 import shapely.affinity
-from shapely.geometry.base import BaseGeometry
+from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, reactive_method, unref
 
-from .animation import Animation, AnimationType, Property, Variable
-from .constants import ORIGIN, Direction
-from .easing import CubicEaseInOut, EasingFunction
-from .helpers import Freezeable, guard_frozen
-
-__all__ = [
-    "Transform",
-    "Rotation",
-    "apply_transforms",
-    "TranslateX",
-    "TranslateY",
-    "TransformControls",
-    "HasGeometry",
-    "Transformable",
-    "Orbit",
-    "HasGeometry",
-    "Point",
-    "Scale",
-]
+from .animation import Animation, AnimationType
+from .constants import ALWAYS, ORIGIN, Direction
+from .easing import EasingFunctionT, cubic_in_out
+from .helpers import Freezeable
+from .types import GeometryT
 
 
-def transform_sort_key(t: Transform) -> int:
-    return t.uid
-
-
-class TransformManager(list["Transform"]):
-    def __init__(
-        self, content: Iterable[Transform] = tuple(), /, is_dirty: bool | None = None
-    ) -> None:
-        if is_dirty is None:
-            raise ValueError("Must set is_dirty.")
-        super().__init__(content)
-        self.is_dirty = is_dirty
-        self.sort()
-
-    def append(self, item: Transform) -> None:
-        super().append(item)
-        self.is_dirty = True
-
-    def extend(self, items: Iterable[Transform]) -> None:
-        super().extend(items)
-        self.is_dirty = True
-
-    def sort(self) -> None:  # type: ignore[override]
-        if self.is_dirty:
-            super().sort(key=transform_sort_key)
-            self.is_dirty = False
-
-    @overload
-    def __getitem__(self, key: SupportsIndex) -> Transform:
-        pass
-
-    @overload
-    def __getitem__(self, key: slice) -> TransformManager:
-        pass
-
-    def __getitem__(self, key: SupportsIndex | slice) -> Transform | TransformManager:
-        if isinstance(key, slice):
-            return TransformManager(super().__getitem__(key), is_dirty=self.is_dirty)
-        else:
-            return super().__getitem__(key)
+class ReactiveGeomMethod(Protocol):
+    def __call__(self, with_transforms: bool = True) -> Computed[float]: ...
 
 
 @runtime_checkable
-class HasGeometry(Freezeable, Protocol):
-    def __init__(self) -> None:
+class Transformable(Protocol):
+    """A base class for things that have a geometry."""
+
+    controls: TransformControls
+    frame: Signal[int]
+    _geom_cached: Computed[GeometryT] | None
+    _raw_geom_cached: Computed[GeometryT] | None
+    _dependencies: list[Any]
+
+    def __init__(self, frame: Signal[int]) -> None:
         super().__init__()
+        self.frame = frame
+        self.controls = TransformControls(self)
+        self._geom_cached: Computed[GeometryT] | None = None
+        self._raw_geom_cached: Computed[GeometryT] | None = None
 
-    def raw_geom(self, frame: int = 0) -> BaseGeometry:
-        pass
+    @property
+    def raw_geom_now(self) -> GeometryT:
+        """Return the geometry at the current frame, before any transformations.
 
-    def _geom(self, frame: int = 0, before: Transform | None = None) -> BaseGeometry:
-        pass
+        Returns
+        -------
+        shapely.geometry.base.BaseGeometry
+        """
+        ...
 
-    def geom(self, frame: int = 0) -> BaseGeometry:
-        return self._geom(frame)
+    @property
+    def raw_geom(self) -> Computed[GeometryT]:
+        if self._raw_geom_cached is None:
+            self._raw_geom_cached = Computed(lambda: self.raw_geom_now, self._dependencies)
+        return self._raw_geom_cached
 
-    def _get_position_along_dim(
-        self,
-        frame: int = 0,
-        direction: Direction = ORIGIN,
-        dim: Literal[0, 1] = 0,
-        before: Transform | None = None,
-    ) -> float:
-        assert -1 <= direction[dim] <= 1
-        bounds = self._geom(frame, before=before).bounds
-        magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
-        return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
+    @property
+    def geom(self) -> Computed[GeometryT]:
+        """Return the geometry at the current frame.
 
-    def get_position_along_dim(
-        self,
-        frame: int = 0,
-        direction: Direction = ORIGIN,
-        dim: Literal[0, 1] = 0,
-    ) -> float:
-        return self._get_position_along_dim(
-            frame=frame,
-            direction=direction,
-            dim=dim,
-        )
+        Returns
+        -------
+        shapely.geometry.base.BaseGeometry
+        """
+        # Check if there is a value in the cache
+        if self._geom_cached is None:
+            # Bind to the current matrix.
+            self._geom_cached = computed(affine_transform)(self.raw_geom, self.controls.matrix)
+        return self._geom_cached
 
-    def _get_critical_point(
-        self,
-        frame: int = 0,
-        direction: Direction = ORIGIN,
-        before: Transform | None = None,
-    ) -> tuple[float, float]:
-        x = self._get_position_along_dim(frame, direction, dim=0, before=before)
-        y = self._get_position_along_dim(frame, direction, dim=1, before=before)
-        return x, y
+    @property
+    def geom_now(self) -> GeometryT:
+        m = self.controls.matrix
+        return affine_transform(cast(GeometryT, unref(self.raw_geom)), m.value)
 
-    def get_critical_point(
-        self,
-        frame: int = 0,
-        direction: Direction = ORIGIN,
-    ) -> tuple[float, float]:
-        return self._get_critical_point(frame, direction)
+    def left_now(self, with_transforms: bool = True) -> float:
+        """Get the left critical point.
 
-    def left(self, frame: int = 0, with_transforms: bool = True) -> float:
-        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+        Parameters
+        ----------
+        with_transforms : bool
+            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+
+        Returns
+        -------
+        float
+        """
+        g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[0]
 
-    def right(self, frame: int = 0, with_transforms: bool = True) -> float:
-        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+    left: ReactiveGeomMethod = reactive_method()(left_now)
+
+    def right_now(self, with_transforms: bool = True) -> float:
+        """Get the right critical point.
+
+        Parameters
+        ----------
+        with_transforms : bool
+            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+
+        Returns
+        -------
+        float
+        """
+        g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[2]
 
-    def down(self, frame: int = 0, with_transforms: bool = True) -> float:
-        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+    right: ReactiveGeomMethod = reactive_method()(right_now)
+
+    def down_now(self, with_transforms: bool = True) -> float:
+        """Get the right critical point.
+
+        Parameters
+        ----------
+        with_transforms : bool
+            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+
+        Returns
+        -------
+        float
+        """
+        g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[1]
 
-    def up(self, frame: int = 0, with_transforms: bool = True) -> float:
-        g = self.geom(frame) if with_transforms else self.raw_geom(frame)
+    down: ReactiveGeomMethod = reactive_method()(down_now)
+
+    def up_now(self, with_transforms: bool = True) -> float:
+        """Get the right critical point.
+
+        Parameters
+        ----------
+        with_transforms : bool
+            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+
+        Returns
+        -------
+        float
+        """
+        g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[3]
 
-    def width(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.right(frame, with_transforms) - self.left(frame, with_transforms)
+    up: ReactiveGeomMethod = reactive_method()(up_now)
 
-    def height(self, frame: int = 0, with_transforms: bool = True) -> float:
-        return self.up(frame, with_transforms) - self.down(frame, with_transforms)
+    def width_now(self, with_transforms: bool = True) -> float:
+        return self.right_now(with_transforms) - self.left_now(with_transforms)
 
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self._geom = cache(self._geom)  # type: ignore[method-assign]
-            self.geom = cache(self.geom)  # type: ignore[method-assign]
-            self.get_critical_point = cache(self.get_critical_point)  # type: ignore[method-assign]  # noqa[E501
-            self._get_critical_point = cache(self._get_critical_point)  # type: ignore[method-assign]  # noqa[E501
-            self.left = cache(self.left)  # type: ignore[method-assign]
-            self.right = cache(self.right)  # type: ignore[method-assign]
-            self.down = cache(self.down)  # type: ignore[method-assign]
-            self.up = cache(self.up)  # type: ignore[method-assign]
-            self.width = cache(self.width)  # type: ignore[method-assign]
-            self.height = cache(self.height)  # type: ignore[method-assign]
-            self._get_position_along_dim = cache(self._get_position_along_dim)  # type: ignore[method-assign]  # noqa[E501
-            super().freeze()
+    width: ReactiveGeomMethod = reactive_method()(width_now)
 
+    def height_now(self, with_transforms: bool = True) -> float:
+        return self.up_now(with_transforms) - self.down_now(with_transforms)
 
-def left_of(lst: TransformManager, query: Transform | None) -> TransformManager:
-    """Get transforms before query transform.
+    height: ReactiveGeomMethod = reactive_method()(height_now)
 
-    Here, "before" means "before" in the global transforms list.
-
-    Paramters
-    ---------
-    lst: list[Transform]
-    query: query: Transform | None
-
-    Returns
-    -------
-    list[Transform]
-        Sorted list of transforms from input lst that are before query.
-    """
-    lst.sort()
-    if query is None:
-        return lst
-
-    idx = bisect.bisect_left(lst, transform_sort_key(query), key=transform_sort_key)
-    return lst[:idx]
-
-
-class TransformControls(Freezeable):
-    animatable_properties = ("rotation", "scale", "delta_x", "delta_y")
-
-    def __init__(self, obj: Transformable) -> None:
-        super().__init__()
-        self.rotation = Property(0)
-        self.scale = Property(1)
-        self.delta_x = Property(0)
-        self.delta_y = Property(0)
-        self.transforms: TransformManager = TransformManager(is_dirty=False)
-        self.obj = obj
-
-    @guard_frozen
-    def add(self, transform: Transform) -> None:
-        self.transforms.append(transform)
-
-    @guard_frozen
-    def follow(self, other: TransformControls) -> None:
-        """Follow another transform control.
-
-        This is implemented as a shallow copy of other's transforms.
-
-        This has the effect of ensuring that self is transformed identically to other,
-        but allows self to add additional transforms after the fact.
-        """
-        self.transforms = TransformManager(other.transforms, is_dirty=other.transforms.is_dirty)
-
-    @contextmanager
-    def transform(self, ctx: cairo.Context, frame: int = 0) -> Generator[None, Any, None]:
-        matrix = self.get_matrix(frame)
-        try:
-            ctx.save()
-            ctx.set_matrix(matrix)
-            yield
-        finally:
-            ctx.restore()
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = self.base_matrix(frame)
-        return matrix.multiply(apply_transforms(frame, self.transforms, before=before))
-
-    def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        return self._get_matrix(frame)
-
-    def base_matrix(self, frame: int = 0) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-
-        pivot_x = self.obj.width(frame, with_transforms=False) / 2
-        pivot_y = self.obj.height(frame, with_transforms=False) / 2
-
-        # Translate
-        delta_x = self.delta_x.at(frame)
-        delta_y = self.delta_y.at(frame)
-        if delta_x or delta_y:
-            matrix.translate(delta_x, delta_y)
-
-        # Rotate
-        radians = math.radians(self.rotation.at(frame))
-        if radians:
-            matrix.translate(pivot_x, pivot_y)
-            matrix.rotate(radians)
-            matrix.translate(-pivot_x, -pivot_y)
-
-        # Scale
-        scale = self.scale.at(frame)
-        if scale:
-            matrix.translate(pivot_x, pivot_y)
-            matrix.scale(scale, scale)
-            matrix.translate(-pivot_x, -pivot_y)
-        return matrix
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.base_matrix = cache(self.base_matrix)  # type: ignore[method-assign]
-            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
-            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
-            for prop in self.animatable_properties:
-                p = getattr(self, prop)
-                assert isinstance(p, Property)
-                p.freeze()
-            super().freeze()
-
-
-@runtime_checkable
-class Transformable(HasGeometry, Protocol):
-    controls: TransformControls
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.controls = TransformControls(self)
-
-    def raw_geom(self, frame: int = 0) -> shapely.Polygon:
-        pass
-
-    def _geom(
-        self,
-        frame: int = 0,
-        before: Transform | None = None,
-    ) -> BaseGeometry:
-        g = self.raw_geom(frame)
-        return affine_transform(g, self._get_matrix(frame, before=before))
-
-    def geom(
-        self,
-        frame: int = 0,
-    ) -> BaseGeometry:
-        return self._geom(frame)
-
-    def add_transform(self, transform: Transform) -> None:
-        self.controls.add(transform)
+    def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
+        self.controls.matrix *= matrix
+        # Invalidate cached geometry
+        self._geom_cached = None
+        return self
 
     def rotate(
-        self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
+        self,
+        amount: float,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
     ) -> Self:
-        self.add_transform(Rotation(self, animation, center, direction))
-        return self
+        """Rotate the object.
+
+        Parameters
+        ----------
+        animation
+            How to vary the rotation over time.
+        center
+            The object around which to rotate
+        direction
+            The relative critical point of the center.
+
+        Returns
+        -------
+        self
+        """
+        center = center if center is not None else self.geom
+        cx, cy = get_critical_point(center, direction)
+        return self.apply_transform(rotate(start, end, amount, cx, cy, self.frame, easing))
 
     def scale(
-        self, animation: Animation, center: HasGeometry | None = None, direction: Direction = ORIGIN
+        self,
+        amount: float,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
     ) -> Self:
-        self.add_transform(Scale(self, animation, center, direction))
-        return self
+        """Scale the object.
+
+        Parameters
+        ----------
+        animation
+            How to vary the scale of the object over time.
+        center
+            The object around which to scale
+        direction
+            The relative critical point of the center.
+
+        Returns
+        -------
+        self
+        """
+        center = center if center is not None else self.geom
+        cx, cy = get_critical_point(center, direction)
+        return self.apply_transform(scale(start, end, amount, cx, cy, self.frame, easing))
 
     def translate(
         self,
-        x: float | Variable,
-        y: float | Variable,
-        start_frame: int,
-        end_frame: int,
-        easing: type[EasingFunction] = CubicEaseInOut,
+        x: HasValue[float],
+        y: HasValue[float],
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
     ) -> Self:
-        if x:
-            self.add_transform(TranslateX(self, start_frame, end_frame, x, easing))
-        if y:
-            self.add_transform(TranslateY(self, start_frame, end_frame, y, easing))
-        return self
+        """Translate the object.
 
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        return self.controls._get_matrix(frame, before=before)
-
-    def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        return self._get_matrix(frame)
+        Parameters
+        ----------
+        x
+            x offset.
+        y
+            y offset.
+        start
+            Start of the animation.
+        end
+            End of the animation
+        easing
+            How the translation will vary over time.
+        """
+        return self.apply_transform(translate(start, end, x, y, self.frame, easing))
 
     def align_to(
         self,
         to: Transformable,
-        start_frame: int,
-        end_frame: int,
-        from_: Transformable | None = None,
-        easing: type[EasingFunction] = CubicEaseInOut,
+        start: int = ALWAYS,
+        lock: int | None = None,
+        end: int = ALWAYS,
+        from_: ReactiveValue[GeometryT] | None = None,
+        easing: EasingFunctionT = cubic_in_out,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
     ) -> Self:
-        from_ = from_ or self
+        """Align the object to another object.
 
-        to_point = to.get_critical_point(end_frame, direction)
-        from_point = from_.get_critical_point(end_frame, direction)
+        Parameters
+        ----------
+        to
+            The object to align to.
+        start
+            Start of animation (begin aligning to the object).
+        end
+            End of animation (finish aligning to the object at this frame, and then stay there).
+        from_
+            Use this object as self when doing the alignment. Defaults to self. This is necessary
+            for code animations. It is sometimes desirable to align, say, the top-left edge of one
+            character in a TextSelection to the top-left of another character.
 
-        delta_x = (to_point[0] - from_point[0]) if center_on_zero or direction[0] != 0 else 0
-        delta_y = (to_point[1] - from_point[1]) if center_on_zero or direction[1] != 0 else 0
+            This is a subtle feature that is missing in manim that made code animations difficult.
+        easing
+            The rate at which to perform the animation
+        direction
+            The critical point of to and from_to use for the alignment.
+        center_on_zero
+            If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
+            directions. This is beneficial for, say, centering the object at the origin (which has
+            a vector that consists of two zeros).
 
-        self.translate(
-            x=delta_x,
-            y=delta_y,
-            start_frame=start_frame,
-            end_frame=end_frame,
-            easing=easing,
+        Returns
+        -------
+        self
+
+        Todo
+        ----
+        I'd like to get rid of center_on_zero.
+        """
+        from_ = from_ or self.geom
+        lock = lock if lock is not None else end
+        return self.apply_transform(
+            align_to(
+                to.geom,
+                from_,
+                frame=self.frame,
+                start=start,
+                lock=lock,
+                end=end,
+                ease=easing,
+                direction=direction,
+                center_on_zero=center_on_zero,
+            )
         )
-        return self
 
     def lock_on(
         self,
         target: Transformable,
-        reference: Transformable | None = None,
-        start_frame: int = 0,
-        end_frame: int = 9999,
+        reference: ReactiveValue[GeometryT] | None = None,
+        start: int = ALWAYS,
+        end: int = -ALWAYS,
         direction: Direction = ORIGIN,
         x: bool = True,
         y: bool = True,
     ) -> Self:
-        self.add_transform(LockOn(self, target, reference, start_frame, end_frame, direction, x, y))
-        return self
+        """Lock on to a target.
 
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
-            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
-            self.geom = cache(self.geom)  # type: ignore[method-assign]
-            self._geom = cache(self._geom)  # type: ignore[method-assign]
-            self.controls.freeze()
-            super().freeze()
-
-
-@runtime_checkable
-class Transform(Freezeable, Protocol):
-    uid_maker: itertools.count = itertools.count()
-    all_transforms: TransformManager = TransformManager(is_dirty=False)
-    reference: Transformable
-    start_frame: int
-    end_frame: int
-    uid: int
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.uid = next(self.uid_maker)
-        Transform.all_transforms.append(self)
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        pass
-
-    def get_matrix(self, frame: int = 0) -> cairo.Matrix:
-        return self._get_matrix(frame)
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            # Monkey patch functions to cache now that object is frozen
-            self._get_matrix = cache(self._get_matrix)  # type: ignore[method-assign]
-            self.get_matrix = cache(self.get_matrix)  # type: ignore[method-assign]
-            super().freeze()
-
-
-class Rotation(Transform):
-    def __init__(
-        self,
-        reference: Transformable,
-        animation: Animation,
-        center: HasGeometry | None = None,
-        direction: Direction = ORIGIN,
-    ):
-        super().__init__()
-        self.reference = reference
-        self.animation = animation
-        self.center = center or reference
-        self.direction = direction
-
-    @property
-    def start_frame(self) -> int:  # type: ignore[override]
-        return self.animation.start_frame
-
-    @property
-    def end_frame(self) -> int:  # type: ignore[override]
-        return self.animation.end_frame
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"reference={self.reference}, "
-            f"animation={self.animation}, "
-            f"center={self.center}, "
-            f"direction={self.direction})"
-        )
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        rotation = math.radians(self.animation.apply(frame, 0))
-        if rotation:
-            cx, cy = self.center._get_critical_point(
-                frame, direction=self.direction, before=before or self
+        Parameters
+        ----------
+        target
+            Object to lock onto
+        reference
+            Measure from this object. This is useful for TextSelections, where you want to align
+            to a particular character in the selection. Defaults to self.
+        start_frame
+            When to start locking on. Defaults to ALWAYS.
+        end_frame
+            When to end locking on. Defaults to -ALWAYS.
+        x
+            If true, lock on in the x dimension.
+        y
+            if true, lock on in the y dimension.
+        """
+        reference = reference or self.geom
+        return self.apply_transform(
+            lock_on(
+                target=target.geom,
+                reference=reference,
+                frame=self.frame,
+                start=start,
+                end=end,
+                direction=direction,
+                x=x,
+                y=y,
             )
-            matrix.translate(cx, cy)
-            matrix.rotate(rotation)
-            matrix.translate(-cx, -cy)
-        return matrix
+        )
 
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.animation.freeze()
-            # self.center.freeze()
-            super().freeze()
-
-
-class Scale(Transform):
-    def __init__(
+    def lock_on2(
         self,
-        reference: Transformable,
-        animation: Animation,
-        center: HasGeometry | None = None,
-        direction: Direction = ORIGIN,
-    ):
-        super().__init__()
-        self.reference = reference
-        self.animation = animation
-        self.center = center or reference
-        self.direction = direction
-
-    @property
-    def start_frame(self) -> int:  # type: ignore[override]
-        return self.animation.start_frame
-
-    @property
-    def end_frame(self) -> int:  # type: ignore[override]
-        return self.animation.end_frame
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"reference={self.reference}, "
-            f"animation={self.animation}, "
-            f"center={self.center}, "
-            f"direction={self.direction})"
-        )
-
-    # @profile
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        scale = self.animation.apply(frame, 1)
-        if scale:
-            cx, cy = self.center._get_critical_point(
-                frame, direction=self.direction, before=before or self
-            )
-            matrix.translate(cx, cy)
-            matrix.scale(scale, scale)
-            matrix.translate(-cx, -cy)
-        return matrix
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.animation.freeze()
-            # self.center.freeze()
-            super().freeze()
-
-
-class TranslateX(Transform):
-    def __init__(
-        self,
-        reference: Transformable,
-        start_frame: int,
-        end_frame: int,
-        delta: float | Variable,
-        easing: type[EasingFunction] = CubicEaseInOut,
-    ):
-        super().__init__()
-        self.reference = reference
-        self.start_frame = start_frame
-        self.end_frame = end_frame
-        self.delta = delta
-        self.easing = easing
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"reference={self.reference}, "
-            f"start_frame={self.start_frame}, "
-            f"end_frame={self.end_frame}, "
-            f"delta={self.delta}, "
-            f"easing={self.easing})"
-        )
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        animation = Animation(
-            self.start_frame,
-            self.end_frame,
-            0,
-            self.delta if isinstance(self.delta, int | float) else self.delta.at(frame),
-            self.easing,
-            AnimationType.ADDITIVE,
-        )
-        delta_x = animation.apply(frame, 0)
-        if delta_x:
-            matrix.translate(delta_x, 0)
-        return matrix
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            super().freeze()
-
-
-class TranslateY(Transform):
-    def __init__(
-        self,
-        reference: Transformable,
-        start_frame: int,
-        end_frame: int,
-        delta: float | Variable,
-        easing: type[EasingFunction] = CubicEaseInOut,
-    ):
-        super().__init__()
-        self.reference = reference
-        self.start_frame = start_frame
-        self.end_frame = end_frame
-        self.delta = delta
-        self.easing = easing
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"reference={self.reference}, "
-            f"start_frame={self.start_frame}, "
-            f"end_frame={self.end_frame}, "
-            f"delta={self.delta}, "
-            f"easing={self.easing})"
-        )
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        animation = Animation(
-            self.start_frame,
-            self.end_frame,
-            0,
-            self.delta if isinstance(self.delta, int | float) else self.delta.at(frame),
-            self.easing,
-            AnimationType.ADDITIVE,
-        )
-        delta_y = animation.apply(frame, 0)
-        if delta_y:
-            matrix.translate(0, delta_y)
-        return matrix
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            super().freeze()
-
-
-class Orbit(Transform):
-    def __init__(
-        self,
-        reference: Transformable,
-        distance: float,
-        center: HasGeometry,
-        rotation_speed: float = 2,
-        initial_angle: float = 0,
-        start_frame: int = 0,
-        end_frame: int = 999,
-        direction: Direction = ORIGIN,
-    ):
-        super().__init__()
-        self.reference = reference
-        self.animation = Animation(start_frame, end_frame, 0, 0)  # values don't do anything.
-        self.distance = Property(distance)
-        self.rotation_speed = Property(rotation_speed)
-        self.center = center
-        self.initial_angle = initial_angle
-        self.direction = direction
-        self.start_frame = start_frame
-        self.end_frame = end_frame
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"reference={self.reference}, "
-            f"distance={self.distance}, "
-            f"rotation_speed={self.rotation_speed}, "
-            f"initial_angle={self.initial_angle}, "
-            f"start_frame={self.animation.start_frame}, "
-            f"end_frame={self.animation.end_frame}, "
-            f"center={self.center}, "
-            f"direction={self.direction})"
-        )
-
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        # Begin orbitting.
-        if frame < self.animation.start_frame:
-            return cairo.Matrix()
-
-        # Make sure we stop orbitting
-        frame = min(frame, self.animation.end_frame)
-
-        # Compute matrix
-        cx, cy = self.center._get_critical_point(
-            frame, direction=self.direction, before=before or self
-        )
-        angle = math.radians(self.initial_angle) + frame * math.radians(
-            self.rotation_speed.at(frame)
-        )
-        distance = self.distance.at(frame)
-        width = self.reference.width(frame, with_transforms=False)
-        height = self.reference.height(frame, with_transforms=False)
-        x = self.reference.controls.delta_x.at(frame)
-        y = self.reference.controls.delta_y.at(frame)
-
-        matrix = cairo.Matrix()
-
-        matrix.translate(cx, cy)
-        matrix.rotate(angle)
-        matrix.translate(distance, 0)
-
-        matrix.translate(-(x + width / 2), -(y + height / 2))
-        return matrix
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            # self.center.freeze()
-            self.distance.freeze()
-            self.rotation_speed.freeze()
-            self.animation.freeze()
-            super().freeze()
-
-
-class LockOn(Transform):
-    def __init__(
-        self,
-        obj: Transformable,
         target: Transformable,
-        reference: Transformable | None = None,
-        start_frame: int = 0,
-        end_frame: int = 9999,
+        reference: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
         x: bool = True,
         y: bool = True,
-    ):
-        super().__init__()
-        self.obj = obj
-        self.target = target
-        self.reference = reference or obj
-        self.start_frame = start_frame
-        self.end_frame = end_frame
-        self.direction = direction
-        self.x = x
-        self.y = y
+    ) -> Self:
+        """Lock on to a target.
 
-    def _get_matrix(self, frame: int = 0, before: Transform | None = None) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        if frame < self.start_frame:
-            return matrix
-        if frame > self.end_frame:
-            frame = self.end_frame
-
-        before = before or self
-        to_point = self.target._get_critical_point(frame, self.direction, before=before)
-        from_point = self.reference._get_critical_point(frame, self.direction, before=before)
-        delta_x = to_point[0] - from_point[0] if self.x else 0
-        delta_y = to_point[1] - from_point[1] if self.y else 0
-
-        if delta_x or delta_y:
-            matrix.translate(delta_x, delta_y)
-        return matrix
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"obj={self.obj}, target={self.target}, reference={self.reference}, "
-            f"start_frame={self.start_frame}, end_frame={self.end_frame})"
+        Parameters
+        ----------
+        target
+            Object to lock onto
+        reference
+            Measure from this object. This is useful for TextSelections, where you want to align
+            to a particular character in the selection. Defaults to self.
+        start_frame
+            When to start locking on. Defaults to ALWAYS.
+        end_frame
+            When to end locking on. Defaults to -ALWAYS.
+        x
+            If true, lock on in the x dimension.
+        y
+            if true, lock on in the y dimension.
+        """
+        reference = reference or self.geom
+        return self.apply_transform(
+            align_now(
+                target=target.geom,
+                reference=reference,
+                direction=direction,
+                x=x,
+                y=y,
+            )
         )
 
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            # self.target.freeze()
-            # self.reference.freeze()
-            super().freeze()
+
+class TransformControls(Freezeable):
+    """Control how transforms are applied to the object.
+
+    Parameters
+    ----------
+    obj : Transformable
+        A reference to the object being transformed.
+
+    Todo
+    ----
+    Passing obj seems a little awkward.
+    """
+
+    animatable_properties = ("rotation", "scale", "delta_x", "delta_y")
+
+    def __init__(self, obj: Transformable) -> None:
+        super().__init__()
+        self.rotation = Signal(0.0)
+        self.scale = Signal(1.0)
+        self.delta_x = Signal(0.0)
+        self.delta_y = Signal(0.0)
+        self.matrix: ReactiveValue[cairo.Matrix] = Signal(cairo.Matrix())
+        self.obj = obj
+
+    def base_matrix(self) -> Computed[cairo.Matrix]:
+        """Get the base transform matrix.
+
+        This applies only the translations, rotations, and scale from potentially
+        animated attributes on the object's controls. applying on the rotation,
+        translations matrix at the specified frame.
+
+        Returns
+        -------
+        cairo.Matrix
+        """
+        return computed(base_transform_matrix)(self.obj.raw_geom, self.delta_x, self.delta_y, self.rotation, self.scale)
 
 
-def apply_transforms(
-    frame: int, transforms: TransformManager, before: Transform | None = None
+def base_transform_matrix(
+    raw_geom: GeometryT, delta_x: float, delta_y: float, rotation: float, scale: float
 ) -> cairo.Matrix:
-    """"""
-    transforms.sort()
     matrix = cairo.Matrix()
-    for t in left_of(transforms, before):
-        matrix = matrix.multiply(t._get_matrix(frame, before=t))
+    bounds = raw_geom.bounds
+
+    # TODO Consider translating by this initially to center it?
+    # or could just always draw centered... (e.g., rectangle)
+    pivot_x = (bounds[2] - bounds[0]) / 2
+    pivot_y = (bounds[3] - bounds[1]) / 2
+
+    # Translate
+    if delta_x or delta_y:
+        matrix.translate(delta_x, delta_y)
+
+    # Rotate
+    radians = math.radians(rotation)
+    if radians:
+        matrix.translate(pivot_x, pivot_y)
+        matrix.rotate(radians)
+        matrix.translate(-pivot_x, -pivot_y)
+
+    # Scale
+    if scale:
+        matrix.translate(pivot_x, pivot_y)
+        matrix.scale(scale, scale)
+        matrix.translate(-pivot_x, -pivot_y)
     return matrix
 
 
-def affine_transform(geom: BaseGeometry, matrix: cairo.Matrix | None) -> BaseGeometry:
+def lock_on(
+    target: ReactiveValue[GeometryT],
+    reference: ReactiveValue[GeometryT],
+    frame: ReactiveValue[int],
+    start: int = ALWAYS,
+    end: int = -ALWAYS,
+    direction: Direction = ORIGIN,
+    x: bool = True,
+    y: bool = True,
+) -> Computed[cairo.Matrix]:
+    """Lock one object's position onto another object.
+
+    Parameters
+    ----------
+    target
+    reference
+    start_frame
+        The first frame to begin translating.
+    end_frame
+        The final frame to end translating.
+    direction
+    x
+        If true, lock on in the x dimension.
+    y
+        If true, lock on in the y dimension.
+    """
+
+    to_x = get_position_along_dim(target, dim=0, direction=direction)
+    to_y = get_position_along_dim(target, dim=1, direction=direction)
+    from_x = get_position_along_dim(reference, dim=0, direction=direction)
+    from_y = get_position_along_dim(reference, dim=1, direction=direction)
+    delta_x = to_x - from_x
+    delta_y = to_y - from_y
+
+    with frame.at(end):
+        dx_end = delta_x.value
+        dy_end = delta_y.value
+
+    @computed
+    def f(delta_x: float, delta_y: float, frame: int) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        if frame < start:
+            return matrix
+        if frame < end:
+            dx = delta_x
+            dy = delta_y
+        else:
+            dx = dx_end
+            dy = dy_end
+        matrix.translate(dx if x else 0, dy if y else 0)
+        return matrix
+
+    return f(delta_x, delta_y, frame)
+
+
+def align_now(
+    target: ReactiveValue[GeometryT],
+    reference: ReactiveValue[GeometryT],
+    direction: Direction = ORIGIN,
+    x: bool = True,
+    y: bool = True,
+) -> Computed[cairo.Matrix]:
+    to_x, to_y = get_critical_point(target, direction=direction)
+    from_x, from_y = get_critical_point(reference, direction=direction)
+    dx = to_x - from_x if x else 0
+    dy = to_y - from_y if y else 0
+
+    @computed
+    def f(dx: float, dy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(dx if x else 0, dy if y else 0)
+        return matrix
+
+    return f(dx, dy)
+
+
+def align_to(
+    to: ReactiveValue[GeometryT],
+    from_: ReactiveValue[GeometryT],
+    frame: Signal[int],
+    start: int = ALWAYS,
+    lock: int = ALWAYS,
+    end: int = ALWAYS,
+    ease: EasingFunctionT = cubic_in_out,
+    direction: Direction = ORIGIN,
+    center_on_zero: bool = False,
+) -> Computed[cairo.Matrix]:
+    to_x, to_y = get_critical_point(to, direction)
+    from_x, from_y = get_critical_point(from_, direction)
+    with frame.at(end):
+        last_x = (to_x - from_x).value
+        last_y = (to_y - from_y).value
+
+    @computed
+    def fx(to_x: float, from_x: float, frame: int) -> float:
+        if center_on_zero or direction[0] != 0:
+            return to_x - from_x if frame < end else last_x
+        return 0
+
+    delta_x = fx(to_x, from_x, frame)
+
+    @computed
+    def fy(to_y: float, from_y: float, frame: int) -> float:
+        if center_on_zero or direction[1] != 0:
+            return to_y - from_y if frame < end else last_y
+        return 0
+
+    delta_y = fy(to_y, from_y, frame)
+
+    return translate(start, lock, delta_x, delta_y, frame, ease=ease)
+
+
+def affine_transform(geom: GeometryT, matrix: cairo.Matrix | None) -> GeometryT:
+    """Apply the cairo.Matrix as shapely affine transform to the provided geometry.
+
+    Parameters
+    ----------
+    geom
+    matrix
+
+    Returns
+    -------
+    shapely.geometry.base.BaseGeometry | shapely.geometry.GeometryCollection
+    """
     if matrix is not None:
         transform_params = [matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.x0, matrix.y0]
         return shapely.affinity.affine_transform(geom, transform_params)
@@ -762,29 +577,166 @@ def affine_transform(geom: BaseGeometry, matrix: cairo.Matrix | None) -> BaseGeo
         return geom
 
 
-class HasXY(Protocol):
-    x: Property
-    y: Property
+def translate(
+    start: int,
+    end: int,
+    delta_x: HasValue[float],
+    delta_y: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    if start == end:
+        # Do not need to animate/ease.
+        x = delta_x
+        y = delta_y
+    else:
+        # Only create animations if Variable or non-zero
+        x = Animation(start, end, 0, delta_x, ease)(0, frame) if isinstance(delta_x, Variable) or delta_x != 0 else 0
+        y = Animation(start, end, 0, delta_y, ease)(0, frame) if isinstance(delta_y, Variable) or delta_y != 0 else 0
+
+    @computed
+    def f(x: float, y: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(x, y)
+        return matrix
+
+    return f(x, y)
 
 
-class Point(HasGeometry):
-    def __init__(self, x: float = 0, y: float = 0):
-        self.x = Property(x)
-        self.y = Property(y)
+def rotate(
+    start: int,
+    end: int,
+    amount: float,
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Rotate matrix.
 
-    def follow(self, other: HasXY) -> None:
-        self.x.follow(other.x)
-        self.y.follow(other.y)
+    Parameters
+    ----------
+    frame
+    before
 
-    def set(self, x: float, y: float) -> None:
-        self.x.set(x)
-        self.y.set(y)
+    Returns
+    -------
+    cairo.Matrix
+    """
+    magnitude = Animation(start, end, 0, amount, ease, animation_type=AnimationType.ADDITIVE)(0, frame)
 
-    def raw_geom(self, frame: int = 0) -> shapely.Point:
-        return shapely.Point(self.x.at(frame), self.y.at(frame))
+    @computed
+    def f(magnitude: float, cx: float, cy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(cx, cy)
+        matrix.rotate(math.radians(magnitude))
+        matrix.translate(-cx, -cy)
+        return matrix
 
-    def _geom(self, frame: int = 0, before: Transform | None = None) -> shapely.Point:
-        return self.raw_geom(frame)
+    return f(magnitude, cx, cy)
 
-    def geom(self, frame: int = 0) -> shapely.Point:
-        return self._geom(frame)
+
+def scale(
+    start: int,
+    end: int,
+    amount: float,
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Scale matrix.
+
+    Parameters
+    ----------
+    frame
+    before
+
+    Returns
+    -------
+    cairo.Matrix
+    """
+    magnitude = Animation(start, end, 1, amount, ease, animation_type=AnimationType.MULTIPLICATIVE)(1, frame)
+
+    @computed
+    def f(magnitude: float, cx: float, cy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(cx, cy)
+        matrix.scale(magnitude, magnitude)
+        matrix.translate(-cx, -cy)
+        return matrix
+
+    return f(magnitude, cx, cy)
+
+
+def get_position_along_dim_now(
+    geom: GeometryT,
+    direction: Direction = ORIGIN,
+    dim: Literal[0, 1] = 0,
+) -> float:
+    """Get value of a position along a dimension at the current frame.
+
+    Parameters
+    ----------
+    geom: Variable[GeometryT]
+    direction: Direction
+        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+        to ORIGIN (center of the object).
+    dim : Literal[0, 1]
+        Dimension to query, where 0 is the horizontal direction and 1 is the vertical
+        direction. Defaults to 0.
+
+    Returns
+    -------
+    Computed[float]
+    """
+    assert -1 <= direction[dim] <= 1
+    bounds = geom.bounds
+    magnitude = 0.5 * (1 - direction[dim]) if dim == 0 else 0.5 * (direction[dim] + 1)
+    return magnitude * bounds[dim] + (1 - magnitude) * bounds[dim + 2]
+
+
+def get_position_along_dim(
+    geom: ReactiveValue[GeometryT],
+    direction: Direction = ORIGIN,
+    dim: Literal[0, 1] = 0,
+) -> Computed[float]:
+    return computed(get_position_along_dim_now)(geom, direction, dim)
+
+
+def get_critical_point_now(geom: GeometryT, direction: Direction = ORIGIN) -> tuple[float, float]:
+    """Get value of a position along both dimensions at the current frame.
+
+    Parameters
+    ----------
+    direction: Direction
+        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+        to ORIGIN (center of the object).
+
+    Returns
+    -------
+    tuple[Computed[float], Computed[float]]
+    """
+    x = get_position_along_dim_now(geom, direction, dim=0)
+    y = get_position_along_dim_now(geom, direction, dim=1)
+    return x, y
+
+
+def get_critical_point(
+    geom: HasValue[GeometryT], direction: Direction = ORIGIN
+) -> tuple[Computed[float], Computed[float]]:
+    """Get value of a position along both dimensions at the current frame.
+
+    Parameters
+    ----------
+    direction: Direction
+        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+        to ORIGIN (center of the object).
+
+    Returns
+    -------
+    tuple[Computed[float], Computed[float]]
+    """
+    x = computed(get_position_along_dim_now)(geom, direction, dim=0)
+    y = computed(get_position_along_dim_now)(geom, direction, dim=1)
+    return x, y

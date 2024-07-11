@@ -5,7 +5,7 @@ from hypothesis import given, strategies as st
 from helpers import filter_runtime_warning
 from keyed import Direction
 
-valid_float = st.floats(allow_nan=False, allow_infinity=False)
+valid_float = st.floats(allow_nan=False, allow_infinity=False, allow_subnormal=False)  # Taichi breaks Subnormals
 
 
 @filter_runtime_warning

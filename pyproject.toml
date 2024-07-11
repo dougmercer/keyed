@@ -1,13 +1,10 @@
 [build-system]
-requires = [
-    "setuptools >= 48",
-    "wheel >= 0.29.0",
-]
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.black]
 target-version = ['py311']
-line_length = 100
+line_length = 120
 exclude = '''
 (
 	build
@@ -30,12 +27,13 @@ exclude = '''
 '''
 
 [tool.isort]
+known_first_party = ["keyed_extras"]
 known_third_party = ["tqdm"]
 profile = "black"
 case_sensitive = true
 combine_as_imports = true
 include_trailing_comma = true
-line_length = 100
+line_length = 120
 multi_line_output=3
 py_version = 310
 src_paths = ["src/keyed", "tests"]

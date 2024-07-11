@@ -11,7 +11,7 @@ scene.add(code)
 
 code.chars[:10].animate(
     "alpha",
-    Animation(start_frame=0, end_frame=24, start_value=0, end_value=1),
+    Animation(start=0, end=24, start_value=0, end_value=1),
 )
 
 scene.preview()

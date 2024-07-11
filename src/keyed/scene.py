@@ -1,33 +1,142 @@
+"""The core Scene object upon which objects are drawn/animated."""
+
 from __future__ import annotations
 
+import logging
 import subprocess
 import warnings
+from enum import Enum
 from functools import cache
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import TYPE_CHECKING, Iterable, Sequence
+from typing import TYPE_CHECKING, Iterable, Literal, Self, Sequence
 
 import cairo
 import numpy as np
 import shapely
-from shapely.geometry.base import BaseGeometry
+from signified import Signal, Variable
 from tqdm import tqdm
 
-from .animation import Property
+from .base import is_visible
 from .code import Selection
-from .freehand import FreeHandContext
+from .compositor import BlendMode, composite_layers
+from .constants import EXTRAS_INSTALLED
+from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
-from .transformation import Transform, TransformControls, Transformable
+from .transformation import TransformControls, Transformable
 
 if TYPE_CHECKING:
     from .base import Base
+    from .extras import FreeHandContext
+
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
 __all__ = ["Scene"]
 
 
-class Scene(Transformable):
+class Blend(Enum):
+    NORMAL = cairo.OPERATOR_OVER
+    ADD = cairo.OPERATOR_ADD
+    MULTIPLY = cairo.OPERATOR_MULTIPLY
+    SCREEN = cairo.OPERATOR_SCREEN
+    OVERLAY = cairo.OPERATOR_OVERLAY
+    DARKEN = cairo.OPERATOR_DARKEN
+    LIGHTEN = cairo.OPERATOR_LIGHTEN
+    COLOR_DODGE = cairo.OPERATOR_COLOR_DODGE
+    COLOR_BURN = cairo.OPERATOR_COLOR_BURN
+    HARD_LIGHT = cairo.OPERATOR_HARD_LIGHT
+    SOFT_LIGHT = cairo.OPERATOR_SOFT_LIGHT
+    DIFFERENCE = cairo.OPERATOR_DIFFERENCE
+    EXCLUSION = cairo.OPERATOR_EXCLUSION
+
+
+class Layer(Freezeable):
+    def __init__(
+        self,
+        scene: Scene,
+        name: str = "",
+        z_index: int = 0,
+        blend: BlendMode = BlendMode.OVER,
+        alpha: float = 1.0,
+    ):
+        super().__init__()
+        self.scene = scene
+        self.name = name
+        self.z_index = z_index
+        self.content: list[Base] = []
+        self.effects: list[Effect] = []
+        self.blend = blend
+        self.opacity = Signal(alpha)
+
+    @guard_frozen
+    def add(self, *objects: Base) -> None:
+        self.content.extend(objects)
+
+    def apply_effect(self, effect: Effect) -> Self:
+        # TODO - Only enable if extras are installed.
+        self.effects.append(effect)
+        return self
+
+    def rasterize(self, frame: int) -> np.ndarray | cairo.SVGSurface:
+        """Be sure to pass frame to have proper caching behavior."""
+        # Draw objects onto the layer surface
+        self.scene.clear()
+        for obj in self.content:
+            if frame in obj.lifetime:
+                obj.cleanup()
+                obj.draw()
+
+        if not self.effects:
+            return self.scene.surface
+
+        # Otherwise, rasterize the scene and apply raster effects.
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.scene._width, self.scene._height)
+        ctx = cairo.Context(surface)
+        ctx.set_source_surface(self.scene.surface, 0, 0)
+        ctx.paint()
+
+        # Convert to NumPy array
+        buf = surface.get_data()
+        arr = np.ndarray(shape=(self.scene._height, self.scene._width, 4), dtype=np.uint8, buffer=buf)
+
+        # Apply effects
+        for effect in self.effects:
+            effect.apply(arr)
+
+        return arr
+
+    def freeze(self):
+        """Freeze each layer's contents to enable caching."""
+        if not self.is_frozen:
+            for content in self.content:
+                content.apply_transform(self.scene.controls.matrix)
+            super().freeze()
+
+
+class Scene(Transformable, Freezeable):
+    """A scene within which graphical objects are placed and manipulated.
+
+    Parameters
+    ----------
+    scene_name : str | None, optional
+        The name of the scene, used for naming output directories and files. Default is None.
+    num_frames : int, optional
+        The number of frames to render in the scene. Default is 60.
+    output_dir : Path, optional
+        The directory path where output files will be stored. Default is "media".
+    width : int, optional
+        The width of the scene in pixels. Default is 3840.
+    height : int, optional
+        The height of the scene in pixels. Default is 2160.
+    antialias : cairo.Antialias, optional
+        The antialiasing level for rendering the scene. Default is cairo.ANTIALIAS_DEFAULT.
+    freehand : bool, optional
+        Indicates whether to enable freehand drawing mode. Default is False.
+    """
+
     def __init__(
         self,
         scene_name: str | None = None,
@@ -38,8 +147,9 @@ class Scene(Transformable):
         antialias: cairo.Antialias = cairo.ANTIALIAS_DEFAULT,
         freehand: bool = False,
     ) -> None:
+        self.frame = Signal(0)
         Freezeable.__init__(self)
-        super().__init__()
+        super().__init__(self.frame)
         self.scene_name = scene_name
         self.num_frames = num_frames
         self.output_dir = output_dir
@@ -47,10 +157,46 @@ class Scene(Transformable):
         self._height = height
         self.surface = cairo.SVGSurface(None, width, height)  # type: ignore[arg-type]
         self.ctx = cairo.Context(self.surface)
-        self.content: list[Base] = []
         self.antialias = antialias
         self.freehand = freehand
         self.controls = TransformControls(self)
+        self._dependencies: list[Variable] = []
+        assert isinstance(self.controls.matrix, Signal)
+        self.controls.matrix.value = self.controls.base_matrix()
+        self.layers: list[Layer] = []
+        self.default_layer = self.create_layer("default", z_index=0)
+
+    def create_layer(
+        self,
+        name: str = "",
+        z_index: int | None = None,
+        blend: BlendMode = BlendMode.OVER,
+        alpha: float = 1.0,
+    ) -> Layer:
+        if z_index is None:
+            z_index = len(self.layers)
+        layer = Layer(self, name, z_index, blend, alpha)
+        self.layers.append(layer)
+        self._sort_layers()
+        return layer
+
+    def _sort_layers(self) -> None:
+        self.layers.sort(key=lambda layer: layer.z_index)
+
+    def move_layer(self, layer: Layer, position: Literal["up", "down", "top", "bottom"]) -> None:
+        current_index = self.layers.index(layer)
+        if position == "up" and current_index > 0:
+            layer.z_index = self.layers[current_index - 1].z_index - 1
+        elif position == "down" and current_index < len(self.layers) - 1:
+            layer.z_index = self.layers[current_index + 1].z_index + 1
+        elif position == "top":
+            layer.z_index = max(layer.z_index for layer in self.layers) + 1
+        elif position == "bottom":
+            layer.z_index = min(layer.z_index for layer in self.layers) - 1
+        self._sort_layers()
+
+    def tic(self) -> None:
+        self.frame.value = self.frame.value + 1
 
     def __repr__(self) -> str:
         return (
@@ -64,41 +210,68 @@ class Scene(Transformable):
 
     @property
     def full_output_dir(self) -> Path:
+        """Full output directory.
+
+        Returns
+        -------
+        Path
+        """
         assert self.scene_name is not None
         return self.output_dir / self.scene_name
 
     @guard_frozen
     def add(self, *content: Base) -> None:
-        self.content.extend(content)
+        """Add one or more graphical objects to the scene.
+
+        Parameters
+        ----------
+        content : Base
+            One or more Base-derived objects to be added to the scene.
+        """
+        self.default_layer.add(*content)
 
     def clear(self) -> None:
+        """Clear the drawing surface of the scene."""
         self.ctx.set_source_rgba(0, 0, 0, 0)
         self.ctx.set_operator(cairo.OPERATOR_CLEAR)
         self.ctx.paint()
         self.ctx.set_operator(cairo.OPERATOR_OVER)
 
     def delete_old_frames(self) -> None:
+        """Delete old frame files from the output directory."""
         for file in self.full_output_dir.glob("*.png"):
             file.unlink()
 
     def _create_folder(self) -> None:
+        """Create the output directory for the scene if it doesn't already exist."""
         if self.scene_name is None:
             raise ValueError("Must set scene name before drawing to file.")
         self.full_output_dir.mkdir(exist_ok=True, parents=True)
 
     def _open_folder(self) -> None:
+        """Open the output directory using the default file explorer."""
         subprocess.run(["open", str(self.full_output_dir)])
 
     @freeze
-    def draw(
-        self, layers: Sequence[int] | None = None, delete: bool = True, open_dir: bool = False
-    ) -> None:
+    def draw(self, layers: Sequence[int] | None = None, delete: bool = True, open_dir: bool = False) -> None:
+        """Draw the scene by rendering it to images.
+
+        Parameters
+        ----------
+        layers : Sequence[int] | None, optional
+            Specific layers to render. If None, all layers are rendered.
+        delete : bool, optional
+            Whether to delete old frames before drawing new ones. Default is True.
+        open_dir : bool, optional
+            Whether to open the output directory after drawing. Default is False.
+        """
         self._create_folder()
         if delete:
             self.delete_old_frames()
 
         layer_name = "-".join([str(layer) for layer in layers]) if layers is not None else "all"
         for frame in tqdm(range(self.num_frames)):
+            self.frame.value = frame
             raster = self.rasterize(frame, layers=tuple(layers) if layers is not None else None)
             filename = self.full_output_dir / f"{layer_name}_{frame:03}.png"
             raster.write_to_png(filename)  # type: ignore[arg-type]
@@ -108,37 +281,137 @@ class Scene(Transformable):
 
     @freeze
     def draw_as_layers(self, open_dir: bool = False) -> None:
+        """Draw each layer of the scene separately.
+
+        Parameters
+        ----------
+        open_dir : bool, optional
+            Whether to open the output directory after drawing. Default is False.
+        """
         self._create_folder()
         self.delete_old_frames()
-        for i, _ in enumerate(self.content):
+        for i, _ in enumerate(self.layers):
             self.draw([i], delete=False)
         if open_dir:
             self._open_folder()
 
     @freeze
-    def draw_frame(self, frame: int, layers: Sequence[int] | None = None) -> None:
-        self.clear()
-        layers_to_render = (
-            (content for idx, content in enumerate(self.content) if idx in layers)
-            if layers is not None
-            else self.content
-        )
-        for content in layers_to_render:
-            if content.lifetime.alive(frame):
-                content.draw(frame)
-
-    @freeze
     def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
-        self.draw_frame(frame, layers=layers)
-        raster = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
-        ctx = cairo.Context(raster)
-        ctx.set_antialias(self.antialias)
-        ctx.set_source_surface(self.surface, 0, 0)
-        ctx.paint()
-        return raster
+        self.frame.value = frame
+        layers_to_render = self.layers if layers is None else [self.layers[idx] for idx in layers]
+
+        layer_arrays = []
+        blend_modes = []
+
+        for layer in layers_to_render:
+            layer_out = layer.rasterize(frame)
+
+            # If the layer surface is SVG, convert it to ImageSurface
+            if isinstance(layer_out, cairo.SVGSurface):
+                temp_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
+                temp_ctx = cairo.Context(temp_surface)
+                temp_ctx.set_source_surface(layer_out, 0, 0)
+                temp_ctx.paint()
+                buf = temp_surface.get_data()
+                layer_out = np.ndarray(shape=(self._height, self._width, 4), dtype=np.uint8, buffer=buf)
+
+            layer_arrays.append(layer_out)
+            blend_modes.append(BlendMode(layer.blend.value))
+
+        # Use the Taichi compositor to blend the layers
+        result = composite_layers(layer_arrays, blend_modes, self._width, self._height)
+
+        # Create a new cairo.ImageSurface from the composited result
+        output_surface = cairo.ImageSurface.create_for_data(
+            result, cairo.FORMAT_ARGB32, self._width, self._height  # pyright: ignore[reportArgumentType]
+        )
+        return output_surface
+
+    # @freeze
+    # def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
+    #     self.frame.value = frame
+    #     layers_to_render = self.layers if layers is None else [self.layers[idx] for idx in layers]
+
+    #     # Create a new ImageSurface for the final output
+    #     output_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
+    #     output_ctx = cairo.Context(output_surface)
+
+    #     for layer in layers_to_render:
+    #         layer_surface = layer.rasterize(frame)
+
+    #         # If the layer surface is SVG, convert it to ImageSurface
+    #         if isinstance(layer_surface, cairo.SVGSurface):
+    #             temp_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
+    #             temp_ctx = cairo.Context(temp_surface)
+    #             temp_ctx.set_source_surface(layer_surface, 0, 0)
+    #             temp_ctx.paint()
+    #             layer_surface = temp_surface
+
+    #         # Composite the layer onto the output surface
+    #         output_ctx.set_operator(layer.blend.value)
+    #         output_ctx.set_source_surface(layer_surface, 0, 0)
+    #         output_ctx.paint()
+
+    #     return output_surface
+
+    # def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
+    #     """Convert a frame of the scene to a raster image.
+
+    #     Parameters
+    #     ----------
+    #     frame : int
+    #         The frame number to rasterize.
+    #     layers : Sequence[int] | None, optional
+    #         Specific layers to rasterize. If None, all layers are rasterized.
+
+    #     Returns
+    #     -------
+    #     cairo.ImageSurface
+    #         The raster image of the specified frame.
+    #     """
+
+    #     self.frame.value = frame
+    #     layers_to_render = (
+    #         (content for idx, content in enumerate(self.layers) if idx in layers)
+    #         if layers is not None else self.layers
+    #     )
+    #     scene_raster = None
+    #     for layer in layers_to_render:
+    #         layer_surface = layer.rasterize(frame)
+    #         # Transfer the layer raster onto the scene raster
+    #         if scene_raster is not None:
+    #             scene_ctx = cairo.Context(scene_raster)
+    #             scene_ctx.set_operator(layer.blend.value)
+    #             scene_ctx.set_source_surface(layer_surface, 0, 0)
+    #             scene_ctx.paint()
+    #         elif isinstance(layer_surface, cairo.SVGSurface):
+    #             surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
+    #             ctx = cairo.Context(surface)
+    #             ctx.set_source_surface(layer_surface, 0, 0)
+    #             ctx.paint()
+    #             scene_raster = surface
+    #         else:
+    #             scene_raster = layer_surface
+    #     assert scene_raster is not None
+    #     return scene_raster
 
     @freeze
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
+        """Convert a frame of the scene to a NumPy array.
+
+        Parameters
+        ----------
+        frame : int, optional
+            The frame number to convert. Default is 0.
+        layers : Sequence[int] | None, optional
+            Specific layers to convert. If None, all layers are converted.
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array representing the raster image of the specified frame.
+        """
+        self.frame.value = frame
         return np.ndarray(
             shape=(self._height, self._width, 4),
             dtype=np.uint8,
@@ -155,41 +428,59 @@ class Scene(Transformable):
 
         Parameters
         ----------
-        x: float
-        y: float
+        x : float
+            The x-coordinate to check.
+        y : float
+            The y-coordinate to check.
+        frame : int, optional
+            The frame number to check against. Default is 0.
 
         Returns
         -------
         Base | None
+            The nearest object if found; otherwise, None.
         """
-        from .editor import Editor
 
-        point = shapely.Point(x, y)
-        nearest: Base | None = None
-        min_distance = float("inf")
+        try:
+            point = shapely.Point(x, y)
+            nearest: Base | None = None
+            min_distance = float("inf")
+            self.frame.value = frame
 
-        def check_objects(objects: Iterable[Base]) -> None:
-            nonlocal nearest, min_distance
-            for obj in objects:
-                if isinstance(obj, Editor):
-                    if obj.code is not None:
-                        check_objects(list(obj.code))
-                elif isinstance(obj, Selection):
-                    check_objects(list(obj))
-                else:
-                    assert hasattr(obj, "alpha"), obj
-                    assert isinstance(obj.alpha, Property)
-                    if obj.alpha.at(frame) == 0:
-                        continue
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", RuntimeWarning)
-                        distance = point.distance(obj.geom(frame))
-                    if distance < min_distance:
-                        min_distance = distance
-                        nearest = obj
+            def check_objects(objects: Iterable[Base]) -> None:
+                nonlocal nearest, min_distance
+                for obj in objects:
+                    logging.debug(f"Checking {obj}")
+                    try:
+                        if EXTRAS_INSTALLED:
+                            from .extras import Editor
 
-        check_objects(self.content)
-        return nearest
+                            if isinstance(obj, Editor):
+                                editor_nearest, editor_distance = obj.find(x, y, frame)
+                                if editor_nearest and editor_distance < min_distance:
+                                    nearest = editor_nearest
+                                    min_distance = editor_distance
+                        elif isinstance(obj, Selection):
+                            check_objects(list(obj))
+                        else:
+                            if not is_visible(obj):
+                                continue
+
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore", RuntimeWarning)
+                                distance = point.distance(obj.geom.value)
+                            if distance < min_distance:
+                                min_distance = distance
+                                nearest = obj
+                    except Exception as e:
+                        logging.error(f"Error processing object {obj}: {e}")
+
+            for layer in self.layers:
+                check_objects(layer.content)
+            return nearest
+        except Exception as e:
+            logging.error(f"Error in Scene.find: {e}")
+            return None
 
     @freeze
     def preview(
@@ -197,33 +488,69 @@ class Scene(Transformable):
         quality: Quality = Quality.high,
         frame_rate: int = 24,
     ) -> None:
+        """Preview the scene in a window with specified quality and frame rate.
+
+        Parameters
+        ----------
+        quality : Quality, optional
+            The quality level of the preview. Default is Quality.high.
+        frame_rate : int, optional
+            The frame rate at which to preview the animation. Default is 24 fps.
+        """
         create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
-    def get_context(self) -> cairo.Context | FreeHandContext:
+    def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
+        """Get the drawing context for the scene.
+
+        Returns
+        -------
+        cairo.Context | FreeHandContext
+            The context to use for drawing.
+        """
         ctx = cairo.Context(self.surface)
+        from .extras import FreeHandContext
+
         return FreeHandContext(ctx) if self.freehand else ctx
 
-    def raw_geom(self, frame: int = 0) -> BaseGeometry:
+    @property
+    def raw_geom_now(self) -> shapely.geometry.Polygon:
+        """Get the raw geometric representation of the scene at the specified frame.
+
+        Parameters
+        ----------
+        frame : int, optional
+            The frame number to fetch the geometry for. Default is 0.
+
+        Returns
+        -------
+        BaseGeometry
+            The geometric representation of the scene at the specified frame.
+        """
         return shapely.box(
-            self.controls.delta_x.at(frame),
-            self.controls.delta_y.at(frame),
+            self.controls.delta_x.value,
+            self.controls.delta_y.value,
             self._width,
             self._height,
         )
 
     def freeze(self) -> None:
+        """Freeze the scene to enable caching."""
         if not self.is_frozen:
             self.rasterize = cache(self.rasterize)  # type: ignore[method-assign]
-            for layer in self.content:
-                for t in self.controls.transforms:
-                    layer.add_transform(t)
-            for layer in self.content:
+            for layer in self.layers:
                 layer.freeze()
-            for transform in Transform.all_transforms:
-                transform.freeze()
             super().freeze()
 
     def to_video(self, frame_rate: int = 24, redraw: bool = True) -> None:
+        """Export the scene as a video file.
+
+        Parameters
+        ----------
+        frame_rate : int, optional
+            The frame rate of the video. Default is 24 fps.
+        redraw : bool, optional
+            Whether to redraw all frames before exporting. Default is True.
+        """
         self._create_folder()
         if redraw:
             self.draw()
@@ -245,6 +572,15 @@ class Scene(Transformable):
         subprocess.run(command)
 
     def to_video_direct(self, frame_rate: int = 24, open_dir: bool = False) -> None:
+        """Export as a video by directly streaming frames to a video file using FFmpeg.
+
+        Parameters
+        ----------
+        frame_rate : int, optional
+            The frame rate of the video. Default is 24 fps.
+        open_dir : bool, optional
+            Whether to open the output directory after the video is created. Default is False.
+        """
         self._create_folder()
         command = [
             "ffmpeg",

@@ -22,7 +22,7 @@ scene.add(trace2, trace)
 
 for obj in [trace, trace2]:
     assert isinstance(obj, Curve | Curve2)
-    obj.end.value = 0
+    obj.end.initial_value = 0
     obj.start.add_animation(Animation(8, 32, 0, 1, easing.CubicEaseInOut))
     obj.end.add_animation(Animation(2, 26, 0, 1, easing.CubicEaseInOut))
 

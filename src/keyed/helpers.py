@@ -1,3 +1,5 @@
+"""Miscellaneous helpers."""
+
 from functools import wraps
 from typing import Any, Callable, Protocol, TypeVar, cast, runtime_checkable
 
@@ -6,6 +8,16 @@ __all__ = ["Freezeable", "guard_frozen", "freeze"]
 
 @runtime_checkable
 class Freezeable(Protocol):
+    """Make a class Hashable by breaking it's ability to setattr.
+
+    When an object is not frozen, we allow it to setattr but do not allow it to hash.
+    Once an object is frozen, setattr breaks but a very simple id-based hash is enabled.
+
+    Todo
+    ----
+    Remove the need for this class by writing proper hash/eq methods for all classes.
+    """
+
     is_frozen: bool
 
     def __init__(self) -> None:
@@ -22,6 +34,7 @@ class Freezeable(Protocol):
         object.__setattr__(self, name, value)
 
     def freeze(self) -> None:
+        """Freeze the object to enable caching."""
         self.is_frozen = True
 
 
@@ -29,7 +42,7 @@ T = TypeVar("T", bound=Callable[..., Any])
 
 
 def guard_frozen(method: T) -> T:
-    """A decorator to check if the object is frozen before allowing method execution.
+    """Check if the object is frozen before allowing method execution.
 
     Parameters
     ----------
@@ -52,7 +65,7 @@ def guard_frozen(method: T) -> T:
 
 
 def freeze(method: T) -> T:
-    """A decorator that calls self.freeze() on the object before executing the method.
+    """Call self.freeze() on the object before executing the method.
 
     Parameters
     ----------

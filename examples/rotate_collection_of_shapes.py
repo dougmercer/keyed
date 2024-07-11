@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Circle, Rectangle, Scene, Selection
+from keyed import Circle, Rectangle, Scene, Selection
 
 scene = Scene()
 
@@ -11,11 +11,11 @@ s = Selection([r1, c1, r2, c2])
 
 scene.add(s)
 
-s.rotate(Animation(0, 6, 0, 90, animation_type=AnimationType.ABSOLUTE))
+s.rotate(90, 0, 6)
 s.translate(0, 800, 12, 18)
-s.scale(Animation(12, 18, 1, 3, animation_type=AnimationType.ABSOLUTE))
+s.scale(3, 12, 18)
 s.translate(800, 0, 24, 30)
-s.rotate(Animation(36, 42, 0, 90, animation_type=AnimationType.ABSOLUTE))
-s.rotate(Animation(48, 52, 0, -90, animation_type=AnimationType.ABSOLUTE))
+s.rotate(90, 36, 42)
+s.rotate(-90, 48, 52)
 
 scene.preview()

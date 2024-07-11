@@ -14,7 +14,7 @@ code.lines[:].write_on(
     lagged_animation=lag_animation(animation_type=AnimationType.ADDITIVE),
     delay=2,
     duration=1,
-    start_frame=2,
+    start=2,
 )
 
 scene.preview()

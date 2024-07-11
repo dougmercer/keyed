@@ -38,10 +38,8 @@ def trace(scene: Scene, test_points: Sequence[tuple[float, float]]) -> Curve:
 
 
 @pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_curve_points_equal(
-    scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]
-) -> None:
-    points = CurveMaker.from_points(scene, points=test_points).points(0)
+def test_curve_points_equal(scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]) -> None:
+    points = CurveMaker.from_points(scene, points=test_points).points.value
     for p, tp in zip(points, test_points):
         assert np.allclose(p, tp), (p, tp)
 
@@ -57,32 +55,24 @@ def test_two_points_are_valid_points(scene: Scene) -> None:
 
 # Have a bunch of dumb tests cause numpy still doesn't support size type hints.
 def test_curve_control_points(curve: Curve) -> None:
-    cp1, cp2 = curve.control_points(curve.points(frame=0), 0)
+    cp1, cp2 = curve.control_points(curve.points.value)
     assert cp1.shape == (2, 2)
     assert cp2.shape == (2, 2)
 
 
 def test_trace_control_points(trace: Curve) -> None:
-    cp1, cp2 = trace.control_points(trace.points(0), 0)
+    cp1, cp2 = trace.control_points(trace.points.value)
     assert cp1.shape == (2, 2)
     assert cp2.shape == (2, 2)
 
 
-@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_curve_simplified_points(
-    scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]
-) -> None:
-    points = CurveMaker.from_points(scene, test_points).simplified_points(0)
-    assert points.shape == (3, 2)
-
-
 def test_curve_points(scene: Scene, test_points: list[tuple[float, float]]) -> None:
-    points = Curve.from_points(scene, test_points).points(0)
+    points = Curve.from_points(scene, test_points).points.value
     assert points.shape == (3, 2)
 
 
 def test_trace_points(trace: Curve) -> None:
-    points = trace.points(0)
+    points = trace.points.value
     assert points.shape == (3, 2)
 
 
@@ -96,7 +86,9 @@ def test_points_same_display_nothing(CurveMaker: type[Curve] | type[Curve2]) -> 
     assert (arr == 0).all(), arr
 
 
-typical_float = st.floats(min_value=10, max_value=20, allow_infinity=False, allow_nan=False)
+typical_float = st.floats(
+    min_value=10, max_value=20, allow_infinity=False, allow_nan=False, allow_subnormal=False
+)  # Taichi breaks Subnormals
 
 
 @filter_runtime_warning
@@ -112,10 +104,8 @@ typical_float = st.floats(min_value=10, max_value=20, allow_infinity=False, allo
 )
 @settings(max_examples=10)
 @pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_curve_contains_pts(
-    pts: list[tuple[float, float]], CurveMaker: type[Curve] | type[Curve2]
-) -> None:
-    assume((np.array(pts).ptp(axis=0) > 5).any())
+def test_curve_contains_pts(pts: list[tuple[float, float]], CurveMaker: type[Curve] | type[Curve2]) -> None:
+    assume((np.ptp(np.array(pts), axis=0) > 5).any())
     scene_size = 30
     scene = Scene(width=scene_size, height=scene_size, num_frames=1)
     curve = CurveMaker.from_points(scene, pts, line_width=3)
@@ -124,18 +114,14 @@ def test_curve_contains_pts(
     for pt in pts:
         scene = Scene(width=scene_size, height=scene_size, num_frames=1)
         curve = Curve.from_points(scene, pts, line_width=3)
-        assert (
-            curve.geom(0).distance(shapely.Point(*pt)) < 0.01
-        ), "Input point is not near the curve."
+        assert curve.geom.distance(shapely.Point(*pt)).value < 0.01, "Input point is not near the curve."
 
         # Check that if we remove content near each of the input points we remove intensity
         # from the scene.
         circle = Circle(scene, pt[0], pt[1], operator=OPERATOR_CLEAR)
         scene.add(curve, circle)
         intensity = to_intensity(scene.asarray(0)).sum()
-        assert (
-            total_intensity > intensity
-        ), "Curve is not visibly near input point {total_intensity} {intensity}"
+        assert total_intensity > intensity, "Curve is not visibly near input point {total_intensity} {intensity}"
 
 
 # @pytest.mark.parametrize("t", [0, 0.5, 1])

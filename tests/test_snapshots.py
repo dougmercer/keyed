@@ -1,3 +1,4 @@
+import io
 from functools import partial
 from typing import Literal
 
@@ -5,9 +6,11 @@ import numpy as np
 import pytest
 import shapely
 import syrupy
+from syrupy.extensions.image import PNGImageSnapshotExtension
 from syrupy.filters import props
 
 import keyed
+from keyed.easing import linear_in_out
 
 DRAWABLES = [
     "rectangle",
@@ -19,9 +22,9 @@ DRAWABLES = [
 ]
 
 METHODS = [
-    partial(keyed.Base.translate, x=90, y=10, start_frame=0, end_frame=6),
-    partial(keyed.Base.scale, animation=keyed.Animation(0, 6, 1, 3)),
-    partial(keyed.Base.rotate, animation=keyed.Animation(0, 6, 0, 360)),
+    "translate",
+    "rotate",
+    "scale",
 ]
 
 
@@ -77,7 +80,7 @@ def text(scene: keyed.Scene) -> keyed.Text:
 
 
 @pytest.mark.parametrize("drawable", DRAWABLES)
-@pytest.mark.parametrize("method", METHODS, ids=lambda x: x.func.__name__)
+@pytest.mark.parametrize("method", METHODS)
 @pytest.mark.snapshot
 def test_base_animations(
     drawable: str,
@@ -89,14 +92,28 @@ def test_base_animations(
     obj = request.getfixturevalue(drawable)
     assert isinstance(obj, keyed.Base)
     scene.add(obj)
-    method(obj)
-    last = None
+
+    match method:
+        case "translate":
+            params = {"x": 90, "y": 10, "start": 0, "end": 6}
+        case "scale":
+            params = {"start": 0, "end": 6, "amount": 3, "easing": linear_in_out}
+        case "rotate":
+            params = {"start": 0, "end": 6, "amount": 360, "easing": linear_in_out}
+
+    method_func = getattr(obj, method)
+    method_func(**params)
     scene.freeze()
     for frame in range(6):
-        val = scene.asarray(frame).tobytes()
-        assert val == snapshot(include=props(f"{frame}", str(type(obj)), method.func.__name__))
-        if last is not None:
-            assert last != val
+        surface = scene.rasterize(frame)
+        with io.BytesIO() as buffer:
+            surface.write_to_png(buffer)
+            buffer.seek(0)
+            image_bytes = buffer.read()
+        assert image_bytes == snapshot(
+            include=props(f"{frame}", str(type(obj)), method),
+            extension_class=PNGImageSnapshotExtension,
+        )
 
 
 @pytest.mark.parametrize("level", ["chars", "lines", "tokens"])
@@ -121,7 +138,7 @@ def test_write_on(
         lagged_animation=keyed.lag_animation(animation_type=keyed.AnimationType.ABSOLUTE),
         delay=1,
         duration=1,
-        start_frame=0,
+        start=0,
     )
     scene.freeze()
     last = None

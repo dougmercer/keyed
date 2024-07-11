@@ -14,7 +14,7 @@ code.tokens[:].write_on(
     lagged_animation=lag_animation(start_value=1, end_value=0),
     delay=1,
     duration=1,
-    start_frame=0,
+    start=0,
 )
 
 scene.preview()

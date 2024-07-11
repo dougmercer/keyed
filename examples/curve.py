@@ -14,7 +14,7 @@ s = TextSelection([code.chars[0], code.chars[10], code.chars[11], code.chars[30]
 scene.add(*s)
 scene.add(code)
 
-points = np.array([np.array(c.geom().centroid.coords).flatten() for c in s])
+points = np.array([np.array(c.geom.centroid.coords.value).flatten() for c in s])
 t = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=1)
 
 for x, y in points:

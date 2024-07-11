@@ -1,40 +1,68 @@
-from keyed import Animation, AnimationType, Code, Editor, Scene, easing, lag_animation, tokenize
+import logging
+import sys
 
-scene = Scene("hello", num_frames=90)
+from keyed import Animation, AnimationType, Code, Scene, easing, tokenize
+from keyed_extras import Editor
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)],
+)
+
+# scene = Scene("editor", num_frames=120)
+scene = Scene("editor", num_frames=120)
 
 with open("src/keyed/helpers.py", "r") as f:
     content = f.read()
-styled_tokens = tokenize(content)
+# content = r"import this"
+styled_tokens = tokenize(content, filename="src/keyed/helpers.py")
 
-code = Code(scene, styled_tokens, font_size=36, x=0, y=0, alpha=1, _ascent_correction=False)
+code = Code(scene, styled_tokens, font_size=36, x=0, y=0, alpha=1)
+
 editor = Editor(
     scene=scene,
     title="hello_world.py",
     x=100,
     y=100,
-    code=code,
-    margin=30,
 )
-editor.align_to(scene, -2, -2, center_on_zero=True).translate(0, -50, -1, -1)
+editor.add(code)
+editor.center()
+editor.rotate(180, 0, 12)
+editor.rotate(-180, 12, 24)
 
-editor._height.add_animation(
-    Animation(0, 8, 0, 200, easing=easing.CubicEaseInOut, animation_type=AnimationType.ADDITIVE)
-)
-editor._width.add_animation(
-    Animation(8, 16, 0, 100, easing=easing.CubicEaseInOut, animation_type=AnimationType.ADDITIVE)
-)
+editor._height = Animation(
+    24,
+    36,
+    0.0,
+    300,
+    ease=easing.cubic_in_out,
+    animation_type=AnimationType.ADDITIVE,
+)(editor._height, scene.frame)
+editor._height = Animation(
+    48,
+    60,
+    0.0,
+    -300,
+    ease=easing.cubic_in_out,
+    animation_type=AnimationType.ADDITIVE,
+)(editor._height, scene.frame)
 
-editor.translate(-600, 0, 0, 6)
+editor.scale(1.5, 36, 48)
+editor.scroll_to(1, 60, 84).scroll_to(0, 90, 114)
 
-editor.scroll_bar.progress.add_animation(
-    Animation(12, 36, 0, 1, easing=easing.CubicEaseInOut, animation_type=AnimationType.ABSOLUTE)
-)
-
-code.chars[1635:].set("alpha", 0)
-
-code.lines[62:].write_on("alpha", lag_animation(animation_type=AnimationType.ADDITIVE), 16, 6, 6)
-
+# for c in code.lines[0].chars:
+#     editor.add(c.emphasize())
 scene.add(editor)
+
+# editor.translate(100, 0, 0, 12)
+
+# scene.add(code)
+# for c in code.lines[0].chars:
+#     scene.add(c.emphasize())
+
+# e = editor.emphasize()
+
+# scene.add(e)
 
 scene.preview()

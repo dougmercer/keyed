@@ -1,3 +1,5 @@
+"""A key-frame focused animation engine."""
+
 from . import color  # noqa
 from . import easing  # noqa
 from . import highlight  # noqa
@@ -7,8 +9,10 @@ from .base import *  # noqa
 from .code import *  # noqa
 from .constants import *  # noqa
 from .curve import *  # noqa
-from .editor import *  # noqa
+from .effects import *  # noqa
+from .extras import *  # noqa
 from .highlight import *  # noqa
+from .line import *  # noqa
 from .polygon import *  # noqa
 from .scene import *  # noqa
 from .shapes import *  # noqa

@@ -22,7 +22,7 @@ trace3 = Curve.from_points(scene, points, alpha=0.5, line_width=50, tension=-1, 
 scene.add(trace2)
 scene.add(trace3)
 scene.add(trace1)
-trace1.end.value = 0
+trace1.end.initial_value = 0
 trace1.end.add_animation(Animation(4, 28, 0, 1, easing.CubicEaseInOut))
 trace1.start.add_animation(Animation(30, 54, 0, 1, easing.CubicEaseInOut))
 

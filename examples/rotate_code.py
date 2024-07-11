@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Code, Scene, tokenize
+from keyed import Code, Scene, tokenize
 
 with open("examples/example.py", "r") as f:
     content = f.read()
@@ -9,6 +9,6 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1)
 
 scene.add(code)
 
-code.rotate(Animation(0, 6, 0, -90, animation_type=AnimationType.ABSOLUTE))
+code.rotate(-90, 0, 6)
 
 scene.preview()

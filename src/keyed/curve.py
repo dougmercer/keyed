@@ -1,7 +1,6 @@
 """Draw lines and curves."""
 
 import warnings
-from copy import copy
 from functools import partial
 from typing import Self, Sequence
 
@@ -10,9 +9,10 @@ import numpy as np
 import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
+from signified import Computed, HasValue, Signal
 
-from .animation import Property
 from .base import Base
+from .color import Color, as_color
 from .scene import Scene
 from .shapes import Circle, Shape
 
@@ -24,6 +24,20 @@ VecArray = npt.NDArray[np.float64]  # Intended to to be of shape (n, 2)
 
 # Derivative of the cubic Bézier curve
 def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
+    """Calculate the derivative of a cubic Bézier curve at a given parameter value.
+
+    Parameters
+    ----------
+    t : float
+        The parameter value, typically between 0 and 1, at which to evaluate the derivative.
+    p0, p1, p2, p3 : Vector
+        Control points of the cubic Bézier curve.
+
+    Returns
+    -------
+    Vector
+        The derivative vector at parameter t.
+    """
     assert p0.shape == (2,)
     assert p1.shape == (2,)
     assert p2.shape == (2,)
@@ -31,8 +45,21 @@ def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) 
     return 3 * (1 - t) ** 2 * (p1 - p0) + 6 * (1 - t) * t * (p2 - p1) + 3 * t**2 * (p3 - p2)
 
 
-# Function to integrate
 def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.float64:
+    """Define function to integrate to calculate the arc length of a cubic Bézier curve.
+
+    Parameters
+    ----------
+    t : float
+        The parameter value at which to calculate the integrand.
+    p0, p1, p2, p3 : Vector
+        Control points of the cubic Bézier curve.
+
+    Returns
+    -------
+    np.float64
+        The value of the integrand at t.
+    """
     assert p0.shape == (2,)
     assert p1.shape == (2,)
     assert p2.shape == (2,)
@@ -41,6 +68,18 @@ def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.fl
 
 
 def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
+    """Calculate the length of a cubic Bézier curve using numerical integration.
+
+    Parameters
+    ----------
+    p0, p1, p2, p3 : Vector
+        Control points of the cubic Bézier curve.
+
+    Returns
+    -------
+    float
+        The total length of the cubic Bézier curve.
+    """
     assert p0.shape == (2,)
     assert p1.shape == (2,)
     assert p2.shape == (2,)
@@ -58,7 +97,22 @@ def de_casteljau(
     p3: Vector,
     reverse: bool = False,
 ) -> tuple[Vector, Vector, Vector, Vector]:
-    """Find new control points for the Bezier curve segment from 0 to t."""
+    """Find control points such that the new curve is equivalent to the orignal segment from 0 to t.
+
+    Parameters
+    ----------
+    t : float
+        The parameter at which to subdivide the curve.
+    p0, p1, p2, p3 : Vector
+        Control points of the cubic Bézier curve.
+    reverse : bool, optional
+        If True, reverse the control points before processing. Default is False.
+
+    Returns
+    -------
+    tuple[Vector, Vector, Vector, Vector]
+        The new control points subdividing the original curve at t.
+    """
     assert p0.shape == (2,)
     assert p1.shape == (2,)
     assert p2.shape == (2,)
@@ -85,22 +139,20 @@ def de_casteljau(
     return p0, a, d, f
 
 
-def calculate_control_points(
-    tension: float, points: list[tuple[float, float]] | Vector
-) -> tuple[Vector, Vector]:
-    """Calculate control points given a list of key points.
+def calculate_control_points(tension: float, points: list[tuple[float, float]] | Vector) -> tuple[Vector, Vector]:
+    """Calculate the control points for a smooth curve through given points with specified tension.
 
     Parameters
     ----------
     tension: float
-        Tension. Value of 0 implies linear line between points.
+        Controls how tightly the curve bends (0 implies linear).
     points: list[tuple[float, float]]
-        Key points the curve must pass through
+        The points through which the curve must pass.
 
     Returns
     -------
     tuple[nd.ndarray, np.ndarray]
-        Control points
+        The control points for each segment of the curve.
     """
     p = np.array(points)
 
@@ -117,80 +169,144 @@ def calculate_control_points(
 
 
 class Curve(Shape):
+    """Draw a curve through the a collection of object's centroids centroids.
+
+    Parameters
+    ----------
+    scene : Scene
+        The scene to which the curve belongs.
+    objects : Sequence[Base]
+        The objects through which the curve will pass.
+    color : tuple[float, float, float], optional
+        The color of the curve in RGB format. Default is (1, 1, 1).
+    alpha : float, optional
+        The transparency of the curve. Default is 1.
+    dash : tuple[Sequence[float], float] | None, optional
+        Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
+    operator : cairo.Operator, optional
+        The compositing operator to use for drawing. Default is :data:`cairo.OPERATOR_OVER`.
+    line_width : float, optional
+        The width of the curve line. Default is 1.
+    simplify : float | None, optional
+        The tolerance for simplifying the curve's path. Default is None.
+    tension : float, optional
+        The tension factor used in calculating control points for the curve. Default is 1.
+
+    Raises
+    ------
+    ValueError
+        If fewer than 2 objects are provided.
+    """
+
     def __init__(
         self,
         scene: Scene,
         objects: Sequence[Base],
-        color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
-        simplify: float | None = None,
         tension: float = 1,
     ):
-        """Draw a curve through the object's centroids.
-
-        Differences from Curve 2:
-        1. If the centroid of all objects are equal, Curve will draw nothing, but
-           Curve2 will draw at the point.
-        """
-        super().__init__()
-        self.start = Property(0)
-        self.end = Property(1)
+        super().__init__(scene)
+        self.start = Signal(0)
+        self.end = Signal(1)
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
         self.scene = scene
         self.ctx = scene.get_context()
-        self.objects = [copy(obj) for obj in objects]
-        self.color = color
-        self.fill_color: tuple[float, float, float] = (1, 1, 1)
-        self.alpha = Property(alpha)
+        self.objects = objects  # [copy(obj) for obj in objects]
+        self.color = as_color(color)
+        self.fill_color: HasValue[Color] = Color(1, 1, 1)
+        self.alpha = Signal(alpha)
         self.dash = dash
         self.operator = operator
         self.draw_fill = False
         self.draw_stroke = True
-        self.line_width = Property(line_width)
-        self.simplify = simplify
-        self.tension = Property(tension)
+        self.line_width = Signal(line_width)
+        self.tension = Signal(tension)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
+        self._dependencies = []
+        for item in self.objects:
+            self._dependencies.extend(item.dependencies)
+        assert isinstance(self.controls.matrix, Signal)
+        self.controls.matrix.value = self.controls.base_matrix()
 
-    def points(self, frame: int = 0) -> VecArray:
-        return np.array([obj.geom(frame).centroid.coords[0] for obj in self.objects])
+    @property
+    def points(self) -> Computed[VecArray]:
+        """Get the array of points representing the centroids of the objects at a given frame.
 
-    def simplified_points(self, frame: int = 0) -> VecArray:
-        line = (
-            self.geom(frame).simplify(self.simplify)
-            if self.simplify is not None
-            else self.geom(frame)
-        )
-        return np.array(list(line.coords))
+        Parameters
+        ----------
+        frame : int, optional
+            The frame number at which to compute the centroids. Default is 0.
 
-    def control_points(self, points: VecArray, frame: int = 0) -> tuple[Vector, Vector]:
-        return calculate_control_points(
-            self.tension.at(frame),
-            points,
-        )
+        Returns
+        -------
+        VecArray
+            An array of 2D points representing the centroids of the objects.
+        """
+        pts = [obj.geom.centroid.coords[0] for obj in self.objects]
 
-    def raw_geom(self, frame: int = 0) -> shapely.LineString:
-        return shapely.LineString(self.points(frame))
+        def f() -> np.ndarray:
+            return np.array([pt.value for pt in pts])
 
-    def _draw_shape(self, frame: int = 0) -> None:
-        start = self.start.at(frame)
-        end = self.end.at(frame)
-        pts = self.simplified_points(frame)
+        return Computed(f, pts)
 
-        if (start == end) and self.start.at(frame + 1) == self.end.at(frame + 1):
+    def control_points(self, points: VecArray) -> tuple[Vector, Vector]:
+        """Calculate the bezier control points at a specific frame.
+
+        Parameters
+        ----------
+        points : VecArray
+            An array of points through which the curve will pass.
+
+        Returns
+        -------
+        tuple[Vector, Vector]
+            Control points for the bezier segments.
+        """
+        return calculate_control_points(self.tension.value, points)
+
+    @property
+    def raw_geom_now(self) -> shapely.LineString:
+        """Geometry of points at the given frame, before any transformations.
+
+        Returns
+        -------
+        shapely.LineString
+            A LineString object representing the curve.
+        """
+        return shapely.LineString([p for p in self.points.value])
+
+    def _draw_shape(self) -> None:
+        """Draw the curve at the specified frame.
+
+        Raises
+        ------
+        ValueError
+            If the start or end parameter values are not between 0 and 1.
+        """
+        start = self.start.value
+        end = self.end.value
+        pts = self.points.value
+
+        with self.frame.at(self.frame.value + 1):
+            start_next = self.start.value
+            end_next = self.end.value
+
+        if (start == end) and start_next == end_next:
             return
-        if tuple(pts.ptp(axis=0)) == (0, 0):
+        if tuple(np.ptp(pts, axis=0)) == (0, 0):
             return
         if start < 0 or start > 1:
             raise ValueError("Parameter start must be between 0 and 1.")
         if end < 0 or end > 1:
             raise ValueError("Parameter end must be between 0 and 1.")
 
-        cp1, cp2 = self.control_points(pts, frame)
+        cp1, cp2 = self.control_points(pts)
 
         # Compute lengths of each segment and their cumulative sum
         segment_lengths = np.array([bezier_length(*b) for b in zip(pts, cp1, cp2, pts[1:])])
@@ -221,9 +337,7 @@ class Curve(Shape):
 
         # Determine the first point, based on start_seg
         p0, p1, p2, p3 = pts[start_idx], cp1[start_idx], cp2[start_idx], pts[start_idx + 1]
-        p0_new, cp1[start_idx], cp2[start_idx], p3_new = de_casteljau(
-            start_seg, p0, p1, p2, p3, reverse=True
-        )
+        p0_new, cp1[start_idx], cp2[start_idx], p3_new = de_casteljau(start_seg, p0, p1, p2, p3, reverse=True)
 
         # Move to the first point
         self.ctx.move_to(*p0_new)
@@ -243,14 +357,39 @@ class Curve(Shape):
         cls,
         scene: Scene,
         points: Sequence[tuple[float, float]] | VecArray,
-        color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
-        simplify: float | None = None,
         tension: float = 1,
     ) -> Self:
+        """Create a Curve object directly from a list of points.
+
+        Parameters
+        ----------
+        scene : Scene
+            The scene in which the curve will be drawn.
+        points : Sequence[tuple[float, float]] | VecArray
+            A sequence of 2D points through which the curve should pass.
+        color : tuple[float, float, float], optional
+            The color of the curve in RGB format. Default is (1, 1, 1).
+        alpha : float, optional
+            The transparency of the curve. Default is 1.
+        dash : tuple[Sequence[float], float] | None, optional
+            Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
+        operator : cairo.Operator, optional
+            The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
+        line_width : float, optional
+            The width of the curve line. Default is 1.
+        tension : float, optional
+            The tension factor used in calculating control points for the curve. Default is 1.
+
+        Returns
+        -------
+        Self
+            An instance of the Curve class.
+        """
         objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
             scene=scene,
@@ -260,7 +399,6 @@ class Curve(Shape):
             dash=dash,
             operator=operator,
             line_width=line_width,
-            simplify=simplify,
             tension=tension,
         )
 
@@ -272,30 +410,3 @@ class Curve(Shape):
             f"operator={self.operator}"
             ")"
         )
-
-    def __copy__(self) -> Self:
-        new = type(self)(
-            scene=self.scene,
-            objects=[copy(obj) for obj in self.objects],
-            color=self.color,
-            dash=self.dash,
-            operator=self.operator,
-            simplify=self.simplify,
-        )
-        new.alpha.follow(self.alpha)
-        new.tension.follow(self.tension)
-        new.start.follow(self.start)
-        new.end.follow(self.end)
-        new.line_width.follow(self.line_width)
-        return new
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.alpha.freeze()
-            self.tension.freeze()
-            self.start.freeze()
-            self.end.freeze()
-            self.line_width.freeze()
-            for obj in self.objects:
-                obj.freeze()
-            super().freeze()

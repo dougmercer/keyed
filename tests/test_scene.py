@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from keyed import Animation, Rectangle, Scene, Text, TextSelection
+from keyed import Rectangle, Scene, Text, TextSelection
 
 
 def test_text_drawing() -> None:
@@ -23,7 +23,6 @@ def test_text_drawing() -> None:
     )
 
     scene.add(text)
-    scene.draw_frame(0)
 
     # Extract pixel data to verify drawing
     # Raster is [height, width, 4] with channels in b, g, r, a order
@@ -37,7 +36,6 @@ def test_add_multiple_drawables() -> None:
     text1 = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)  # Red text
     text2 = Text(scene, "World", 20, 100, 50, "Sans", (0, 1, 0), alpha=1)  # Green text
     scene.add(text1, text2)
-    scene.draw_frame(0)
 
     buf = scene.rasterize(0).get_data()
     arr: np.ndarray = np.ndarray(shape=(100, 200, 4), dtype=np.uint8, buffer=buf)
@@ -70,7 +68,7 @@ def test_clear_scene() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=width, height=height)
     text = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)
     scene.add(text)
-    scene.draw_frame(frame=0)
+    scene.rasterize(0)
     scene.clear()
 
     # Manually rasterize without calling scene.rasterize()
@@ -91,7 +89,9 @@ def test_draw_as_layers(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
     text0 = Text(scene, "Hello", color=(1, 0, 0))
     text1 = Text(scene, "World", color=(0, 1, 0))
-    scene.add(text0, text1)
+    scene.add(text0)
+    layer2 = scene.create_layer("2")
+    layer2.add(text1)
     scene.draw_as_layers()
 
     # Read the two layers in
@@ -184,9 +184,8 @@ def test_scene_transform() -> None:
     r1 = Rectangle(scene1, x=1, y=1, width=1, height=1)
     scene1.add(r1)
 
-    rot = Animation(1, 2, 3, 4)
     translate_args = (1, 2, 3, 4)
-    scene1.rotate(rot, scene1)
+    scene1.rotate(10, 1, 2, center=scene1.geom)
     scene1.translate(*translate_args)
     arr1 = scene1.asarray(6)
 
@@ -194,8 +193,10 @@ def test_scene_transform() -> None:
     r2 = Rectangle(scene2, x=1, y=1, width=1, height=1)
 
     scene2.add(r2)
-    r2.rotate(rot, scene2)
+    r2.rotate(10, 1, 2, center=scene2.geom)
     r2.translate(*translate_args)
     arr2 = scene2.asarray(6)
+
+    print(type(arr1), type(arr2))
 
     assert (arr1 == arr2).all(), (arr1, arr2)

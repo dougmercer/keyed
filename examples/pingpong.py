@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Code, PingPong, Scene, easing, tokenize
+from keyed import Animation, Code, PingPong, Scene, Signal, easing, tokenize
 
 styled_tokens = tokenize(r"import this")
 
@@ -8,20 +8,16 @@ code = Code(scene, styled_tokens, font_size=48)
 scene.add(code.lines[0])
 
 a = code.lines[0:1]
-
-a.animate(
-    "delta_y",
-    PingPong(
-        n=3,
-        animation=Animation(
-            start_frame=0,
-            end_frame=12,
-            start_value=50,
-            end_value=150,
-            easing=easing.CubicEaseInOut,
-            animation_type=AnimationType.ABSOLUTE,
-        ),
+y_anim = PingPong(
+    n=3,
+    animation=Animation(
+        start=0,
+        end=12,
+        start_value=0,
+        end_value=150,
+        ease=easing.cubic_in_out,
     ),
-)
+)(Signal(0), scene.frame)
+a.translate(0, y_anim)
 
 scene.preview()

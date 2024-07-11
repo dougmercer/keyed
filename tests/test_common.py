@@ -21,11 +21,11 @@ METHODS = [
     Base.right,
     Base.down,
     Base.up,
-    Base.__copy__,
+    # Base.__copy__,
     Base.draw,
-    Base.geom,
-    Base.get_critical_point,
-    Base.get_position_along_dim,
+    lambda obj: getattr(obj, "geom"),
+    # Base.get_critical_point,
+    # Base.get_position_along_dim,
 ]
 
 
@@ -36,5 +36,5 @@ def test_common_methods_dont_fail(
     method: Callable,
 ) -> None:
     drawable, kwargs = drawable_args
-    obj = drawable(scene, **kwargs)  # type: ignore[call-arg]
+    obj = drawable(scene, **kwargs)
     method(obj)

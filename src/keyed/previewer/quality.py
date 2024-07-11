@@ -1,3 +1,5 @@
+"""Define animation quality settings."""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterator
@@ -7,6 +9,8 @@ __all__ = ["Quality", "QualitySetting"]
 
 @dataclass
 class QualitySetting:
+    """Animation quality setting."""
+
     width: int
     height: int
 
@@ -23,6 +27,8 @@ class QualitySetting:
 
 
 class Quality(Enum):
+    """Enum of animation quality settings."""
+
     very_low = QualitySetting(width=1024, height=576)
     low = QualitySetting(width=1152, height=648)
     medium = QualitySetting(width=1280, height=720)

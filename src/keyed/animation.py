@@ -1,95 +1,142 @@
+"""Animation related classes/functions."""
+
 from __future__ import annotations
 
 import math
-from copy import copy
 from enum import Enum, auto
-from functools import cache, partial
-from typing import Any, Callable, Protocol, Self, Type, runtime_checkable
+from functools import partial
+from typing import Any, Generic, TypeVar
 
-from .easing import Discretize, EasingFunction, LinearInOut
-from .helpers import Freezeable
+from signified import Computed, HasValue, ReactiveValue, Signal, computed
+
+from .constants import ALWAYS
+from .easing import EasingFunctionT, easing_function, linear_in_out
 
 __all__ = [
     "AnimationType",
     "Animation",
     "SinusoidalAnimation",
     "lag_animation",
-    "Property",
     "Loop",
     "PingPong",
-    "Expression",
-    "Variable",
 ]
 
 
 class AnimationType(Enum):
+    """Animation types.
+
+    Keyed supports three animation types:
+        * MULTIPLICATIVE: Multiplies the current value.
+        * ABSOLUTE: Sets the current value.
+        * ADDITIVE: Adds to the current value.
+    """
+
     MULTIPLICATIVE = auto()
     ABSOLUTE = auto()
     ADDITIVE = auto()
 
 
-class Animation(Freezeable):
+T = TypeVar("T")
+A = TypeVar("A")
+
+
+class Animation(Generic[T]):
+    """Define an animation.
+
+    Animations vary a parameter over time.
+
+    Generally, Animations become active at ``start_frame`` and smoothly change
+    according to the ``easing`` function until terminating to a final value at
+    ``end_frame``. The animation will remain active (i.e., the parameter will
+    not suddenly jump back to it's pre-animation state), but will cease varying.
+
+    Parameters
+    ----------
+    start_frame
+        Frame at which the animation will become active.
+    end_frame
+        Frame at which the animation will stop varying.
+    start_value
+        Value at which the animation will start.
+    end_value
+        Value at which the animation will end.
+    ease
+        The rate in which the value will change throughout the animation.
+    animation_type
+        How the animation value will affect the ::class::``Property``'s value.
+
+    Raises
+    ------
+    ValueError
+        When ``start_frame > end_frame``
+    """
+
     def __init__(
         self,
-        start_frame: int,
-        end_frame: int,
-        start_value: float,
-        end_value: float,
-        easing: Type[EasingFunction] | Discretize = LinearInOut,
+        start: int,
+        end: int,
+        start_value: HasValue[T],
+        end_value: HasValue[T],
+        ease: EasingFunctionT = linear_in_out,
         animation_type: AnimationType = AnimationType.ABSOLUTE,
     ) -> None:
-        super().__init__()
-        if start_frame > end_frame:
+        if start > end:
             raise ValueError("Ending frame must be after starting frame.")
         if not hasattr(self, "start_frame"):
-            self.start_frame = start_frame
+            self.start_frame = start
         if not hasattr(self, "end_frame"):
-            self.end_frame = end_frame
+            self.end_frame = end
         self.start_value = start_value
         self.end_value = end_value
-        self.easing = easing(
-            start_frame=start_frame,
-            end_frame=end_frame,
-            start=self.start_value,
-            end=self.end_value,
-        )
+        self.ease = ease
         self.animation_type = animation_type
 
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(start_frame={self.start_frame}, "
-            f"end_frame={self.end_frame}, start_value={self.start_value}, "
-            f"end_value={self.end_value}, easing={self.easing.__class__.__name__}, "
-            f"animation_type={self.animation_type.name})"
-        )
+    def __call__(self, value: HasValue[A], frame: ReactiveValue[int]) -> Computed[A | T]:
+        """Bind the animation to the input value and frame."""
+        easing = easing_function(start=self.start_frame, end=self.end_frame, ease=self.ease, frame=frame)
 
-    def apply(self, frame: int, current_value: float) -> float:
-        if not self.is_active(frame):
-            return current_value
-        easing = self.easing(frame)
-        match self.animation_type:
-            case AnimationType.ABSOLUTE:
-                return easing
-            case AnimationType.ADDITIVE:
-                return current_value + easing
-            case AnimationType.MULTIPLICATIVE:
-                return current_value * easing
-            case _:
-                raise ValueError("Undefined AnimationType")
+        @computed
+        def f(value: A, frame: int, easing: float, start: T, end: T) -> A | T:
+            eased_value = end * easing + start * (1 - easing)  # pyright: ignore[reportOperatorIssue] # noqa: E501
 
-    def is_active(self, frame: int) -> bool:
-        return frame >= self.start_frame
+            match self.animation_type:
+                case AnimationType.ABSOLUTE:
+                    pass
+                case AnimationType.ADDITIVE:
+                    eased_value = value + eased_value
+                case AnimationType.MULTIPLICATIVE:
+                    eased_value = value * eased_value
+                case _:
+                    raise ValueError("Undefined AnimationType")
+
+            return value if frame < self.start_frame else eased_value
+
+        return f(value, frame, easing, self.start_value, self.end_value)
 
     def __len__(self) -> int:
+        """Return number of frames in the animation."""
         return self.end_frame - self.start_frame + 1
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.apply = cache(self.apply)  # type: ignore[method-assign]
-            super().freeze()
 
 
 class SinusoidalAnimation(Animation):
+    """Animate a parameter using a Sine function.
+
+    Parameters
+    ----------
+    start_frame
+        Frame at which the animation will become active.
+    period
+        The duration (period) of one cycle.
+    magnitude
+        The maximum value above/below the center value the sine wave will vary.
+    phase
+        Controls where in the sine curve the animation begins.
+
+    Todo
+    ----
+    Can this be simplified now that we have Signals/Computed?
+    """
+
     def __init__(
         self,
         start_frame: int,
@@ -98,7 +145,6 @@ class SinusoidalAnimation(Animation):
         center: float = 0,
         phase: float = 0,
     ) -> None:
-        Freezeable.__init__(self)
         assert period > 0
         assert phase >= 0
         self.period = period
@@ -120,16 +166,32 @@ class SinusoidalAnimation(Animation):
     def __hash__(self) -> int:
         return hash((self.start_frame, self.period, self.phase, self.magnitude, self.center))
 
-    def apply(self, current_frame: float, current_value: float | None) -> float:
-        if current_frame < self.start_frame:
-            current_frame = self.start_frame
-        elif self.start_frame < current_frame < self.end_frame:
-            pass
-        else:
-            current_frame = self.end_frame
-        return self.center + self.magnitude * math.sin(
-            2 * math.pi * (current_frame - self.start_frame + self.phase) / self.period
-        )
+    def __call__(self, value: Any, frame: ReactiveValue[int]) -> Computed[float]:  # pyright: ignore[reportIncompatibleMethodOverride] # fmt: skip # noqa: E501
+        """Apply the animation to the current value at the current frame.
+
+        Parameters
+        ----------
+        frame
+            The frame at which the animation is applied.
+        current_value
+            (Unused) This value does not affect the output.
+
+        Returns
+        -------
+        float
+            The value after the animation.
+        """
+        is_before_now = frame < self.start_frame
+        is_before_end = frame < self.end_frame
+        frame = is_before_now.where(self.start_frame, is_before_end.where(frame, self.end_frame))
+
+        @computed
+        def f(frame: int) -> float:
+            return self.center + self.magnitude * math.sin(
+                2 * math.pi * (frame - self.start_frame + self.phase) / self.period
+            )
+
+        return f(frame)
 
     def __repr__(self) -> str:
         return (
@@ -140,274 +202,185 @@ class SinusoidalAnimation(Animation):
 
 
 class Loop(Animation):
-    def __init__(self, animation: Animation, n: int):
-        Freezeable.__init__(self)
+    """Loop an animation.
+
+    Parameters
+    ----------
+    animation
+        The animation to loop.
+    n
+        Number of times to loop the animation.
+    """
+
+    def __init__(self, animation: Animation, n: int = 1):
         self.animation = animation
         self.n = n
         super().__init__(self.start_frame, self.end_frame, 0, 0)
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
+        """Frame at which the animation will become active."""
         return self.animation.start_frame
 
     @property
     def end_frame(self) -> int:  # type: ignore[override]
+        """Frame at which the animation will stop varying."""
         return self.animation.start_frame + len(self.animation) * self.n
 
-    def apply(self, current_frame: int, current_value: float) -> float:
-        if current_frame < self.start_frame:
-            return current_value
-        elif current_frame >= self.end_frame:
-            return self.animation.apply(self.animation.end_frame, current_value)
+    def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
+        """Apply the animation to the current value at the current frame.
 
-        # Calculate the frame position within the entire loop cycle
-        frame_in_cycle = (current_frame - self.animation.start_frame) % len(self.animation)
-        effective_frame = self.animation.start_frame + frame_in_cycle
-        return self.animation.apply(effective_frame, current_value)
+        Parameters
+        ----------
+        frame
+            The frame at which the animation is applied.
+        current_value
+            The initial value.
+
+        Returns
+        -------
+        float
+            The value after the animation
+        """
+        effective_frame = self.animation.start_frame + (frame - self.animation.start_frame) % len(self.animation)
+        active_anim = self.animation(value, effective_frame)
+        post_anim = self.animation(value, Signal(self.animation.end_frame))
+
+        @computed
+        def f(frame: int, value: Any, active_anim: Any, post_anim: Any) -> Any:
+            if frame < self.start_frame:
+                return value
+            elif frame < self.end_frame:
+                return active_anim
+            else:
+                return post_anim
+
+        return f(frame, value, active_anim, post_anim)
 
     def __repr__(self) -> str:
         return f"Loop(animation={self.animation}, n={self.n})"
 
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.animation.freeze()
-            super().freeze()
-
 
 class PingPong(Animation):
-    def __init__(self, animation: Animation, n: int):
-        Freezeable.__init__(self)
+    """Play an animation forward, then backwards n times.
+
+    Parameters
+    ----------
+    animation
+    n
+        Number of full back-and-forth cycles
+    """
+
+    def __init__(self, animation: Animation, n: int = 1):
         self.animation = animation
-        self.n = n  # Number of full back-and-forth cycles
+        self.n = n
         super().__init__(self.start_frame, self.end_frame, 0, 0)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, PingPong):
-            return NotImplemented
-        return (self.animation, self.n) == (other.animation, other.n)
-
-    def __hash__(self) -> int:
-        return hash((self.animation, self.n))
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
+        """Returns the frame at which the animation begins."""
         return self.animation.start_frame
 
     @property
     def end_frame(self) -> int:  # type: ignore[override]
-        # Each cycle consists of going forward and coming back
+        """Returns the frame at which the animation stops varying.
+
+        Notes
+        -----
+        Each cycle consists of going forward and coming back.
+        """
         return self.animation.start_frame + self.cycle_len * self.n
 
     @property
     def cycle_len(self) -> int:
+        """Returns the number of frames in one cycle."""
         return 2 * (len(self.animation) - 1)
 
-    def apply(self, current_frame: int, current_value: float) -> float:
-        if current_frame < self.start_frame or current_frame > self.end_frame:
-            return current_value
+    def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
+        """Apply the animation to the current value at the current frame.
 
-        # Calculate the position within a single forward and backward cycle
-        frame_in_cycle = (current_frame - self.start_frame) % self.cycle_len
+        Parameters
+        ----------
+        frame
+            The frame at which the animation is applied.
+        current_value
+            The initial value.
 
-        if frame_in_cycle < len(self.animation):
-            # Frame in first (forward) half of the cycle
-            effective_frame = self.animation.start_frame + frame_in_cycle
-        else:
-            # Frame in second (reverse) half of the cycle
-            effective_frame = self.animation.end_frame - (frame_in_cycle - len(self.animation) + 1)
+        Returns
+        -------
+        float
+            The value after the animation
+        """
 
-        return self.animation.apply(effective_frame, current_value)
+        # Calculate effective frame based on whether we're in the forward or backward cycle
+        @computed
+        def effective_frame_(frame: int) -> int:
+            frame_in_cycle = (frame - self.start_frame) % self.cycle_len
+            return (
+                self.animation.start_frame + frame_in_cycle
+                if frame_in_cycle < len(self.animation)
+                else self.animation.end_frame - (frame_in_cycle - len(self.animation) + 1)
+            )
+
+        effective_frame = effective_frame_(frame)
+        anim = self.animation(value, effective_frame)
+
+        @computed
+        def f(frame: int, value: Any) -> Any:
+            return value if frame < self.start_frame or frame > self.end_frame else anim.value
+
+        return f(frame, value)
 
     def __repr__(self) -> str:
         return f"PingPong(animation={self.animation}, n={self.n})"
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.animation.freeze()
-            super().freeze()
 
 
 def lag_animation(
     start_value: float = 0,
     end_value: float = 1,
-    easing: Type[EasingFunction] = LinearInOut,
+    easing: EasingFunctionT = linear_in_out,
     animation_type: AnimationType = AnimationType.MULTIPLICATIVE,
 ) -> partial[Animation]:
+    """Partially-initialize an animation for use with :meth:`keyed.base.Selection.write_on`.
+
+    This will set the animations values, easing, and type without setting its start/end frames.
+
+    Parameters
+    ----------
+    start_value
+        Value at which the animation will start.
+    end_value
+        Value at which the animation will end.
+    easing
+        The rate in which the value will change throughout the animation.
+    animation_type
+        How the animation value will affect the :class:`keyed.animation.Property`'s value.
+
+    Returns
+    -------
+    partial[Animation]
+        Partially initialized animation.
+    """
     return partial(
         Animation,
         start_value=start_value,
         end_value=end_value,
-        easing=easing,
+        ease=easing,
         animation_type=animation_type,
     )
 
 
-@runtime_checkable
-class Variable(Protocol):
-    def at(self, frame: int) -> float:
-        pass
+def step(value: float, frame: int = ALWAYS, animation_type: AnimationType = AnimationType.ABSOLUTE) -> Animation:
+    """Return an animation that applies a step function to the Variable at a particular frame.
 
-    def __add__(self, other: float | Variable) -> Expression:
-        if isinstance(other, float | int):
-
-            def func(frame: int) -> float:
-                return self.at(frame) + other
-
-            return Expression(func)
-        elif isinstance(other, Variable):
-
-            def func(frame: int) -> float:
-                return self.at(frame) + other.at(frame)
-
-            return Expression(func)
-        else:
-            raise TypeError(f"Unsupported type {type(other)}")
-
-    def __sub__(self, other: float | Variable) -> Expression:
-        if isinstance(other, float | int):
-
-            def func(frame: int) -> float:
-                return self.at(frame) - other
-
-            return Expression(func)
-        elif isinstance(other, Variable):
-
-            def func(frame: int) -> float:
-                return self.at(frame) - other.at(frame)
-
-            return Expression(func)
-        else:
-            raise TypeError(f"Unsupported type {type(other)}")
-
-    def __truediv__(self, other: float | Variable) -> Expression:
-        if isinstance(other, float | int):
-
-            def func(frame: int) -> float:
-                return self.at(frame) / other
-
-            return Expression(func)
-        elif isinstance(other, Variable):
-
-            def func(frame: int) -> float:
-                return self.at(frame) / other.at(frame)
-
-            return Expression(func)
-        else:
-            raise TypeError(f"Unsupported type {type(other)}")
-
-    def __mul__(self, other: float | Variable) -> Expression:
-        if isinstance(other, float | int):
-
-            def func(frame: int) -> float:
-                return self.at(frame) * other
-
-            return Expression(func)
-        elif isinstance(other, Variable):
-
-            def func(frame: int) -> float:
-                return self.at(frame) * other.at(frame)
-
-            return Expression(func)
-        else:
-            raise TypeError(f"Unsupported type {type(other)}")
-
-    def __radd__(self, other: float | Variable) -> Expression:
-        return self.__add__(other)
-
-    def __rsub__(self, other: float | Variable) -> Expression:
-        return self.__sub__(other)
-
-    def __rmul__(self, other: float | Variable) -> Expression:
-        return self.__mul__(other)
-
-    def __rtruediv__(self, other: float | Variable) -> Expression:
-        return self.__truediv__(other)
-
-    def __neg__(self) -> Expression:
-        def func(frame: int) -> float:
-            return -self.at(frame)
-
-        return Expression(func)
-
-
-class Property(Freezeable, Variable):
-    def __init__(self, value: float) -> None:
-        super().__init__()
-        self.value = value
-        self.animations: list[Animation] = []
-        self.following: None | Variable = None
-
-    def __repr__(self) -> str:
-        return f"Property(value={self.value}, animations={self.animations!r})"
-
-    def add_animation(self, animation: Animation) -> Self:
-        self.animations.append(animation)
-        return self
-
-    def at(self, frame: int) -> float:
-        current_value = self.following.at(frame) if self.following else self.value
-        for animation in self.animations:
-            current_value = animation.apply(frame, current_value)
-        return current_value
-
-    def __copy__(self) -> Self:
-        new = type(self)(self.value)
-        new.animations = copy(self.animations)
-        new.follow(self)
-        return new
-
-    @property
-    def is_animated(self) -> bool:
-        return len(self.animations) > 0 or self.following is not None
-
-    def follow(self, other: Variable) -> Self:
-        self.following = other
-        return self
-
-    def offset(self, value: float, frame: int = 0) -> Self:
-        self.add_animation(
-            Animation(
-                start_frame=frame,
-                end_frame=frame,
-                start_value=value,
-                end_value=value,
-                animation_type=AnimationType.ADDITIVE,
-            ),
-        )
-        return self
-
-    def set(self, value: float, frame: int = 0) -> Self:
-        self.add_animation(
-            Animation(
-                start_frame=frame,
-                end_frame=frame,
-                start_value=value,
-                end_value=value,
-                animation_type=AnimationType.ABSOLUTE,
-            ),
-        )
-        return self
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.at = cache(self.at)  # type: ignore[method-assign]
-            if self.following:
-                if isinstance(self.following, Freezeable):
-                    self.following.freeze()
-            for animation in self.animations:
-                animation.freeze()
-            super().freeze()
-
-
-class Expression(Freezeable, Variable):
-    def __init__(self, func: Callable[[int], float]) -> None:
-        super().__init__()
-        self.func = func
-
-    def at(self, frame: int) -> Any:
-        return self.func(frame)
-
-    def freeze(self) -> None:
-        if not self.is_frozen:
-            self.at = cache(self.at)  # type: ignore[method-assign]
-            super().freeze()
+    TODO
+    ----
+    Can this be simpler?
+    """
+    return Animation(
+        start=frame,
+        end=frame,
+        start_value=value,
+        end_value=value,
+        animation_type=animation_type,
+    )
