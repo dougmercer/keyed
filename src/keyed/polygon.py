@@ -29,6 +29,8 @@ class Curve2(Shape):
         simplify: float | None = None,
         tension: float = 1,
         buffer: float = 30,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
     ):
         super().__init__()
         if len(objects) < 2:
@@ -43,8 +45,8 @@ class Curve2(Shape):
         self.alpha = Property(alpha)
         self.dash = dash
         self.operator = operator
-        self.draw_fill = True
-        self.draw_stroke = True
+        self.draw_fill = draw_fill
+        self.draw_stroke = draw_stroke
         self.line_width = Property(line_width)
         self.simplify = simplify
         self.tension = Property(tension)
@@ -169,6 +171,8 @@ class Curve2(Shape):
         simplify: float | None = None,
         tension: float = 1,
         buffer: float = 30,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
     ) -> Self:
         objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
@@ -183,6 +187,8 @@ class Curve2(Shape):
             simplify=simplify,
             tension=tension,
             buffer=buffer,
+            draw_fill=draw_fill,
+            draw_stroke=draw_stroke,
         )
 
     def freeze(self) -> None:
