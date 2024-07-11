@@ -83,7 +83,12 @@ class KeyedFormatter(Formatter):
 def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenType, str]]:
     """Splits a multiline token into multiple tokens."""
     token_type, text = token
-    if token_type not in (Token.Literal.String.Doc, Token.Literal.String.Single):
+    if token_type not in (
+        Token.Literal.String.Doc,
+        Token.Literal.String.Single,
+        Token.Literal.String.Double,
+        Token.Generic.Output,
+    ):
         return [token]
 
     parts = []
