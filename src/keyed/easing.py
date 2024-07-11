@@ -52,8 +52,10 @@ class EasingFunction(Protocol):
         pass
 
     def ease(self, frame: float) -> float:
-        if frame <= self.start_frame:
-            t: float = 0
+        if self.start_frame == self.end_frame:
+            t: float = 1
+        elif frame <= self.start_frame:
+            t = 0
         elif frame >= self.end_frame:
             t = 1
         else:
