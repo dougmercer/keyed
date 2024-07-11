@@ -73,7 +73,9 @@ class ScrollBar(Selection):
         scroll_indicator.align_to(scroll_bar, -11, -11, direction=UP)
 
         self.progress = Property(0)
-        scroll_indicator.controls.delta_y.follow((scroll_bar._height - indicator_height) * self.progress)
+        scroll_indicator.controls.delta_y.follow(
+            (scroll_bar._height - indicator_height) * self.progress
+        )
 
         self._width = scroll_bar._width
         self._height = scroll_bar._height
