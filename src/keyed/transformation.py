@@ -480,6 +480,8 @@ def lock_on(
     delta_x = to_x - from_x
     delta_y = to_y - from_y
 
+    # TODO - Is it possible to have an at() method for Computed objects?
+    assert isinstance(frame, Signal)
     with frame.at(end):
         dx_end = delta_x.value
         dy_end = delta_y.value
