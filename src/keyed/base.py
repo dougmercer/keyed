@@ -253,6 +253,11 @@ class Base(Transformable, Protocol):
     def cleanup(self) -> None:
         return None
 
+    def fade(self, value: HasValue[float], start: int, end: int) -> Self:
+        assert hasattr(self, "alpha")
+        self.alpha = Animation(start, end, self.alpha, value)(self.alpha, self.frame)
+        return self
+
 
 class BaseText(Base, Protocol):
     """Provide text-based features for drawable objects in a scene."""
@@ -589,6 +594,11 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     def cleanup(self) -> None:
         for obj in self:
             obj.cleanup()
+
+    def fade(self, value: HasValue[float], start: int, end: int) -> Self:
+        for obj in self:
+            obj.fade(value, start, end)
+        return self
 
 
 def is_visible(obj: Any) -> bool:
