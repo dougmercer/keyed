@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 # from IPython.display import HTML, display
 
 
-__all__ = ["style_to_color_map", "as_rgb"]
+__all__ = ["style_to_color_map", "as_rgb", "Color"]
 
 
 @dataclass
