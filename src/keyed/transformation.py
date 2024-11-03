@@ -88,7 +88,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[0]
 
-    left: ReactiveGeomMethod = reactive_method()(left_now)
+    left: ReactiveGeomMethod = reactive_method("_dependencies")(left_now)
 
     def right_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -105,7 +105,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[2]
 
-    right: ReactiveGeomMethod = reactive_method()(right_now)
+    right: ReactiveGeomMethod = reactive_method("_dependencies")(right_now)
 
     def down_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -122,7 +122,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[1]
 
-    down: ReactiveGeomMethod = reactive_method()(down_now)
+    down: ReactiveGeomMethod = reactive_method("_dependencies")(down_now)
 
     def up_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -139,17 +139,17 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[3]
 
-    up: ReactiveGeomMethod = reactive_method()(up_now)
+    up: ReactiveGeomMethod = reactive_method("_dependencies")(up_now)
 
     def width_now(self, with_transforms: bool = True) -> float:
         return self.right_now(with_transforms) - self.left_now(with_transforms)
 
-    width: ReactiveGeomMethod = reactive_method()(width_now)
+    width: ReactiveGeomMethod = reactive_method("_dependencies")(width_now)
 
     def height_now(self, with_transforms: bool = True) -> float:
         return self.up_now(with_transforms) - self.down_now(with_transforms)
 
-    height: ReactiveGeomMethod = reactive_method()(height_now)
+    height: ReactiveGeomMethod = reactive_method("_dependencies")(height_now)
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix
