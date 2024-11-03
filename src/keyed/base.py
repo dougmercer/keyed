@@ -187,14 +187,14 @@ class Base(Transformable, Protocol):
         bounds = self.geom.bounds
         x = bounds[0]
         y = bounds[1]
-        width = bounds[2] - x
-        height = bounds[3] - y
+        width = bounds[2] - x + buffer
+        height = bounds[3] - y + buffer
 
         r = Rectangle(
             self.scene,
             color=color,
-            x=x,
-            y=y,
+            x=x - 0.5 * buffer,
+            y=y - 0.5 * buffer,
             width=width,
             height=height,
             fill_color=fill_color,
