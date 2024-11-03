@@ -59,7 +59,7 @@ class Text(BaseText):
     code: Code | None, optional
         Reference to the parent :class:`keyed.code.Code` object, if part of a code block.
     operator: cairo.Operator, optional
-        The compositing operator used to render the text. Default is :data:`cairo.OPERATOR_ADD`.
+        The compositing operator used to render the text. Default is :data:`cairo.OPERATOR_OVER`.
 
     TODO
     ----
@@ -81,7 +81,7 @@ class Text(BaseText):
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
         code: Code | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_ADD,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
         super().__init__(scene)
         self.scene = scene
@@ -382,7 +382,7 @@ class Token(TextSelection[Text]):
     code : Code | None, optional
         Reference to the parent Code object, if part of a code block.
     operator : cairo.Operator, optional
-        The compositing operator used to render the token. Default is :data:`cairo.OPERATOR_ADD`.
+        The compositing operator used to render the token. Default is :data:`cairo.OPERATOR_OVER`.
     """
 
     def __init__(
@@ -395,7 +395,7 @@ class Token(TextSelection[Text]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_ADD,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
         self._token = token
         objects: list[Text] = []
@@ -483,7 +483,7 @@ class Line(TextSelection[Token]):
     code : Code | None, optional
         Reference to the parent Code object, if part of a code block.
     operator : cairo.Operator, optional
-        The compositing operator used to render the line. Default is :data:`cairo.OPERATOR_ADD`.
+        The compositing operator used to render the line. Default is :data:`cairo.OPERATOR_OVER`.
     """
 
     def __init__(
@@ -496,7 +496,7 @@ class Line(TextSelection[Token]):
         font_size: int = 24,
         alpha: float = 1,
         code: Code | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_ADD,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
         self._tokens = tokens
         objects: list[Token] = []
@@ -553,7 +553,7 @@ class Code(TextSelection[Line]):
     alpha: float, optional
         The opacity level of the code text. Default is 1.
     operator: cairo.Operator, optional
-        The compositing operator used to render the code. Default is :data:`cairo.OPERATOR_ADD`.
+        The compositing operator used to render the code. Default is :data:`cairo.OPERATOR_OVER`.
     _ascent_correction: bool, optional
         Whether to adjust the y-position based on the font's ascent. Default is True.
 
@@ -573,7 +573,7 @@ class Code(TextSelection[Line]):
         x: float = 10,
         y: float = 10,
         alpha: float = 1,
-        operator: cairo.Operator = cairo.OPERATOR_ADD,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
         _ascent_correction: bool = True,
     ) -> None:
         self._tokens = tokens
