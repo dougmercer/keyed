@@ -371,7 +371,9 @@ def lag_animation(
     )
 
 
-def step(value: float, frame: int = ALWAYS, animation_type: AnimationType = AnimationType.ABSOLUTE) -> Animation:
+def step(
+    value: HasValue[T], frame: int = ALWAYS, animation_type: AnimationType = AnimationType.ABSOLUTE
+) -> Animation[T]:
     """Return an animation that applies a step function to the Variable at a particular frame.
 
     TODO
