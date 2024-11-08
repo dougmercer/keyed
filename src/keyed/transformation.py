@@ -71,7 +71,7 @@ class Transformable(Protocol):
     @property
     def geom_now(self) -> GeometryT:
         m = self.controls.matrix
-        return affine_transform(cast(GeometryT, unref(self.raw_geom)), m.value)
+        return affine_transform(unref(self.raw_geom), m.value)
 
     def left_now(self, with_transforms: bool = True) -> float:
         """Get the left critical point.

@@ -323,7 +323,10 @@ class Scene(Transformable, Freezeable):
 
         # Create a new cairo.ImageSurface from the composited result
         output_surface = cairo.ImageSurface.create_for_data(
-            result, cairo.FORMAT_ARGB32, self._width, self._height  # pyright: ignore[reportArgumentType]
+            result,  # pyright: ignore[reportArgumentType]
+            cairo.FORMAT_ARGB32,
+            self._width,
+            self._height,
         )
         return output_surface
 
@@ -469,6 +472,7 @@ class Scene(Transformable, Freezeable):
                             with warnings.catch_warnings():
                                 warnings.simplefilter("ignore", RuntimeWarning)
                                 distance = point.distance(obj.geom.value)
+
                             if distance < min_distance:
                                 min_distance = distance
                                 nearest = obj

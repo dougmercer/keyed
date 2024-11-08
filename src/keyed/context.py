@@ -11,7 +11,6 @@ else:
 
 
 class ContextWrapper(base):
-
     def __init__(self, cr: Context) -> None:
         self.cr = cr
 
