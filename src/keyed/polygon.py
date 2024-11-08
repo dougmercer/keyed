@@ -1,11 +1,11 @@
 """Objects that draw directly from a shapely geometry."""
 
-from typing import Self, Sequence
+from typing import Self, Sequence, Callable
 
 import cairo
 import numpy as np
 import shapely
-from signified import Computed, Signal
+from signified import Computed, Signal, as_signal, unref, HasValue, has_value, reactive_method
 
 from .base import Base
 from .color import Color, as_color
@@ -290,7 +290,7 @@ class Polygon(Shape):
     def __init__(
         self,
         scene: Scene,
-        polygon: shapely.Polygon,
+        polygon: HasValue[shapely.Polygon],
         color: tuple[float, float, float] | Color = (1, 1, 1),
         fill_color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
@@ -302,9 +302,9 @@ class Polygon(Shape):
         super().__init__(scene)
         self.scene = scene
         self.ctx = scene.get_context()
-        if not isinstance(polygon, shapely.Polygon):
+        if not has_value(polygon, shapely.Polygon):
             raise NotImplementedError("Currently only supports a Polygon.")
-        self.polygon = polygon
+        self.polygon = as_signal(polygon)
         self.color = as_color(color)
         self.fill_color = as_color(fill_color)
         self.alpha = Signal(alpha)
@@ -316,12 +316,12 @@ class Polygon(Shape):
         self.buffer = Signal(buffer)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self._dependencies = [self.buffer]
+        self._dependencies = [self.polygon, self.buffer]
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
     @property
-    def raw_points(self) -> VecArray:
+    def raw_points_now(self) -> VecArray:
         """Get the raw points from the polygon's exterior without any modifications or buffering.
 
         Returns
@@ -329,12 +329,15 @@ class Polygon(Shape):
         VecArray
             An array of 2D points directly extracted from the polygon's exterior.
         """
-        if self.polygon.is_empty:
+        p = unref(self.polygon)
+        if p.is_empty:
             return np.empty((0, 2))
-        return np.array(list(self.polygon.exterior.coords))
+        return np.array(list(p.exterior.coords))
+
+    raw_points: Computed[VecArray] = reactive_method("_dependencies")(raw_points_now)
 
     @property
-    def points(self) -> VecArray:
+    def points_now(self) -> VecArray:
         """Compute and return the points of the polygon's exterior boundary after applying a buffer.
 
         Returns
@@ -342,9 +345,11 @@ class Polygon(Shape):
         VecArray
             An array of 2D points representing the buffered exterior of the polygon.
         """
-        buffered = self.polygon.buffer(self.buffer.value)
+        buffered = unref(self.polygon).buffer(self.buffer.value)
         assert isinstance(buffered, shapely.Polygon)
         return np.array(list(buffered.exterior.coords))
+
+    points: Callable[..., Computed[VecArray]] = reactive_method("_dependencies")(points_now)
 
     def _draw_shape(self) -> None:
         """Draw the shape at the specified frame.
@@ -393,4 +398,4 @@ class Polygon(Shape):
         shapely.Polygon
             The polygonal representation of the curve.
         """
-        return self.polygon
+        return unref(self.polygon)
