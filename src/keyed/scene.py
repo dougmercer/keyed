@@ -443,6 +443,7 @@ class Scene(Transformable, Freezeable):
         Base | None
             The nearest object if found; otherwise, None.
         """
+        from .extras import Editor
 
         try:
             point = shapely.Point(x, y)
@@ -455,14 +456,12 @@ class Scene(Transformable, Freezeable):
                 for obj in objects:
                     logging.debug(f"Checking {obj}")
                     try:
-                        if EXTRAS_INSTALLED:
-                            from .extras import Editor
+                        if isinstance(obj, Editor):
+                            editor_nearest, editor_distance = obj.find(x, y, frame)
+                            if editor_nearest and editor_distance < min_distance:
+                                nearest = editor_nearest
+                                min_distance = editor_distance
 
-                            if isinstance(obj, Editor):
-                                editor_nearest, editor_distance = obj.find(x, y, frame)
-                                if editor_nearest and editor_distance < min_distance:
-                                    nearest = editor_nearest
-                                    min_distance = editor_distance
                         elif isinstance(obj, Selection):
                             check_objects(list(obj))
                         else:
