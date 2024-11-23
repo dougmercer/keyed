@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Literal, Protocol, Self, cast, runtime_checkable
+from typing import Any, Literal, Protocol, Self, runtime_checkable
 
 import cairo
 import shapely
@@ -15,10 +15,6 @@ from .constants import ALWAYS, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
 from .helpers import Freezeable
 from .types import GeometryT
-
-
-class ReactiveGeomMethod(Protocol):
-    def __call__(self, with_transforms: bool = True) -> Computed[float]: ...
 
 
 @runtime_checkable
@@ -88,7 +84,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[0]
 
-    left: ReactiveGeomMethod = reactive_method("_dependencies")(left_now)
+    left = reactive_method("_dependencies")(left_now)
 
     def right_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -105,7 +101,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[2]
 
-    right: ReactiveGeomMethod = reactive_method("_dependencies")(right_now)
+    right = reactive_method("_dependencies")(right_now)
 
     def down_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -122,7 +118,7 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[1]
 
-    down: ReactiveGeomMethod = reactive_method("_dependencies")(down_now)
+    down = reactive_method("_dependencies")(down_now)
 
     def up_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -139,17 +135,17 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[3]
 
-    up: ReactiveGeomMethod = reactive_method("_dependencies")(up_now)
+    up = reactive_method("_dependencies")(up_now)
 
     def width_now(self, with_transforms: bool = True) -> float:
         return self.right_now(with_transforms) - self.left_now(with_transforms)
 
-    width: ReactiveGeomMethod = reactive_method("_dependencies")(width_now)
+    width = reactive_method("_dependencies")(width_now)
 
     def height_now(self, with_transforms: bool = True) -> float:
         return self.up_now(with_transforms) - self.down_now(with_transforms)
 
-    height: ReactiveGeomMethod = reactive_method("_dependencies")(height_now)
+    height = reactive_method("_dependencies")(height_now)
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix

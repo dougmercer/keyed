@@ -21,6 +21,3 @@ class HasAlpha(Protocol):
 
 
 GeometryT = shapely.geometry.base.BaseGeometry
-# | shapely.GeometryCollection
-# | shapely.Polygon
-# | shapely.LineString

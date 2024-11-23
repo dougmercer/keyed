@@ -1,11 +1,11 @@
 """Objects that draw directly from a shapely geometry."""
 
-from typing import Self, Sequence, Callable
+from typing import Self, Sequence
 
 import cairo
 import numpy as np
 import shapely
-from signified import Computed, Signal, as_signal, unref, HasValue, has_value, reactive_method
+from signified import Computed, HasValue, Signal, as_signal, has_value, reactive_method, unref
 
 from .base import Base
 from .color import Color, as_color
@@ -321,7 +321,8 @@ class Polygon(Shape):
         self.controls.matrix.value = self.controls.base_matrix()
 
     @property
-    def raw_points_now(self) -> VecArray:
+    @reactive_method("_dependencies")
+    def raw_points(self) -> VecArray:
         """Get the raw points from the polygon's exterior without any modifications or buffering.
 
         Returns
@@ -334,10 +335,9 @@ class Polygon(Shape):
             return np.empty((0, 2))
         return np.array(list(p.exterior.coords))
 
-    raw_points: Computed[VecArray] = reactive_method("_dependencies")(raw_points_now)
-
     @property
-    def points_now(self) -> VecArray:
+    @reactive_method("_dependencies")
+    def points(self) -> VecArray:
         """Compute and return the points of the polygon's exterior boundary after applying a buffer.
 
         Returns
@@ -348,8 +348,6 @@ class Polygon(Shape):
         buffered = unref(self.polygon).buffer(self.buffer.value)
         assert isinstance(buffered, shapely.Polygon)
         return np.array(list(buffered.exterior.coords))
-
-    points: Callable[..., Computed[VecArray]] = reactive_method("_dependencies")(points_now)
 
     def _draw_shape(self) -> None:
         """Draw the shape at the specified frame.

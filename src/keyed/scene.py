@@ -20,7 +20,6 @@ from tqdm import tqdm
 from .base import is_visible
 from .code import Selection
 from .compositor import BlendMode, composite_layers
-from .constants import EXTRAS_INSTALLED
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
