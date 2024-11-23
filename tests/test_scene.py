@@ -9,7 +9,6 @@ from keyed import Rectangle, Scene, Text, TextSelection
 
 
 def test_text_drawing() -> None:
-
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=100, height=100)
     text = Text(
         scene,

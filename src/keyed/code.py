@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
 import cairo
 import shapely
 import shapely.ops
-from pygments.token import Token as PygmentsToken, _TokenType as Pygments_TokenType
+from pygments.token import Token as PygmentsToken
+from pygments.token import _TokenType as Pygments_TokenType
 from signified import HasValue, ReactiveValue, Signal, Variable, as_signal, unref
 
 from .animation import Animation

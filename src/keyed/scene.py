@@ -23,7 +23,7 @@ from .compositor import BlendMode, composite_layers
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
-from .transformation import TransformControls, Transformable
+from .transformation import Transformable, TransformControls
 
 if TYPE_CHECKING:
     from .base import Base
