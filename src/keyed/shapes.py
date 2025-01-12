@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager
-from typing import Any, Generator, Iterable, Protocol, Self, Sequence
+from typing import Generator, Iterable, Protocol, Self, Sequence
 
 import cairo
 import shapely
@@ -76,7 +76,6 @@ class Shape(Base, Protocol):
     line_width: ReactiveValue[float]
     line_cap: cairo.LineCap
     line_join: cairo.LineJoin
-    _dependencies: list[Any]
     fill_pattern: cairo.Pattern | None
     stroke_pattern: cairo.Pattern | None
 

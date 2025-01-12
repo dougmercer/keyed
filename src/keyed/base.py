@@ -92,7 +92,6 @@ class Base(Transformable, Protocol):
 
     scene: Scene
     lifetime: Lifetime
-    _dependencies: list[Variable]
 
     def __init__(self, scene: Scene) -> None:
         Transformable.__init__(self, scene.frame)
