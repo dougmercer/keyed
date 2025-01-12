@@ -9,7 +9,7 @@ from signified import Computed, HasValue, Signal, as_signal, has_value, reactive
 
 from .base import Base
 from .color import Color, as_color
-from .curve import VecArray, bezier_length, calculate_control_points, de_casteljau
+from .curve import VecArray, as_xy, bezier_length, calculate_control_points, de_casteljau
 from .scene import Scene
 from .shapes import Circle, Shape
 
@@ -87,7 +87,6 @@ class Curve2(Shape):
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.buffer = Signal(buffer)
-        self._dependencies = []
         for item in self.objects:
             self._dependencies.extend(item.dependencies)
         self.raw_points = self._raw_points
@@ -103,7 +102,7 @@ class Curve2(Shape):
         shapely.Polygon
             The polygonal representation of the curve.
         """
-        pts = [obj.geom.centroid.coords[0] for obj in self.objects]
+        pts = [as_xy(obj.geom.centroid) for obj in self.objects]
 
         def f() -> np.ndarray:
             return np.array([pt.value for pt in pts])
@@ -316,7 +315,7 @@ class Polygon(Shape):
         self.buffer = Signal(buffer)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self._dependencies = [self.polygon, self.buffer]
+        self._dependencies.extend([self.polygon, self.buffer])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 

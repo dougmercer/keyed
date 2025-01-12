@@ -329,7 +329,7 @@ class Rectangle(Shape):
         self.round_tr = round_tr
         self.round_br = round_br
         self.round_bl = round_bl
-        self._dependencies = [self._width, self._height, self.radius]
+        self._dependencies.extend([self._width, self._height, self.radius])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -445,7 +445,7 @@ class Rectangle(Shape):
         new_obj.scene = self.scene
         new_obj.ctx = self.scene.get_context()
 
-        new_obj._dependencies = [new_obj.radius, new_obj.x, new_obj.y]
+        new_obj._dependencies.extend([new_obj.radius, new_obj.x, new_obj.y])
         return new_obj
 
 
@@ -513,7 +513,7 @@ class Circle(Shape):
         self.line_width = as_signal(line_width)
         self.line_cap = cairo.LINE_CAP_BUTT
         self.line_join = cairo.LINE_JOIN_MITER
-        self._dependencies = [self.radius, self.x, self.y]
+        self._dependencies.extend([self.radius, self.x, self.y])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -561,5 +561,5 @@ class Circle(Shape):
         new_obj.scene = self.scene
         new_obj.ctx = self.scene.get_context()
 
-        new_obj._dependencies = [new_obj.radius, new_obj.x, new_obj.y]
+        new_obj._dependencies.extend([new_obj.radius, new_obj.x, new_obj.y])
         return new_obj

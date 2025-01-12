@@ -101,7 +101,7 @@ class Text(BaseText):
         self.ctx = scene.get_context()
         self.code = code
         self.operator = operator
-        self._dependencies = [self.size, self.text]
+        self._dependencies.extend([self.size, self.text])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -219,10 +219,6 @@ class Text(BaseText):
         w = extents.width
         h = extents.height
         return shapely.box(x, y, x + w, y + h)
-
-    # @property
-    # def raw_geom(self) -> Computed[shapely.Polygon]:
-    #     return Computed(lambda: self._raw_geom, self._dependencies)
 
     # def __copy__(self) -> Self:
     #     new = type(self)(

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Iterable, Literal, Self, Sequence
 import cairo
 import numpy as np
 import shapely
-from signified import Signal, Variable
+from signified import Signal
 from tqdm import tqdm
 
 from .base import is_visible
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from .extras import FreeHandContext
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
 __all__ = ["Scene"]
@@ -159,7 +159,6 @@ class Scene(Transformable, Freezeable):
         self.antialias = antialias
         self.freehand = freehand
         self.controls = TransformControls(self)
-        self._dependencies: list[Variable] = []
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
         self.layers: list[Layer] = []

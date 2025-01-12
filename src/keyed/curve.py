@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
-from signified import Computed, HasValue, Signal
+from signified import Computed, HasValue, Signal, computed
 
 from .base import Base
 from .color import Color, as_color
@@ -20,6 +20,11 @@ __all__ = ["Curve"]
 
 Vector = npt.NDArray[np.float64]  # Intended to to be of shape (2,)
 VecArray = npt.NDArray[np.float64]  # Intended to to be of shape (n, 2)
+
+
+@computed
+def as_xy(pt: shapely.Point) -> tuple[float, float]:
+    return pt.x, pt.y
 
 
 # Derivative of the cubic Bézier curve
@@ -228,7 +233,6 @@ class Curve(Shape):
         self.tension = Signal(tension)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self._dependencies = []
         for item in self.objects:
             self._dependencies.extend(item.dependencies)
         assert isinstance(self.controls.matrix, Signal)
@@ -248,7 +252,7 @@ class Curve(Shape):
         VecArray
             An array of 2D points representing the centroids of the objects.
         """
-        pts = [obj.geom.centroid.coords[0] for obj in self.objects]
+        pts = [as_xy(obj.geom.centroid) for obj in self.objects]
 
         def f() -> np.ndarray:
             return np.array([pt.value for pt in pts])
@@ -403,10 +407,4 @@ class Curve(Shape):
         )
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"objects={self.objects!r}, "
-            f"dash={self.dash}, "
-            f"operator={self.operator}"
-            ")"
-        )
+        return f"{self.__class__.__name__}(objects={self.objects!r}, dash={self.dash}, operator={self.operator})"

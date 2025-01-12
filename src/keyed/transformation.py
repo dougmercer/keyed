@@ -8,7 +8,7 @@ from typing import Any, Literal, Protocol, Self, runtime_checkable
 import cairo
 import shapely
 import shapely.affinity
-from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, reactive_method, unref
+from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
 
 from .animation import Animation, AnimationType
 from .constants import ALWAYS, ORIGIN, Direction
@@ -31,6 +31,7 @@ class Transformable(Protocol):
         super().__init__()
         self.frame = frame
         self.controls = TransformControls(self)
+        self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
         self._geom_cached: Computed[GeometryT] | None = None
         self._raw_geom_cached: Computed[GeometryT] | None = None
 
@@ -84,8 +85,6 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[0]
 
-    left = reactive_method("_dependencies")(left_now)
-
     def right_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
 
@@ -100,8 +99,6 @@ class Transformable(Protocol):
         """
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[2]
-
-    right = reactive_method("_dependencies")(right_now)
 
     def down_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
@@ -118,8 +115,6 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[1]
 
-    down = reactive_method("_dependencies")(down_now)
-
     def up_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
 
@@ -135,17 +130,11 @@ class Transformable(Protocol):
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[3]
 
-    up = reactive_method("_dependencies")(up_now)
-
     def width_now(self, with_transforms: bool = True) -> float:
         return self.right_now(with_transforms) - self.left_now(with_transforms)
 
-    width = reactive_method("_dependencies")(width_now)
-
     def height_now(self, with_transforms: bool = True) -> float:
         return self.up_now(with_transforms) - self.down_now(with_transforms)
-
-    height = reactive_method("_dependencies")(height_now)
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix
@@ -372,6 +361,38 @@ class Transformable(Protocol):
                 y=y,
             )
         )
+
+    # def left_now(self, with_transforms: bool = True) -> float:
+    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, LEFT)[0]
+
+    # def right_now(self, with_transforms: bool = True) -> float:
+    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, RIGHT)[0]
+
+    # def down_now(self, with_transforms: bool = True) -> float:
+    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, DOWN)[1]
+
+    # def up_now(self, with_transforms: bool = True) -> float:
+    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, UP)[1]
+
+    def down(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.geom if with_transforms else self.raw_geom).bounds[1]
+
+    def up(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.geom if with_transforms else self.raw_geom).bounds[3]
+
+    def left(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.geom if with_transforms else self.raw_geom).bounds[0]
+
+    def right(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.geom if with_transforms else self.raw_geom).bounds[2]
+
+    def width(self, with_transforms: bool = True) -> Computed[float]:
+        bounds = (self.geom if with_transforms else self.raw_geom).bounds
+        return bounds[2] - bounds[0]
+
+    def height(self, with_transforms: bool = True) -> Computed[float]:
+        bounds = (self.geom if with_transforms else self.raw_geom).bounds
+        return bounds[3] - bounds[1]
 
 
 class TransformControls(Freezeable):

@@ -102,7 +102,7 @@ class Line(Base):
         self.draw_fill = False
         self.draw_stroke = True
         # Todo consider how to draw outlined line.
-        self._dependencies = [self.x0, self.x1, self.y0, self.y1]
+        self._dependencies.extend([self.x0, self.x1, self.y0, self.y1])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -223,16 +223,18 @@ class BezierCurve(Base):
         self.draw_fill = False
         self.draw_stroke = True
         # Todo consider how to draw outlined line.
-        self._dependencies = [
-            self.x0,
-            self.y0,
-            self.x1,
-            self.x2,
-            self.y1,
-            self.y2,
-            self.x3,
-            self.y3,
-        ]
+        self._dependencies.extend(
+            [
+                self.x0,
+                self.y0,
+                self.x1,
+                self.x2,
+                self.y1,
+                self.y2,
+                self.x3,
+                self.y3,
+            ]
+        )
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
