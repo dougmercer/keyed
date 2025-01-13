@@ -228,7 +228,10 @@ class Base(Transformable, Protocol):
         new = step(value, frame)(prop, self.frame)
         if isinstance(prop, Variable):
             for p in prop._observers:
-                new.subscribe(p)
+                if isinstance(p, Variable):
+                    p.observe(new)
+                # new.subscribe(p)  # TODO: Using subscribe directly causes color interpolation test to have infinite recursion?
+
         setattr(self, property, new)
 
     def set_literal(self, property: str, value: Any) -> None:
