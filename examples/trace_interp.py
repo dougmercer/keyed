@@ -14,12 +14,11 @@ trace = Curve(
     code.lines[0:4].chars,
     alpha=0.5,
     line_width=50,
-    simplify=None,
     tension=1,
 )
 
 scene.add(trace)
 
-trace.end.add_animation(Animation(0, 24, 0, 1, easing.CubicEaseInOut))
+trace.end = Animation(0, 24, 0, 1, easing.cubic_in_out)(trace.end, scene.frame)
 
 scene.preview()

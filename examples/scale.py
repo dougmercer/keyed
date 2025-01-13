@@ -1,4 +1,4 @@
-from keyed import Animation, AnimationType, Circle, Code, Rectangle, Scene, Selection, tokenize
+from keyed import Circle, Code, Rectangle, Scene, Selection, tokenize
 
 scene = Scene()
 

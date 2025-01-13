@@ -1,9 +1,9 @@
-from keyed import UL, Animation, AnimationType, Code, Scene, easing, lag_animation, tokenize
+from keyed import UL, AnimationType, Code, Scene, lag_animation, tokenize
 from keyed_extras import Editor
 
-scene = Scene(scene_name="code_replace", num_frames=60)
-
-styled_tokens1 = tokenize(r"import this")
+scene = Scene(scene_name="code_replace", num_frames=100)
+content = "import this\n" * 10
+styled_tokens1 = tokenize(content)
 code1 = Code(scene, styled_tokens1, font_size=48)
 
 styled_tokens2 = tokenize(r"import that")
@@ -14,13 +14,12 @@ editor = Editor(
     title="hello_world.py",
     x=100,
     y=100,
-    code=code1,
-    margin=30,
 )
+editor.add(code1)
 
-code2.align_to(code1, from_=code2.chars[0].geom, direction=UL)
+code2.align_to(code1.lines[-1], from_=code2.chars[0].geom, direction=UL)
 
-editor.add_code(code2)
+editor.add(code2)
 
 scene.add(editor)
 
@@ -29,7 +28,7 @@ code1.chars[-1:-5:-1].write_on(
     lagged_animation=lag_animation(start_value=1, end_value=0, animation_type=AnimationType.ABSOLUTE),
     delay=4,
     duration=1,
-    start=0,
+    start=24,
 )
 
 code2.chars[-5:].write_on(
@@ -37,11 +36,12 @@ code2.chars[-5:].write_on(
     lagged_animation=lag_animation(start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE),
     delay=4,
     duration=1,
-    start=24,
+    start=36,
 )
 
-editor.scroll_bar.progress.value = Animation(12, 36, 0, 1.0, ease=easing.cubic_in_out)(
-    editor.scroll_bar.progress.value, scene.frame
-)
+editor.scroll_to(1, 0, 24)
+
+editor.align_to(scene, start=24, lock=48, center_on_zero=True)
+editor.scale(2, 48, 60).rotate(180, 60, 72)
 
 scene.preview()

@@ -14,7 +14,6 @@ t = Curve(
     code.lines[0:4].chars,
     alpha=0.5,
     line_width=50,
-    simplify=True,
     tension=0.7,
 )
 
