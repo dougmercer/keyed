@@ -63,6 +63,6 @@ def test_discretize_correct_transitions() -> None:
     expected = [easing.quad_in(t) for t in test_points]
 
     actual = [discrete_quad_in(t) for t in test_points]
-    assert (
-        pytest.approx(actual, abs=1e-4) == expected
-    ), f"Discrete values do not match expected values: {actual} vs {expected}"
+    assert pytest.approx(actual, abs=1e-4) == expected, (
+        f"Discrete values do not match expected values: {actual} vs {expected}"
+    )

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from helpers import filter_runtime_warning
 from keyed import Direction

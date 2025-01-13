@@ -1,5 +1,6 @@
 import pytest
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given
+from hypothesis import strategies as st
 
 from keyed import Computed, Signal
 

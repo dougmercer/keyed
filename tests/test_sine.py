@@ -1,7 +1,8 @@
 import math
 
 import pytest
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given
+from hypothesis import strategies as st
 
 from keyed import Signal, SinusoidalAnimation
 
@@ -15,7 +16,13 @@ from keyed import Signal, SinusoidalAnimation
 )
 def test_cyclical(start: int, period: int, magnitude: float, center: float, phase: float) -> None:
     frame = Signal(0)
-    a = SinusoidalAnimation(start_frame=start, period=period, magnitude=magnitude, center=center, phase=phase)
+    a = SinusoidalAnimation(
+        start_frame=start,
+        period=period,
+        magnitude=magnitude,
+        center=center,
+        phase=phase,
+    )
     anim = a(None, frame)
 
     tol = 1e-12
@@ -37,7 +44,13 @@ def test_cyclical(start: int, period: int, magnitude: float, center: float, phas
 def test_phase(start: int, period: int, magnitude: float, center: float, phase: float) -> None:
     assume(start + phase <= start + period)
 
-    a = SinusoidalAnimation(start_frame=start, period=period, magnitude=magnitude, center=center, phase=phase)
+    a = SinusoidalAnimation(
+        start_frame=start,
+        period=period,
+        magnitude=magnitude,
+        center=center,
+        phase=phase,
+    )
     b = SinusoidalAnimation(start_frame=start, period=period, magnitude=magnitude, center=center, phase=0)
     a_val = a(None, Signal(start)).value
     b_val = b(None, Signal(start + phase)).value
@@ -81,9 +94,13 @@ def test_magnitude(start: int, period: int, center: float, magnitude: float) -> 
     assume(start + 3 * quarter_period <= start + period)
 
     frame = Signal(0)
-    a = SinusoidalAnimation(start_frame=start, period=period, magnitude=magnitude, center=center, phase=quarter_period)(
-        None, frame
-    )
+    a = SinusoidalAnimation(
+        start_frame=start,
+        period=period,
+        magnitude=magnitude,
+        center=center,
+        phase=quarter_period,
+    )(None, frame)
     tol = 1e-12
     with frame.at(start):
         expected = center + magnitude

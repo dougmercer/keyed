@@ -1,6 +1,6 @@
 name: keyed
 dependencies:
-  - python
+  - python<=3.12
   - pip
   - pip:
     - -e ".[all]"

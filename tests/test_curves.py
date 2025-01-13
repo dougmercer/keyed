@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 import shapely
 from cairo import OPERATOR_CLEAR
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 from helpers import filter_runtime_warning, to_intensity
 from keyed import Circle, Curve, Curve2, Scene
@@ -87,7 +88,11 @@ def test_points_same_display_nothing(CurveMaker: type[Curve] | type[Curve2]) -> 
 
 
 typical_float = st.floats(
-    min_value=10, max_value=20, allow_infinity=False, allow_nan=False, allow_subnormal=False
+    min_value=10,
+    max_value=20,
+    allow_infinity=False,
+    allow_nan=False,
+    allow_subnormal=False,
 )  # Taichi breaks Subnormals
 
 
