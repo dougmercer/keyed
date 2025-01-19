@@ -2,7 +2,7 @@
 
 import warnings
 from functools import partial
-from typing import Self, Sequence
+from typing import Any, Self, Sequence
 
 import cairo
 import numpy as np
@@ -18,8 +18,8 @@ from .shapes import Circle, Shape
 
 __all__ = ["Curve"]
 
-Vector = npt.NDArray[np.float64]  # Intended to to be of shape (2,)
-VecArray = npt.NDArray[np.float64]  # Intended to to be of shape (n, 2)
+Vector = npt.NDArray[np.floating[Any]]  # Intended to to be of shape (2,)
+VecArray = npt.NDArray[np.floating[Any]]  # Intended to to be of shape (n, 2)
 
 
 @computed
@@ -50,7 +50,7 @@ def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) 
     return 3 * (1 - t) ** 2 * (p1 - p0) + 6 * (1 - t) * t * (p2 - p1) + 3 * t**2 * (p3 - p2)
 
 
-def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.float64:
+def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.floating[Any]:
     """Define function to integrate to calculate the arc length of a cubic Bézier curve.
 
     Parameters

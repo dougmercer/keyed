@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import subprocess
 import warnings
 from enum import Enum
@@ -20,6 +19,7 @@ from tqdm import tqdm
 from .base import is_visible
 from .code import Selection
 from .compositor import BlendMode, composite_layers
+from .constants import EXTRAS_INSTALLED
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
@@ -28,10 +28,6 @@ from .transformation import Transformable, TransformControls
 if TYPE_CHECKING:
     from .base import Base
     from .extras import FreeHandContext
-
-
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
 
 __all__ = ["Scene"]
 
@@ -74,10 +70,11 @@ class Layer(Freezeable):
     def add(self, *objects: Base) -> None:
         self.content.extend(objects)
 
-    def apply_effect(self, effect: Effect) -> Self:
-        # TODO - Only enable if extras are installed.
-        self.effects.append(effect)
-        return self
+    if EXTRAS_INSTALLED:
+        def apply_effect(self, effect: Effect) -> Self:
+            # TODO - Only enable if extras are installed.
+            self.effects.append(effect)
+            return self
 
     def rasterize(self, frame: int) -> np.ndarray | cairo.SVGSurface:
         """Be sure to pass frame to have proper caching behavior."""
@@ -452,35 +449,30 @@ class Scene(Transformable, Freezeable):
             def check_objects(objects: Iterable[Base]) -> None:
                 nonlocal nearest, min_distance
                 for obj in objects:
-                    logging.debug(f"Checking {obj}")
-                    try:
-                        if isinstance(obj, Editor):
-                            editor_nearest, editor_distance = obj.find(x, y, frame)
-                            if editor_nearest and editor_distance < min_distance:
-                                nearest = editor_nearest
-                                min_distance = editor_distance
+                    if isinstance(obj, Editor):
+                        editor_nearest, editor_distance = obj.find(x, y, frame)
+                        if editor_nearest and editor_distance < min_distance:
+                            nearest = editor_nearest
+                            min_distance = editor_distance
 
-                        elif isinstance(obj, Selection):
-                            check_objects(list(obj))
-                        else:
-                            if not is_visible(obj):
-                                continue
+                    elif isinstance(obj, Selection):
+                        check_objects(list(obj))
+                    else:
+                        if not is_visible(obj):
+                            continue
 
-                            with warnings.catch_warnings():
-                                warnings.simplefilter("ignore", RuntimeWarning)
-                                distance = point.distance(obj.geom.value)
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore", RuntimeWarning)
+                            distance = point.distance(obj.geom.value)
 
-                            if distance < min_distance:
-                                min_distance = distance
-                                nearest = obj
-                    except Exception as e:
-                        logging.error(f"Error processing object {obj}: {e}")
+                        if distance < min_distance:
+                            min_distance = distance
+                            nearest = obj
 
             for layer in self.layers:
                 check_objects(layer.content)
             return nearest
-        except Exception as e:
-            logging.error(f"Error in Scene.find: {e}")
+        except Exception:
             return None
 
     @freeze

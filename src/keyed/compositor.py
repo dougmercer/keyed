@@ -1,9 +1,12 @@
+import io
+from contextlib import redirect_stdout
 from enum import Enum
 
 import numpy as np
 import taichi as ti
 
-ti.init(arch=ti.gpu)
+with redirect_stdout(io.StringIO()):
+    ti.init(arch=ti.gpu)
 
 
 class BlendMode(Enum):
