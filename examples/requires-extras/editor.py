@@ -1,14 +1,5 @@
-import logging
-import sys
-
 from keyed import Animation, AnimationType, Code, Scene, easing, tokenize
 from keyed_extras import Editor
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
-    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)],
-)
 
 # scene = Scene("editor", num_frames=120)
 scene = Scene("editor", num_frames=120)

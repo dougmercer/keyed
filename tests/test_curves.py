@@ -8,7 +8,7 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from helpers import filter_runtime_warning, to_intensity
-from keyed import Circle, Curve, Curve2, Scene
+from keyed import Circle, Curve, Scene
 
 
 @pytest.fixture
@@ -38,13 +38,6 @@ def trace(scene: Scene, test_points: Sequence[tuple[float, float]]) -> Curve:
     return Curve(scene, objects=objects, color=(1, 0, 0), alpha=1, tension=0.5)
 
 
-@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_curve_points_equal(scene: Scene, CurveMaker: Curve | Curve2, test_points: list[tuple[float, float]]) -> None:
-    points = CurveMaker.from_points(scene, points=test_points).points.value
-    for p, tp in zip(points, test_points):
-        assert np.allclose(p, tp), (p, tp)
-
-
 def test_one_point_is_invalid(scene: Scene) -> None:
     with pytest.raises(ValueError):
         Curve.from_points(scene, points=np.array([[1, 1]]), tension=1)
@@ -54,34 +47,10 @@ def test_two_points_are_valid_points(scene: Scene) -> None:
     Curve.from_points(scene, points=np.array([[1, 1], [2, 2]]), tension=1)
 
 
-# Have a bunch of dumb tests cause numpy still doesn't support size type hints.
-def test_curve_control_points(curve: Curve) -> None:
-    cp1, cp2 = curve.control_points(curve.points.value)
-    assert cp1.shape == (2, 2)
-    assert cp2.shape == (2, 2)
-
-
-def test_trace_control_points(trace: Curve) -> None:
-    cp1, cp2 = trace.control_points(trace.points.value)
-    assert cp1.shape == (2, 2)
-    assert cp2.shape == (2, 2)
-
-
-def test_curve_points(scene: Scene, test_points: list[tuple[float, float]]) -> None:
-    points = Curve.from_points(scene, test_points).points.value
-    assert points.shape == (3, 2)
-
-
-def test_trace_points(trace: Curve) -> None:
-    points = trace.points.value
-    assert points.shape == (3, 2)
-
-
-@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_points_same_display_nothing(CurveMaker: type[Curve] | type[Curve2]) -> None:
+def test_points_same_display_nothing() -> None:
     test_points_same = [(1, 1), (1, 1), (1, 1)]
     scene = Scene(width=10, height=10)
-    c = CurveMaker.from_points(scene, test_points_same)
+    c = Curve.from_points(scene, test_points_same)
     scene.add(c)
     arr = scene.asarray(0)
     assert (arr == 0).all(), arr
@@ -108,12 +77,11 @@ typical_float = st.floats(
     )
 )
 @settings(max_examples=10)
-@pytest.mark.parametrize("CurveMaker", [Curve, Curve2])
-def test_curve_contains_pts(pts: list[tuple[float, float]], CurveMaker: type[Curve] | type[Curve2]) -> None:
+def test_curve_contains_pts(pts: list[tuple[float, float]]) -> None:
     assume((np.ptp(np.array(pts), axis=0) > 5).any())
     scene_size = 30
     scene = Scene(width=scene_size, height=scene_size, num_frames=1)
-    curve = CurveMaker.from_points(scene, pts, line_width=3)
+    curve = Curve.from_points(scene, pts, line_width=3)
     scene.add(curve)
     total_intensity = to_intensity(scene.asarray(0)).sum()
     for pt in pts:
@@ -127,13 +95,3 @@ def test_curve_contains_pts(pts: list[tuple[float, float]], CurveMaker: type[Cur
         scene.add(curve, circle)
         intensity = to_intensity(scene.asarray(0)).sum()
         assert total_intensity > intensity, "Curve is not visibly near input point {total_intensity} {intensity}"
-
-
-# @pytest.mark.parametrize("t", [0, 0.5, 1])
-# def test_curve_draw_shape(curve, t):
-#     curve.t.set_value_at_frame(t, 0)
-#     curve._draw_shape(0)
-
-# def test_trace_draw_shape(trace):
-#     trace.t.set_value_at_frame(0.5, 0)
-#     trace._draw_shape(0)  # This should not raise an error

@@ -1,6 +1,6 @@
 from keyed import Animation, Code, Curve, Scene, TextSelection, easing, tokenize
 
-with open("examples/example.py", "r") as f:
+with open("examples/_example.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 
@@ -13,6 +13,6 @@ curve = Curve(scene, s, alpha=0.5, line_width=50, tension=0.5)
 scene.add(code)
 scene.add(curve)
 
-curve.end = Animation(0, 24, 0, 1, easing.cubic_in_out)(curve.end, scene.frame)
+curve.end.value = Animation(0, 24, 0, 1, easing.cubic_in_out)(curve.end, scene.frame)
 
 scene.preview()

@@ -1,6 +1,6 @@
 from keyed import Code, Scene, lag_animation, tokenize
 
-with open("examples/example.py", "r") as f:
+with open("examples/_example.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 

@@ -2,7 +2,7 @@ import cairo
 
 from keyed import Code, Scene, tokenize
 
-with open("examples/example.py", "r") as f:
+with open("examples/_example.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 
@@ -22,6 +22,5 @@ scene.add(r)
 
 # emphs = [c.emphasize() for c in code.chars]
 # scene.add(*emphs)
-
 
 scene.preview()

@@ -2,7 +2,7 @@ import numpy as np
 
 from keyed import Circle, Code, Curve, Scene, TextSelection, tokenize
 
-with open("examples/example.py", "r") as f:
+with open("examples/_example.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 

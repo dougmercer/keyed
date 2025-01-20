@@ -14,11 +14,8 @@ polygon_with_hole = shapely.Polygon(exterior).difference(shapely.Polygon(hole))
 
 s = Scene()
 
-p = Polygon(s, polygon_with_hole, fill_color=(0, 0.8, 0.2), color=(0.5, 0.1, 0), line_width=10)
-p.scale(4, 0, 6)
-p.translate(100, 0, -1, -1)
-p.translate(0, 50, 12, 18)
-p.rotate(90, 24, 30)
+p = Polygon(s, polygon_with_hole, fill_color=(0, 0.8, 0.2), color=(0.5, 0.1, 0), line_width=10).center()
+(p.scale(4, 0, 6).translate(100, 0, -1, -1).translate(0, 50, 12, 18).rotate(90, 24, 30).rotate(-180, 36, 48))
 
 s.add(p)
 s.preview()
