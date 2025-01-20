@@ -71,6 +71,7 @@ class Layer(Freezeable):
         self.content.extend(objects)
 
     if EXTRAS_INSTALLED:
+
         def apply_effect(self, effect: Effect) -> Self:
             # TODO - Only enable if extras are installed.
             self.effects.append(effect)

@@ -1,6 +1,5 @@
 """Draw lines and curves."""
 
-import warnings
 from functools import partial
 from typing import Any, Self, Sequence
 
@@ -9,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
-from signified import Computed, HasValue, Signal, computed
+from signified import Signal, computed
 
 from .base import Base
 from .color import Color, as_color
@@ -182,8 +181,10 @@ class Curve(Shape):
         The scene to which the curve belongs.
     objects : Sequence[Base]
         The objects through which the curve will pass.
-    color : tuple[float, float, float], optional
+    color : tuple[float, float, float] or Color, optional
         The color of the curve in RGB format. Default is (1, 1, 1).
+    fill_color : tuple[float, float, float] or Color, optional
+        The color of the curve's fill in RGB format. Default is (1, 1, 1).
     alpha : float, optional
         The transparency of the curve. Default is 1.
     dash : tuple[Sequence[float], float] | None, optional
@@ -208,203 +209,177 @@ class Curve(Shape):
         scene: Scene,
         objects: Sequence[Base],
         color: tuple[float, float, float] | Color = (1, 1, 1),
+        fill_color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         tension: float = 1,
+        buffer: float = 30,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
     ):
         super().__init__(scene)
-        self.start = Signal(0)
-        self.end = Signal(1)
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
+
         self.scene = scene
         self.ctx = scene.get_context()
-        self.objects = objects  # [copy(obj) for obj in objects]
+        self.objects = objects
         self.color = as_color(color)
-        self.fill_color: HasValue[Color] = Color(1, 1, 1)
+        self.fill_color = as_color(fill_color)
         self.alpha = Signal(alpha)
         self.dash = dash
         self.operator = operator
-        self.draw_fill = False
-        self.draw_stroke = True
+        self.draw_fill = draw_fill
+        self.draw_stroke = draw_stroke
         self.line_width = Signal(line_width)
         self.tension = Signal(tension)
+        self.buffer = Signal(buffer)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
+        self.start = Signal(0.0)
+        self.end = Signal(1.0)
+
+        # Add dependencies from child objects
         for item in self.objects:
             self._dependencies.extend(item.dependencies)
+
+        # Initialize transform controls
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
-    @property
-    def points(self) -> Computed[VecArray]:
-        """Get the array of points representing the centroids of the objects at a given frame.
+    def _calculate_points(self) -> np.ndarray:
+        """Calculate the points through which the curve will pass."""
+        return np.array([obj.geom_now.centroid.coords[0] for obj in self.objects])
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number at which to compute the centroids. Default is 0.
+    def _get_partial_curve_points(self, points: np.ndarray) -> np.ndarray:
+        """Get points for a partial curve based on start and end parameters."""
+        if len(points) < 2:
+            return points
 
-        Returns
-        -------
-        VecArray
-            An array of 2D points representing the centroids of the objects.
-        """
-        pts = [as_xy(obj.geom.centroid) for obj in self.objects]
+        cp1, cp2 = calculate_control_points(self.tension.value, points)
 
-        def f() -> np.ndarray:
-            return np.array([pt.value for pt in pts])
+        # Calculate segment lengths for parameterization
+        segment_lengths = np.array([bezier_length(*b) for b in zip(points[:-1], cp1, cp2, points[1:])])
+        total_length = np.sum(segment_lengths)
+        cumulative_lengths = np.hstack([0, np.cumsum(segment_lengths)])
 
-        return Computed(f, pts)
+        # Find segments containing start and end points
+        start_length = self.start.value * total_length
+        end_length = self.end.value * total_length
 
-    def control_points(self, points: VecArray) -> tuple[Vector, Vector]:
-        """Calculate the bezier control points at a specific frame.
+        start_idx = np.searchsorted(cumulative_lengths, start_length, "right") - 1
+        end_idx = np.searchsorted(cumulative_lengths, end_length, "right") - 1
 
-        Parameters
-        ----------
-        points : VecArray
-            An array of points through which the curve will pass.
+        # Calculate parametric positions within segments
+        if start_idx < len(segment_lengths):
+            start_t = (start_length - cumulative_lengths[start_idx]) / segment_lengths[start_idx]
+        else:
+            start_t = 1.0
 
-        Returns
-        -------
-        tuple[Vector, Vector]
-            Control points for the bezier segments.
-        """
-        return calculate_control_points(self.tension.value, points)
+        if end_idx < len(segment_lengths):
+            end_t = (end_length - cumulative_lengths[end_idx]) / segment_lengths[end_idx]
+        else:
+            end_t = 1.0
 
-    @property
-    def raw_geom_now(self) -> shapely.LineString:
-        """Geometry of points at the given frame, before any transformations.
+        # Get partial curve points using de Casteljau's algorithm
+        result_points = []
 
-        Returns
-        -------
-        shapely.LineString
-            A LineString object representing the curve.
-        """
-        return shapely.LineString([p for p in self.points.value])
+        # Add start point
+        if start_idx < len(points) - 1:
+            p0, p1, p2, p3 = points[start_idx], cp1[start_idx], cp2[start_idx], points[start_idx + 1]
+            p0_new, _, _, _ = de_casteljau(start_t, p0, p1, p2, p3, reverse=True)
+            result_points.append(p0_new)
+
+        # Add intermediate points
+        result_points.extend(points[start_idx + 1 : end_idx + 1])
+
+        # Add end point
+        if end_idx < len(points) - 1:
+            p0, p1, p2, p3 = points[end_idx], cp1[end_idx], cp2[end_idx], points[end_idx + 1]
+            _, _, _, p3_new = de_casteljau(end_t, p0, p1, p2, p3)
+            result_points.append(p3_new)
+
+        return np.array(result_points)
+
+    def _create_curve_path(self, points: np.ndarray) -> None:
+        """Create the curve path using bezier splines."""
+        if len(points) < 2:
+            return
+
+        # Calculate control points
+        cp1, cp2 = calculate_control_points(self.tension.value, points)
+
+        # Draw the curve
+        self.ctx.move_to(*points[0])
+        for i in range(len(points) - 1):
+            self.ctx.curve_to(cp1[i][0], cp1[i][1], cp2[i][0], cp2[i][1], points[i + 1][0], points[i + 1][1])
 
     def _draw_shape(self) -> None:
-        """Draw the curve at the specified frame.
+        """Draw both the fill and stroke of the curve."""
+        # Get full points and calculate partial curve points
+        full_points = self._calculate_points()
+        points = self._get_partial_curve_points(full_points)
 
-        Raises
-        ------
-        ValueError
-            If the start or end parameter values are not between 0 and 1.
-        """
-        start = self.start.value
-        end = self.end.value
-        pts = self.points.value
-
-        with self.frame.at(self.frame.value + 1):
-            start_next = self.start.value
-            end_next = self.end.value
-
-        if (start == end) and start_next == end_next:
+        if len(points) < 2:
             return
-        if tuple(np.ptp(pts, axis=0)) == (0, 0):
-            return
-        if start < 0 or start > 1:
-            raise ValueError("Parameter start must be between 0 and 1.")
-        if end < 0 or end > 1:
-            raise ValueError("Parameter end must be between 0 and 1.")
 
-        cp1, cp2 = self.control_points(pts)
+        # Create the buffered geometry
+        stroke_line = shapely.LineString(points)
 
-        # Compute lengths of each segment and their cumulative sum
-        segment_lengths = np.array([bezier_length(*b) for b in zip(pts, cp1, cp2, pts[1:])])
-        total_length = np.sum(segment_lengths)
-        cumulative_lengths = np.cumsum(segment_lengths)
+        buffer_geom = stroke_line.buffer(self.buffer.value)
+        coords = list(buffer_geom.exterior.coords)
+        self.ctx.move_to(*coords[0])
+        for coord in coords[1:]:
+            self.ctx.line_to(*coord)
+        self.ctx.close_path()
 
-        # Find the segment where the parameter start falls
-        target_length = start * total_length
-        start_idx = np.searchsorted(cumulative_lengths, target_length)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            if start_idx == 0:
-                start_seg = target_length / segment_lengths[0]
-            else:
-                segment_progress = target_length - cumulative_lengths[start_idx - 1]
-                start_seg = segment_progress / segment_lengths[start_idx]
+    @property
+    def raw_geom_now(self) -> shapely.Polygon:
+        """Return the geometry before any transformations."""
+        full_points = self._calculate_points()
+        points = self._get_partial_curve_points(full_points)
 
-        # Find the segment where the parameter end falls
-        target_length = end * total_length
-        end_idx = np.searchsorted(cumulative_lengths, target_length)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            if end_idx == 0:
-                end_seg = target_length / segment_lengths[0]
-            elif end_idx < len(segment_lengths):
-                segment_progress = target_length - cumulative_lengths[end_idx - 1]
-                end_seg = segment_progress / segment_lengths[end_idx]
+        if len(points) < 2:
+            return shapely.Polygon()
 
-        # Determine the first point, based on start_seg
-        p0, p1, p2, p3 = pts[start_idx], cp1[start_idx], cp2[start_idx], pts[start_idx + 1]
-        p0_new, cp1[start_idx], cp2[start_idx], p3_new = de_casteljau(start_seg, p0, p1, p2, p3, reverse=True)
-
-        # Move to the first point
-        self.ctx.move_to(*p0_new)
-
-        # Draw full segments up to the end_idx
-        for i in range(start_idx, end_idx):
-            self.ctx.curve_to(*cp1[i], *cp2[i], *pts[i + 1])
-
-        # Draw the partial segment up to t_seg
-        if end_idx < len(pts) - 1:
-            p0, p1, p2, p3 = pts[end_idx], cp1[end_idx], cp2[end_idx], pts[end_idx + 1]
-            _, p1_new, p2_new, p3_new = de_casteljau(end_seg, p0, p1, p2, p3)
-            self.ctx.curve_to(*p1_new, *p2_new, *p3_new)
+        # Create a line from the points and buffer it
+        line = shapely.LineString(points)
+        return line.buffer(self.buffer.value)
 
     @classmethod
     def from_points(
         cls,
         scene: Scene,
-        points: Sequence[tuple[float, float]] | VecArray,
+        points: Sequence[tuple[float, float]] | np.ndarray,
         color: tuple[float, float, float] | Color = (1, 1, 1),
+        fill_color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         line_width: float = 1,
         tension: float = 1,
+        buffer: float = 30,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
     ) -> Self:
-        """Create a Curve object directly from a list of points.
-
-        Parameters
-        ----------
-        scene : Scene
-            The scene in which the curve will be drawn.
-        points : Sequence[tuple[float, float]] | VecArray
-            A sequence of 2D points through which the curve should pass.
-        color : tuple[float, float, float], optional
-            The color of the curve in RGB format. Default is (1, 1, 1).
-        alpha : float, optional
-            The transparency of the curve. Default is 1.
-        dash : tuple[Sequence[float], float] | None, optional
-            Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
-        operator : cairo.Operator, optional
-            The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-        line_width : float, optional
-            The width of the curve line. Default is 1.
-        tension : float, optional
-            The tension factor used in calculating control points for the curve. Default is 1.
-
-        Returns
-        -------
-        Self
-            An instance of the Curve class.
-        """
+        """Create a Curve object directly from a sequence of points."""
         objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
         return cls(
             scene=scene,
             objects=objects,
             color=color,
+            fill_color=fill_color,
             alpha=alpha,
             dash=dash,
             operator=operator,
             line_width=line_width,
             tension=tension,
+            buffer=buffer,
+            draw_fill=draw_fill,
+            draw_stroke=draw_stroke,
         )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(objects={self.objects!r}, dash={self.dash}, operator={self.operator})"
+        return f"{self.__class__.__name__}(...)"
