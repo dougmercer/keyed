@@ -2,6 +2,63 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "keyed"
+description = "A reactive animation library."
+version = "0.0.1"
+readme = "README.md"
+authors = [
+    {name = "Doug Mercer", email = "dougmerceryt@gmail.com"}
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pillow",
+    "pycairo",
+    "pydantic",
+    "pygments",
+    "scipy",
+    "shapely",
+    "signified",
+    "taichi",
+    "tqdm",
+    "pyside6",
+]
+
+[project.optional-dependencies]
+lint = [
+    "ruff",
+    "pyright",
+]
+test = [
+    "hypothesis",
+    "pytest",
+    "pytest-cov",
+    "syrupy",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "mkdocs-material-extensions",
+]
+all = ["keyed[lint,test,docs]"]
+
+[tool.setuptools.package-data]
+keyed = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --cov=src --cov-report=xml --junitxml=junit/test-results.xml --durations=10"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests", "src"]
+markers = {snapshot = "marks tests as snapshot (deselect with '-m \"not snapshot\"')"}
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "pass"
+]
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
