@@ -120,12 +120,22 @@ nav:
   - Home: index.md
   - Installation: install.md
   - Tutorial:
-    - First Scene: first_scene.md
-    - Animation: animation.md
-    - Easing: easing.md
-    - Reactive Values: reactive_values.md
-    - Previewer: previewer.md
-  - API Reference: api.md
+    - First Scene: tutorial/first_scene.md
+    - Animation: tutorial/animation.md
+    - Easing: tutorial/easing.md
+    - Reactive Values: tutorial/reactive_values.md
+    - Previewer: tutorial/previewer.md
+  - API Reference:
+    - Animation: api/animation.md
+    - Easing: api/easing.md
+    - Transformations: api/transforms.md
+    - Scene: api/scene.md
+    - Shapes, Lines, and Curves: api/shapes.md
+    - Text: api/code.md
+    - Colors: api/colors.md
+    - Effects: api/effects.md
+    - Utilities: api/utils.md
+    - Implementation Details: api/impl.md
   - Examples: examples.md
   - Gotchyas: gotchyas.md
 
@@ -135,4 +145,6 @@ plugins:
       handlers:
         python:
           paths: [src]
+          import:
+          - https://dougmercer.github.io/signified/objects.inv
   - autorefs

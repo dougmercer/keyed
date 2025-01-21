@@ -65,7 +65,7 @@ Here we create and animate the most interesting thing the animation - a [Circle]
 
 - `.center()` - Centers the circle in the scene
 - First `.translate()` - Moves the ball down by 300 pixels with a bouncy easing
-- `.scale()` - Doubles the size of the ball, scaling from the bottom ([DOWN](keyed.constants.DOWN))
+- `.scale()` - Doubles the size of the ball, scaling from the bottom [DOWN][keyed.constants.DOWN]
 - Second `.translate()` - Moves the ball up with a snappy elastic easing
 
 Notice how we specify start and end frames for each animation. The ball will:
