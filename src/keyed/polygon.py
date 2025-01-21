@@ -18,35 +18,22 @@ __all__ = ["Polygon"]
 class Polygon(Shape):
     """Represents a polygonal shape drawn directly from a Shapely geometry object.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene in which the polygon is drawn.
-    polygon : shapely.Polygon
-        The Shapely polygon object that defines the shape.
-    color : tuple[float, float, float], optional
-        The RGB color of the polygon's outline. Default is (1, 1, 1).
-    fill_color : tuple[float, float, float], optional
-        The RGB color of the polygon's fill. Default is (1, 1, 1).
-    alpha : float, optional
-        The opacity of the polygon. Default is 1.
-    dash : tuple[Sequence[float], float] | None, optional
-        The dash pattern for the polygon's outline. Default is None.
-    operator : cairo.Operator, optional
-        The compositing operator to use for drawing the polygon. Default is cairo.OPERATOR_OVER.
-    line_width : float, optional
-        The thickness of the polygon's outline. Default is 1.
-    buffer : float, optional
-        The buffer distance to apply around the polygon. Default is 0.
+    Args:
+        scene: The scene in which the polygon is drawn.
+        polygon: The Shapely polygon object that defines the shape.
+        color: The RGB color of the polygon's outline. Default is (1, 1, 1).
+        fill_color: The RGB color of the polygon's fill. Default is (1, 1, 1).
+        alpha: The opacity of the polygon. Default is 1.
+        dash: The dash pattern for the polygon's outline. Default is None.
+        operator: The compositing operator to use for drawing the polygon. Default is cairo.OPERATOR_OVER.
+        line_width: The thickness of the polygon's outline. Default is 1.
+        buffer: The buffer distance to apply around the polygon. Default is 0.
 
-    Raises
-    ------
-    NotImplementedError
-        If a non-polygonal Shapely geometry is provided.
+    Raises:
+        NotImplementedError: If a non-polygonal Shapely geometry is provided.
 
-    Todo
-    ----
-    This object needs a lot more generalization to robustly handle arbitrary shapely geometries.
+    Todo:
+        This object needs a lot more generalization to robustly handle arbitrary shapely geometries.
     """
 
     def __init__(
@@ -87,9 +74,7 @@ class Polygon(Shape):
     def raw_points(self) -> VecArray:
         """Get the raw points from the polygon's exterior without any modifications or buffering.
 
-        Returns
-        -------
-        VecArray
+        Returns:
             An array of 2D points directly extracted from the polygon's exterior.
         """
         p = unref(self.polygon)
@@ -102,9 +87,7 @@ class Polygon(Shape):
     def points(self) -> VecArray:
         """Compute and return the points of the polygon's exterior boundary after applying a buffer.
 
-        Returns
-        -------
-        VecArray
+        Returns:
             An array of 2D points representing the buffered exterior of the polygon.
         """
         buffered = unref(self.polygon).buffer(self.buffer.value)
@@ -114,10 +97,8 @@ class Polygon(Shape):
     def _draw_shape(self) -> None:
         """Draw the shape at the specified frame.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame at which to draw the polygon. Default is 0.
+        Args:
+            frame: The frame at which to draw the polygon. Default is 0.
         """
         ctx = self.ctx
         polygon = self.raw_geom.value
@@ -148,14 +129,7 @@ class Polygon(Shape):
     def raw_geom_now(self) -> shapely.Polygon:
         """Return the geometry before any transformations.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number for which to compute the geometry. Default is 0.
-
-        Returns
-        -------
-        shapely.Polygon
+        Returns:
             The polygonal representation of the curve.
         """
         return unref(self.polygon)

@@ -33,39 +33,24 @@ class Text(BaseText):
     For code objects, this will be a single character, as this allows each character
     to be individually animated.
 
-    Parameters
-    ----------
-    scene: Scene
-        The scene in which the text is displayed.
-    text: str
-        The content of the text object.
-    size: int, optional
-        The font size of the text. Default is 24.
-    x: float, optional
-        The x-coordinate for the position of the text. Default is 10.
-    y: float, optional
-        The y-coordinate for the position of the text. Default is 10.
-    font: str, optional
-        The font family of the text. Default is "Anonymous Pro".
-    color: tuple[float, float, float], optional
-        The color of the text in RGB format. Default is (1, 1, 1).
-    token_type: pygments.token.TokenType | None, optional
-        The token type from Pygments, if applicable.
-    alpha: float, optional
-        The opacity level of the text. Default is 1.
-    slant: cairo.FontSlant, optional
-        The font slant. Default is :data:`cairo.FONT_SLANT_NORMAL`.
-    weight: cairo.FontWeight, optional
-        The font weight. Default is :data:`cairo.FONT_WEIGHT_NORMAL`.
-    code: Code | None, optional
-        Reference to the parent :class:`keyed.code.Code` object, if part of a code block.
-    operator: cairo.Operator, optional
-        The compositing operator used to render the text. Default is :data:`cairo.OPERATOR_OVER`.
+    Args:
+        scene: The scene in which the text is displayed.
+        text: The content of the text object.
+        size: The font size of the text. Default is 24.
+        x: The x-coordinate for the position of the text. Default is 10.
+        y: The y-coordinate for the position of the text. Default is 10.
+        font: The font family of the text. Default is "Anonymous Pro".
+        color: The color of the text in RGB format. Default is (1, 1, 1).
+        token_type: The token type from Pygments, if applicable.
+        alpha: The opacity level of the text. Default is 1.
+        slant: The font slant. Default is :data:`cairo.FONT_SLANT_NORMAL`.
+        weight: The font weight. Default is :data:`cairo.FONT_WEIGHT_NORMAL`.
+        code: Reference to the parent :class:`keyed.code.Code` object, if part of a code block.
+        operator: The compositing operator used to render the text. Default is :data:`cairo.OPERATOR_OVER`.
 
-    TODO
-    ----
-        * The code object is provided to support reverse the nearest-character lookup in
-          the Preview window. It would be nice if this were not necessary.
+    TODO:
+        The code object is provided to support reverse the nearest-character lookup in
+        the Preview window. It would be nice if this were not necessary.
     """
 
     def __init__(
@@ -122,10 +107,8 @@ class Text(BaseText):
     def style(self) -> Generator[None, None, None]:
         """Create a context manager that sets the text style within a specified frame.
 
-        Yields
-        ------
-        None
-            No value is yielded, but style settings are applied and then cleaned up.
+        Yields:
+            None: No value is yielded, but style settings are applied and then cleaned up.
         """
         try:
             self.ctx.save()
@@ -138,13 +121,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self) -> None:
-        """Draw the text object at a specific frame.
-
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number at which to draw the text. Default is 0.
-        """
+        """Draw the text object at a specific frame."""
         with self.style():
             self.ctx.new_path()
             self.ctx.transform(self.controls.matrix.value)
@@ -154,9 +131,7 @@ class Text(BaseText):
     def extents(self) -> cairo.TextExtents:
         """Calculate the text dimensions (extents) at the current frame.
 
-        Returns
-        -------
-        cairo.TextExtents
+        Returns:
             The calculated text extents.
         """
 
@@ -166,9 +141,7 @@ class Text(BaseText):
     def is_whitespace(self) -> bool:
         """Determine if the text object consists only of whitespace.
 
-        Returns
-        -------
-        bool
+        Returns:
             True if the text is whitespace, False otherwise.
         """
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
@@ -178,12 +151,9 @@ class Text(BaseText):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to a property of the Text object.
 
-        Parameters
-        ----------
-        property : str
-            The property to animate.
-        animation : Animation
-            The animation to apply.
+        Args:
+            property: The property to animate.
+            animation: The animation to apply.
         """
         parent: TransformControls | Text
         if property in self.controls.animatable_properties:
@@ -203,13 +173,10 @@ class Text(BaseText):
     def raw_geom_now(self) -> shapely.Polygon:
         """Calculate the geometry before any transformations.
 
-        Note
-        ----
-        This may still vary over time. For example, the font size can be animated.
+        Note:
+            This may still vary over time. For example, the font size can be animated.
 
-        Returns
-        -------
-        shapely.Polygon
+        Returns:
             The geometric representation of the text.
         """
 
@@ -241,16 +208,11 @@ class Text(BaseText):
     def max_containing_font_size(self, max_width: float, max_height: float) -> float:
         """Determine the maximum font size that fits within given dimensions.
 
-        Parameters
-        ----------
-        max_width : float
-            Maximum width available for the text.
-        max_height : float
-            Maximum height available for the text.
+        Args:
+            max_width: Maximum width available for the text.
+            max_height: Maximum height available for the text.
 
-        Returns
-        -------
-        float
+        Returns:
             The maximum font size that fits within the specified dimensions.
         """
         self.ctx.select_font_face(self.font, self.slant, self.weight)
@@ -297,23 +259,15 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
     ) -> None:
         """Sequentially animates a property across all objects in the selection.
 
-        Parameters
-        ----------
-        property : str
-            The property to animate.
-        lagged_animation : Callable
-            The animation function to apply, which should create an Animation.
-            See :func:`keyed.animations.lag_animation`.
-        start : int
-            The frame at which the first animation should start.
-        delay : int
-            The delay in frames before starting the next object's animation.
-        duration : int
-            The duration of each object's animation in frames.
-        skip_whitespace : bool, optional
-            Whether to skip whitespace characters. Default is True.
+        Args:
+            property: The property to animate.
+            lagged_animation: The animation function to apply, which should create an Animation.
+                See :func:`keyed.animations.lag_animation`.
+            start: The frame at which the first animation should start.
+            delay: The delay in frames before starting the next object's animation.
+            duration: The duration of each object's animation in frames.
+            skip_whitespace: Whether to skip whitespace characters. Default is True.
         """
-        # filter(lambda item: item.is_whitespace())
         frame = start
         for item in self:
             if skip_whitespace and item.is_whitespace():
@@ -325,9 +279,7 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
     def is_whitespace(self) -> bool:
         """Determine if all objects in the selection are whitespace.
 
-        Returns
-        -------
-        bool
+        Returns:
             True if all objects are whitespace, False otherwise.
         """
         return all(obj.is_whitespace() for obj in self)
@@ -342,9 +294,7 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
     def filter_whitespace(self) -> TextSelection:
         """Filter out all objects that are whitespace from the selection.
 
-        Returns
-        -------
-        TextSelection
+        Returns:
             A new TextSelection containing only non-whitespace objects.
         """
         return TextSelection(obj for obj in self if not obj.is_whitespace())
@@ -360,26 +310,16 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
 class Token(TextSelection[Text]):
     """Represents a syntactic token as part of code, typically consisting of multiple characters.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene in which the token is displayed.
-    token : StyledToken
-        The style and content information for the token.
-    x : float
-        The initial x-coordinate for the position of the token.
-    y : float
-        The initial y-coordinate for the position of the token.
-    font : str, optional
-        The font family used for the token text. Default is "Anonymous Pro".
-    font_size : int, optional
-        The font size used for the token text. Default is 24.
-    alpha : float, optional
-        The opacity level of the token text. Default is 1.
-    code : Code | None, optional
-        Reference to the parent Code object, if part of a code block.
-    operator : cairo.Operator, optional
-        The compositing operator used to render the token. Default is :data:`cairo.OPERATOR_OVER`.
+    Args:
+        scene: The scene in which the token is displayed.
+        token: The style and content information for the token.
+        x: The initial x-coordinate for the position of the token.
+        y: The initial y-coordinate for the position of the token.
+        font: The font family used for the token text. Default is "Anonymous Pro".
+        font_size: The font size used for the token text. Default is 24.
+        alpha: The opacity level of the token text. Default is 1.
+        code: Reference to the parent Code object, if part of a code block.
+        operator: The compositing operator used to render the token. Default is :data:`cairo.OPERATOR_OVER`.
     """
 
     def __init__(
@@ -419,14 +359,7 @@ class Token(TextSelection[Text]):
     def extents(self) -> cairo.TextExtents:
         """Calculate the combined text extents of all characters in the token at a specified frame.
 
-        Parameters
-        ----------
-        frame : int
-            The frame at which to calculate the extents.
-
-        Returns
-        -------
-        cairo.TextExtents
+        Returns:
             The calculated text extents for the token.
         """
         _extents = [char.extents for char in self]
@@ -461,26 +394,16 @@ class Token(TextSelection[Text]):
 class Line(TextSelection[Token]):
     """A line of code, consisting of tokens.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene in which the line is displayed.
-    tokens : list[StyledToken]
-        A list of styled tokens that make up the line.
-    x : float
-        The x-coordinate for the position of the line.
-    y : float
-        The y-coordinate for the position of the line.
-    font : str, optional
-        The font family used for the line text. Default is "Anonymous Pro".
-    font_size : int, optional
-        The font size used for the line text. Default is 24.
-    alpha : float, optional
-        The opacity level of the line text. Default is 1.
-    code : Code | None, optional
-        Reference to the parent Code object, if part of a code block.
-    operator : cairo.Operator, optional
-        The compositing operator used to render the line. Default is :data:`cairo.OPERATOR_OVER`.
+    Args:
+        scene: The scene in which the line is displayed.
+        tokens: A list of styled tokens that make up the line.
+        x: The x-coordinate for the position of the line.
+        y: The y-coordinate for the position of the line.
+        font: The font family used for the line text. Default is "Anonymous Pro".
+        font_size: The font size used for the line text. Default is 24.
+        alpha: The opacity level of the line text. Default is 1.
+        code: Reference to the parent Code object, if part of a code block.
+        operator: The compositing operator used to render the line. Default is :data:`cairo.OPERATOR_OVER`.
     """
 
     def __init__(
@@ -533,29 +456,19 @@ class Line(TextSelection[Token]):
 class Code(TextSelection[Line]):
     """A code block.
 
-    Parameters
-    ----------
-    scene: Scene
-        The scene in which the code is displayed.
-    tokens: list[StyledToken]
-        A list of styled tokens that make up the code. See :data:`keyed.highlight.tokenize`.
-    font: str, optional
-        The font family used for the code text. Default is "Anonymous Pro".
-    font_size: int, optional
-        The font size used for the code text. Default is 24.
-    x: float, optional
-        The x-coordinate for the position of the code. Default is 10.
-    y: float, optional
-        The y-coordinate for the position of the code. Default is 10.
-    alpha: float, optional
-        The opacity level of the code text. Default is 1.
-    operator: cairo.Operator, optional
-        The compositing operator used to render the code. Default is :data:`cairo.OPERATOR_OVER`.
-    _ascent_correction: bool, optional
-        Whether to adjust the y-position based on the font's ascent. Default is True.
+    Args:
+        scene: The scene in which the code is displayed.
+        tokens: A list of styled tokens that make up the code. See :data:`keyed.highlight.tokenize`.
+        font: The font family used for the code text. Default is "Anonymous Pro".
+        font_size: The font size used for the code text. Default is 24.
+        x: The x-coordinate for the position of the code. Default is 10.
+        y: The y-coordinate for the position of the code. Default is 10.
+        alpha: The opacity level of the code text. Default is 1.
+        operator: The compositing operator used to render the code. Default is :data:`cairo.OPERATOR_OVER`.
+        _ascent_correction: Whether to adjust the y-position based on the font's ascent. Default is True.
 
-    TODO
-    ----
+    TODO:
+
         * Consider making this object a proper, slicable list-like thing (i.e., replace
           __init__ with a classmethod)
         * Consider removing _ascent_correction.
@@ -615,13 +528,8 @@ class Code(TextSelection[Line]):
     def set_default_font(self, ctx: cairo.Context) -> None:
         """Set the font/size.
 
-        Parameters
-        ----------
-        ctx: cairo.Context
-
-        Returns
-        -------
-        None
+        Args:
+            ctx: cairo.Context
         """
         ctx.select_font_face(self.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         ctx.set_font_size(self.font_size)

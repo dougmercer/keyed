@@ -51,25 +51,16 @@ class Animation(Generic[T]):
     ``end_frame``. The animation will remain active (i.e., the parameter will
     not suddenly jump back to it's pre-animation state), but will cease varying.
 
-    Parameters
-    ----------
-    start_frame
-        Frame at which the animation will become active.
-    end_frame
-        Frame at which the animation will stop varying.
-    start_value
-        Value at which the animation will start.
-    end_value
-        Value at which the animation will end.
-    ease
-        The rate in which the value will change throughout the animation.
-    animation_type
-        How the animation value will affect the ::class::``Property``'s value.
+    Args:
+        start: Frame at which the animation will become active.
+        end: Frame at which the animation will stop varying.
+        start_value: Value at which the animation will start.
+        end_value: Value at which the animation will end.
+        ease: The rate in which the value will change throughout the animation.
+        animation_type: How the animation value will affect the ::class::``Property``'s value.
 
-    Raises
-    ------
-    ValueError
-        When ``start_frame > end_frame``
+    Raises:
+        ValueError: When ``start_frame > end_frame``
     """
 
     def __init__(
@@ -122,20 +113,14 @@ class Animation(Generic[T]):
 class SinusoidalAnimation(Animation):
     """Animate a parameter using a Sine function.
 
-    Parameters
-    ----------
-    start_frame
-        Frame at which the animation will become active.
-    period
-        The duration (period) of one cycle.
-    magnitude
-        The maximum value above/below the center value the sine wave will vary.
-    phase
-        Controls where in the sine curve the animation begins.
+    Args:
+        start_frame: Frame at which the animation will become active.
+        period: The duration (period) of one cycle.
+        magnitude: The maximum value above/below the center value the sine wave will vary.
+        phase: Controls where in the sine curve the animation begins.
 
-    Todo
-    ----
-    Can this be simplified now that we have Signals/Computed?
+    Todo:
+        Can this be simplified now that we have Signals/Computed?
     """
 
     def __init__(
@@ -170,16 +155,11 @@ class SinusoidalAnimation(Animation):
     def __call__(self, value: Any, frame: ReactiveValue[int]) -> Computed[float]:  # pyright: ignore[reportIncompatibleMethodOverride] # fmt: skip # noqa: E501
         """Apply the animation to the current value at the current frame.
 
-        Parameters
-        ----------
-        frame
-            The frame at which the animation is applied.
-        current_value
-            (Unused) This value does not affect the output.
+        Args:
+            frame: The frame at which the animation is applied.
+            value: (Unused) This value does not affect the output.
 
-        Returns
-        -------
-        float
+        Returns:
             The value after the animation.
         """
         is_before_now = frame < self.start_frame
@@ -205,12 +185,9 @@ class SinusoidalAnimation(Animation):
 class Loop(Animation):
     """Loop an animation.
 
-    Parameters
-    ----------
-    animation
-        The animation to loop.
-    n
-        Number of times to loop the animation.
+    Args:
+        animation: The animation to loop.
+        n: Number of times to loop the animation.
     """
 
     def __init__(self, animation: Animation, n: int = 1):
@@ -231,17 +208,12 @@ class Loop(Animation):
     def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
         """Apply the animation to the current value at the current frame.
 
-        Parameters
-        ----------
-        frame
-            The frame at which the animation is applied.
-        current_value
-            The initial value.
+        Args:
+            frame: The frame at which the animation is applied.
+            value: The initial value.
 
-        Returns
-        -------
-        float
-            The value after the animation
+        Returns:
+            The value after the animation.
         """
         effective_frame = self.animation.start_frame + (frame - self.animation.start_frame) % len(self.animation)
         active_anim = self.animation(value, effective_frame)
@@ -265,11 +237,9 @@ class Loop(Animation):
 class PingPong(Animation):
     """Play an animation forward, then backwards n times.
 
-    Parameters
-    ----------
-    animation
-    n
-        Number of full back-and-forth cycles
+    Args:
+        animation: The animation to ping-pong.
+        n: Number of full back-and-forth cycles
     """
 
     def __init__(self, animation: Animation, n: int = 1):
@@ -286,9 +256,8 @@ class PingPong(Animation):
     def end_frame(self) -> int:  # type: ignore[override]
         """Returns the frame at which the animation stops varying.
 
-        Notes
-        -----
-        Each cycle consists of going forward and coming back.
+        Notes:
+            Each cycle consists of going forward and coming back.
         """
         return self.animation.start_frame + self.cycle_len * self.n
 
@@ -300,17 +269,12 @@ class PingPong(Animation):
     def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
         """Apply the animation to the current value at the current frame.
 
-        Parameters
-        ----------
-        frame
-            The frame at which the animation is applied.
-        current_value
-            The initial value.
+        Args:
+            frame: The frame at which the animation is applied.
+            value: The initial value.
 
-        Returns
-        -------
-        float
-            The value after the animation
+        Returns:
+            The value after the animation.
         """
 
         # Calculate effective frame based on whether we're in the forward or backward cycle
@@ -346,20 +310,13 @@ def lag_animation(
 
     This will set the animations values, easing, and type without setting its start/end frames.
 
-    Parameters
-    ----------
-    start_value
-        Value at which the animation will start.
-    end_value
-        Value at which the animation will end.
-    easing
-        The rate in which the value will change throughout the animation.
-    animation_type
-        How the animation value will affect the :class:`keyed.animation.Property`'s value.
+    Args:
+        start_value: Value at which the animation will start.
+        end_value: Value at which the animation will end.
+        easing: The rate in which the value will change throughout the animation.
+        animation_type: How the animation value will affect the :class:`keyed.animation.Property`'s value.
 
-    Returns
-    -------
-    partial[Animation]
+    Returns:
         Partially initialized animation.
     """
     return partial(
@@ -376,10 +333,21 @@ def step(
 ) -> Animation[T]:
     """Return an animation that applies a step function to the Variable at a particular frame.
 
-    TODO
-    ----
-    Can this be simpler?
+    Args:
+        value: The value to step to.
+        frame: The frame at which the step will be applied.
+        animation_type: See :class:`AnimationType`.
+
+    Returns:
+        An animation that applies a step function to the Variable at a particular frame.
+
+    TODO:
+        Can this be simpler?
     """
+    # def step_builder(initial_value: HasValue[A], frame_rx: ReactiveValue[int]) -> Computed[A|T]:
+    #     return (frame_rx >= frame).where(value, initial_value)
+
+    # return step_builder  # Callable[[HasValue[A], ReactiveValue[int]], Computed[A|T]]
     return Animation(
         start=frame,
         end=frame,

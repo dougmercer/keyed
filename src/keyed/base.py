@@ -43,19 +43,13 @@ class Lifetime:
 
     An object will only be drawn if the current frame is within the specified start and end frames.
 
-    Parameters
-    ----------
-    start : float | None, optional
-        The start frame of the lifetime. Defaults to negative infinity if not provided.
-    end : float | None, optional
-        The end frame of the lifetime. Defaults to positive infinity if not provided.
+    Args:
+        start: The start frame of the lifetime. Defaults to negative infinity if not provided.
+        end: The end frame of the lifetime. Defaults to positive infinity if not provided.
 
-    Attributes
-    ----------
-    start : float
-        The starting frame of the object's lifetime.
-    end : float
-        The ending frame of the object's lifetime.
+    Attributes:
+        start: The starting frame of the object's lifetime.
+        end: The ending frame of the object's lifetime.
     """
 
     def __init__(self, start: float | None = None, end: float | None = None):
@@ -65,14 +59,10 @@ class Lifetime:
     def __contains__(self, frame: int) -> bool:
         """Check if a specific frame is within the lifetime of the object.
 
-        Parameters
-        ----------
-        frame : int
-            The frame number to check.
+        Args:
+            frame: The frame number to check.
 
-        Returns
-        -------
-        bool
+        Returns:
             True if the frame is within the lifetime, False otherwise.
         """
         return (self.start <= frame) and (self.end >= frame)
@@ -82,12 +72,9 @@ class Lifetime:
 class Base(Transformable, Protocol):
     """Base protocol class for drawable objects in an animation scene.
 
-    Attributes
-    ----------
-    scene : Scene
-        The scene to which the object belongs.
-    lifetime : Lifetime
-        The lifetime of the object.
+    Attributes:
+        scene: The scene to which the object belongs.
+        lifetime: The lifetime of the object.
     """
 
     scene: Scene
@@ -102,27 +89,15 @@ class Base(Transformable, Protocol):
         return self._dependencies
 
     def draw(self) -> None:
-        """Draw the object on the scene at the current frame.
-
-        This is an abstract method.
-        """
+        """Draw the object on the scene at the current frame."""
         pass
 
     def animate(self, property: str, animation: Animation) -> None:
         """Animate a specified property of the object using the provided animation.
 
-        This is an abstract method.
-
-        Parameters
-        ----------
-        property : str
-            The name of the property to animate.
-        animation : Animation
-            The animation to apply to the property.
-
-        Returns
-        -------
-        None
+        Args:
+            property: The name of the property to animate.
+            animation: The animation to apply to the property.
         """
         pass
 
@@ -141,45 +116,30 @@ class Base(Transformable, Protocol):
     ) -> Rectangle:
         """Emphasize the object by drawing a rectangle around it.
 
-        Parameters
-        ----------
-        buffer: float, optional
-            The buffer distance around the object's geometry for the emphasis. Default is 5.
-        radius: float, optional
-            The corner radius of the emphasized area. Default is 0.
-        fill_color: tuple[float, float, float], optional
-            The fill color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
-        color: tuple[float, float, float], optional
-            The stroke color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
-        alpha: float, optional
-            The alpha transparency of the emphasis. Default is 1.
-        dash: tuple[Sequence[float], float] | None, optional
-            The dash pattern for the emphasis outline. Default is None.
-        line_width: float, optional
-            The line width of the emphasis outline. Default is 2.
-        draw_fill: bool, optional
-            Whether to draw the fill of the emphasis. Default is True.
-        draw_stroke: bool, optional
-            Whether to draw the stroke of the emphasis. Default is True.
-        operator: cairo.Operator, optional
-            The compositing operator to use for drawing the emphasis. Default is
-            :data:`cairo.OPERATOR_SCREEN`.
+        Args:
+            buffer: The buffer distance around the object's geometry for the emphasis. Default is 5.
+            radius: The corner radius of the emphasized area. Default is 0.
+            fill_color: The fill color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
+            color: The stroke color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
+            alpha: The alpha transparency of the emphasis. Default is 1.
+            dash: The dash pattern for the emphasis outline. Default is None.
+            line_width: The line width of the emphasis outline. Default is 2.
+            draw_fill: Whether to draw the fill of the emphasis. Default is True.
+            draw_stroke: Whether to draw the stroke of the emphasis. Default is True.
+            operator: The compositing operator to use for drawing the emphasis. Default is
+                :data:`cairo.OPERATOR_SCREEN`.
 
-        Returns
-        -------
-        Rectangle
+        Returns:
             A Rectangle object representing the emphasized area around the original object.
 
-        Notes
-        -----
-        This creates a Rectangle instance and sets up dynamic expressions to follow the
-        geometry of the object as it changes through different frames, applying the specified
-        emphasis effects. Emphasis should generally be applied after all animations on the
-        original object have been added.
+        Notes:
+            This creates a Rectangle instance and sets up dynamic expressions to follow the
+            geometry of the object as it changes through different frames, applying the specified
+            emphasis effects. Emphasis should generally be applied after all animations on the
+            original object have been added.
 
-        TODO
-        ----
-        Consider renaming "buffer" to margin.
+        TODO:
+            Consider renaming "buffer" to margin.
         """
         from .shapes import Rectangle
 
@@ -210,17 +170,13 @@ class Base(Transformable, Protocol):
     def set(self, property: str, value: Any, frame: int = ALWAYS) -> None:
         """Set a property of the object at a specific frame.
 
-        Parameters
-        ----------
-        property : str
-            The name of the property to set.
-        value : Any
-            The new value for the property.
-        frame : int, optional
-            The frame at which the property value should be set. Default is 0.
+        Args:
+            property: The name of the property to set.
+            value: The new value for the property.
+            frame: The frame at which the property value should be set. Default is 0.
 
-        TODO
-        ----
+        TODO:
+
             * Consider removing.
             * Consider returning self.
         """
@@ -240,14 +196,11 @@ class Base(Transformable, Protocol):
     def center(self, frame: int = ALWAYS) -> Self:
         """Center the object within the scene.
 
-        Parameters
-        ----------
-        frame : int
-            The frame at which to center the object. Defaults to :data:`keyed.constants.ALWAYS`.
+        Args:
+            frame: The frame at which to center the object. Defaults to :data:`keyed.constants.ALWAYS`.
 
-        Returns
-        -------
-        self
+        Returns:
+            self
         """
         self.align_to(self.scene, start=frame, end=frame, direction=ORIGIN, center_on_zero=True)
         return self
@@ -266,17 +219,11 @@ class BaseText(Base, Protocol):
 
     @property
     def chars(self) -> TextSelection[Text]:
-        """Return a selection of Text objects representing individual characters.
-
-        This is an abstract method.
-        """
+        """Return a selection of Text objects representing individual characters."""
         ...
 
     def is_whitespace(self) -> bool:
-        """Determine if the text content is whitespace.
-
-        This is an abstract method.
-        """
+        """Determine if the text content is whitespace."""
         ...
 
     def highlight(
@@ -290,28 +237,17 @@ class BaseText(Base, Protocol):
     ) -> "Curve":
         """Highlight text by drawing a curve passing through the text.
 
-        Parameters
-        ----------
-        color : tuple[float, float, float], optional
-            The color to use for highlighting as an RGB tuple.
-        alpha : float, optional
-            The transparency level of the highlight.
-        dash : tuple[Sequence[float], float] | None, optional
-            Dash pattern for the highlight stroke.
-        operator : cairo.Operator, optional
-            The compositing operator to use for rendering the highlight.
-        line_width : float, optional
-            The width of the highlight stroke.
-        simplify : float | None, optional
-            The simplification tolerance level for the curve geometry.
-        tension : float, optional
-            The tension for the curve fitting the text. A value of 0 will draw a
-            linear path betwee points, where as a non-zero value will allow some
-            slack in the bezier curve connecting each set of points.
+        Args:
+            color: The color to use for highlighting as an RGB tuple.
+            alpha: The transparency level of the highlight.
+            dash: Dash pattern for the highlight stroke.
+            operator: The compositing operator to use for rendering the highlight.
+            line_width: The width of the highlight stroke.
+            tension: The tension for the curve fitting the text. A value of 0 will draw a
+                linear path betwee points, where as a non-zero value will allow some
+                slack in the bezier curve connecting each set of points.
 
-        Returns
-        -------
-        Curve
+        Returns:
             A Curve passing through all characters in the underlying text.
         """
         from .curve import Curve
@@ -334,13 +270,11 @@ T = TypeVar("T", bound=Base)
 class Selection(Base, list[T]):  # type: ignore[misc]
     """A sequence of drawable objects, allowing collective transformations and animations.
 
-    Parameters
-    ----------
-    iterable
+    Args:
+        iterable: An iterable of drawable objects to include in the selection.
     """
 
     def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
-        # TODO Remove need for these annoying hacks
         from .scene import Scene
 
         self._dependencies: list
@@ -351,44 +285,28 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     def animate(self, property: str, animation: Animation) -> None:
         """Animate a property across all objects in the selection using the provided animation.
 
-        Parameters
-        ----------
-        property: str
-        animation: Animation
+        Args:
+            property: str
+            animation: Animation
 
-        Returns
-        -------
-        None
+        Returns:
+            None
         """
         for item in self:
             item.animate(property, animation)
 
     def draw(self) -> None:
-        """Draws all objects in the selection on the scene at the specified frame.
-
-        Parameters
-        ----------
-        frame: int
-
-        Returns
-        -------
-        None
-        """
+        """Draws all objects in the selection on the scene at the specified frame."""
         for item in self:
             item.draw()
 
     def set(self, property: str, value: Any, frame: int = 0) -> None:
         """Set a property to a new value for all objects in the selection at the specified frame.
 
-        Parameters
-        ----------
-        property: str
-        value: Any
-        frame: int
-
-        Returns
-        -------
-        None
+        Args:
+            property: The name of the property to set.
+            value: The value to set it to.
+            frame: The frame at which to set the value.
         """
         for item in self:
             item.set(property, value, frame)
@@ -396,15 +314,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     def set_literal(self, property: str, value: Any) -> None:
         """Set a property to a new value for all objects in the selection at the specified frame.
 
-        Parameters
-        ----------
-        property: str
-        value: Any
-
-
-        Returns
-        -------
-        None
+        Args:
+            property: The name of the property to set.
+            value: Value to set to.
         """
         for item in self:
             item.set_literal(property, value)
@@ -419,19 +331,13 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> None:
         """Sequentially animates a property across all objects in the selection.
 
-        Parameters
-        ----------
-        property : str
-            The property to animate.
-        lagged_animation : Callable
-            The animation function to apply, which should create an Animation.
-            See :func:`keyed.animations.lag_animation`.
-        start_frame : int
-            The frame at which the first animation should start.
-        delay : int
-            The delay in frames before starting the next object's animation.
-        duration : int
-            The duration of each object's animation in frames.
+        Args:
+            property: The property to animate.
+            lagged_animation : The animation function to apply, which should create an Animation.
+                See :func:`keyed.animations.lag_animation`.
+            start: The frame at which the first animation should start.
+            delay: The delay in frames before starting the next object's animation.
+            duration: The duration of each object's animation in frames.
         """
         frame = start
         for item in self:
@@ -480,17 +386,15 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     def scene(self) -> Scene:  # type: ignore[override]
         """Returns the scene associated with the first object in the selection.
 
-        Raises
-        ------
-        ValueError
-            If the selection is empty and the scene cannot be retrieved.
+        Raises:
+            ValueError: If the selection is empty and the scene cannot be retrieved.
         """
         if not self:
             raise ValueError("Cannot retrieve 'scene': Selection is empty.")
         return self[0].scene
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
-        # TODO should we allow transform by constant matrix? Probably...
+        # TODO should we allow transform by HasValue[cairo.Matrix]? Probably...
         for obj in self:
             obj.apply_transform(matrix)
         return self
@@ -606,6 +510,13 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 def is_visible(obj: Any) -> bool:
     """Check if an object is visible.
 
-    Note: Does not consider if an object is within the bounds of the canvas.
+    Args:
+        obj: Query object.
+
+    Returns:
+        True if the object is visible, False otherwise.
+
+    Note:
+        Does not consider if an object is within the bounds of the canvas.
     """
     return isinstance(obj, HasAlpha) and unref(obj.alpha) > 0

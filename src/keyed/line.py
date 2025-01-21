@@ -113,10 +113,8 @@ class Line(Base):
         Temporarily sets various drawing properties such as line width, line cap, line join,
         dash pattern, and operator based on the shape's attributes.
 
-        Yields
-        ------
-        None
-            Yields control back to the caller within the context of the configured style.
+        Yields:
+            None: Yields control back to the caller within the context of the configured style.
         """
         try:
             self.ctx.save()
@@ -131,13 +129,7 @@ class Line(Base):
             self.ctx.restore()
 
     def draw(self) -> None:
-        """Draw the shape within its styled context, applying transformations.
-
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number to draw. Default is 0.
-        """
+        """Draw the shape within its styled context, applying transformations."""
         x0 = lerp(self.x0.value, self.x1.value, self.start.value)
         y0 = lerp(self.y0.value, self.y1.value, self.start.value)
         x1 = lerp(self.x0.value, self.x1.value, self.end.value)
@@ -153,12 +145,9 @@ class Line(Base):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to a property of the shape.
 
-        Parameters
-        ----------
-        property : str
-            The name of the property to animate.
-        animation : Animation
-            The animation object defining how the property changes over time.
+        Args:
+            property: The name of the property to animate.
+            animation: The animation object defining how the property changes over time.
         """
         if property in self.controls.animatable_properties:
             parent = self.controls
@@ -245,10 +234,8 @@ class BezierCurve(Base):
         Temporarily sets various drawing properties such as line width, line cap, line join,
         dash pattern, and operator based on the shape's attributes.
 
-        Yields
-        ------
-        None
-            Yields control back to the caller within the context of the configured style.
+        Yields:
+            None: Yields control back to the caller within the context of the configured style.
         """
         try:
             self.ctx.save()
@@ -288,12 +275,9 @@ class BezierCurve(Base):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to a property of the shape.
 
-        Parameters
-        ----------
-        property : str
-            The name of the property to animate.
-        animation : Animation
-            The animation object defining how the property changes over time.
+        Args:
+        property: The name of the property to animate.
+        animation: The animation object defining how the property changes over time.
         """
         if property in self.controls.animatable_properties:
             parent = self.controls
@@ -366,8 +350,14 @@ def bezier_point(
 
     Args:
         t (float): The parameter between 0 and 1.
-        p0, p1, p2, p3 (tuple): The control points of the cubic Bezier curve.
-
+        x0: The x coordinate of the first control point of the cubic Bézier curve.
+        y0: The y coordinate of the first control point of the cubic Bézier curve.
+        x1: Second x
+        y1: Second y
+        x2: Third x
+        y2: Third y
+        x3: Fourth x
+        y3: Fourth y
     Returns:
         tuple: The point on the curve at parameter t.
     """
@@ -392,7 +382,14 @@ def approximate_bezier_as_linestring(
     Approximate a cubic Bezier curve as a Shapely LineString.
 
     Args:
-        p0, p1, p2, p3 (tuple): The control points of the cubic Bezier curve.
+        x0: The x coordinate of the first control point of the cubic Bézier curve.
+        y0: The y coordinate of the first control point of the cubic Bézier curve.
+        x1: Second x
+        y1: Second y
+        x2: Third x
+        y2: Third y
+        x3: Fourth x
+        y3: Fourth y
         num_points (int): Number of points to sample along the curve.
 
     Returns:

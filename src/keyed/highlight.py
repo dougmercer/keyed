@@ -63,14 +63,12 @@ class KeyedFormatter(Formatter):
     def format_code(tokens: list[tuple[_TokenType, str]], style: StyleMeta) -> str:
         """Convert code into styled tokens.
 
-        Parameters
-        ----------
-        tokens
-        style
+        Args:
+            tokens: List of tokens to format.
+            style: The Pygments style to use.
 
-        Returns
-        -------
-        str
+        Returns:
+            Styled code as JSON.
         """
         colors = style_to_color_map(style)
         styled_tokens: list[StyledToken] = []
@@ -135,20 +133,14 @@ def tokenize(
 ) -> list[StyledToken]:
     """Tokenize code text into styled tokens.
 
-    Parameters
-    ----------
-    text : str
-        The code text to tokenize.
-    lexer : Lexer | None, optional
-        The Pygments lexer to use. If None, PythonLexer is used.
-    formatter : Formatter | None, optional
-        The Pygments formatter to use. If None, KeyedFormatter is used.
-    filename : str, optional
-        The filename of the code, used for more accurate Jedi analysis. Default is '<unknown>'.
+    Args:
+        text: The code text to tokenize.
+        lexer: The Pygments lexer to use. If None, PythonLexer is used.
+        formatter: The Pygments formatter to use. If None, KeyedFormatter is used.
+        filename: The filename of the code, used for more accurate Jedi analysis. Default is '<unknown>'.
 
-    Returns
-    -------
-    list[StyledTokens]
+    Returns:
+        List of styled tokens.
     """
     from pygments import format, lex
     from pygments.lexers.python import PythonLexer

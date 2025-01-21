@@ -39,9 +39,8 @@ class Transformable(Protocol):
     def raw_geom_now(self) -> GeometryT:
         """Return the geometry at the current frame, before any transformations.
 
-        Returns
-        -------
-        shapely.geometry.base.BaseGeometry
+        Returns:
+            The raw geometry, before any transformations, now.
         """
         ...
 
@@ -55,9 +54,8 @@ class Transformable(Protocol):
     def geom(self) -> Computed[GeometryT]:
         """Return the geometry at the current frame.
 
-        Returns
-        -------
-        shapely.geometry.base.BaseGeometry
+        Returns:
+            A reactive value of the geometry.
         """
         # Check if there is a value in the cache
         if self._geom_cached is None:
@@ -73,14 +71,11 @@ class Transformable(Protocol):
     def left_now(self, with_transforms: bool = True) -> float:
         """Get the left critical point.
 
-        Parameters
-        ----------
-        with_transforms : bool
-            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+        Args:
+            with_transforms : Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
 
-        Returns
-        -------
-        float
+        Returns:
+            The left critical point.
         """
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[0]
@@ -88,44 +83,35 @@ class Transformable(Protocol):
     def right_now(self, with_transforms: bool = True) -> float:
         """Get the right critical point.
 
-        Parameters
-        ----------
-        with_transforms : bool
-            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+        Args:
+            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
 
-        Returns
-        -------
-        float
+        Returns:
+            The right critical point.
         """
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[2]
 
     def down_now(self, with_transforms: bool = True) -> float:
-        """Get the right critical point.
+        """Get the down critical point.
 
-        Parameters
-        ----------
-        with_transforms : bool
-            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+        Args:
+            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
 
-        Returns
-        -------
-        float
+        Returns:
+            The down critical point.
         """
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[1]
 
     def up_now(self, with_transforms: bool = True) -> float:
-        """Get the right critical point.
+        """Get the up critical point.
 
-        Parameters
-        ----------
-        with_transforms : bool
-            Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
+        Args:
+            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
 
-        Returns
-        -------
-        float
+        Returns:
+            The up critical point.
         """
         g = self.geom_now if with_transforms else self.raw_geom_now
         return g.bounds[3]
@@ -153,18 +139,16 @@ class Transformable(Protocol):
     ) -> Self:
         """Rotate the object.
 
-        Parameters
-        ----------
-        animation
-            How to vary the rotation over time.
-        center
-            The object around which to rotate
-        direction
-            The relative critical point of the center.
+        Args:
+            amount: Amount to rotate by.
+            start: The frame to start rotating.
+            end: The frame to end rotating.
+            easing: The easing function to use.
+            center: The object around which to rotate.
+            direction: The relative critical point of the center.
 
-        Returns
-        -------
-        self
+        Returns:
+            self
         """
         center = center if center is not None else self.geom
         cx, cy = get_critical_point(center, direction)
@@ -181,18 +165,16 @@ class Transformable(Protocol):
     ) -> Self:
         """Scale the object.
 
-        Parameters
-        ----------
-        animation
-            How to vary the scale of the object over time.
-        center
-            The object around which to scale
-        direction
-            The relative critical point of the center.
+        Args:
+            amount: Amount to scale by.
+            start: The frame to start scaling.
+            end: The frame to end scaling.
+            easing: The easing function to use.
+            center: The object around which to rotate.
+            direction: The relative critical point of the center.
 
-        Returns
-        -------
-        self
+        Returns:
+            self
         """
         center = center if center is not None else self.geom
         cx, cy = get_critical_point(center, direction)
@@ -208,18 +190,12 @@ class Transformable(Protocol):
     ) -> Self:
         """Translate the object.
 
-        Parameters
-        ----------
-        x
-            x offset.
-        y
-            y offset.
-        start
-            Start of the animation.
-        end
-            End of the animation
-        easing
-            How the translation will vary over time.
+        Args:
+            x: x offset.
+            y: y offset.
+            start: The frame to start translating.
+            end: The frame to end translating.
+            easing: The easing function to use.
         """
         return self.apply_transform(translate(start, end, x, y, self.frame, easing))
 
@@ -236,36 +212,26 @@ class Transformable(Protocol):
     ) -> Self:
         """Align the object to another object.
 
-        Parameters
-        ----------
-        to
-            The object to align to.
-        start
-            Start of animation (begin aligning to the object).
-        end
-            End of animation (finish aligning to the object at this frame, and then stay there).
-        from_
-            Use this object as self when doing the alignment. Defaults to self. This is necessary
-            for code animations. It is sometimes desirable to align, say, the top-left edge of one
-            character in a TextSelection to the top-left of another character.
+        Args:
+            to: The object to align to.
+            start: Start of animation (begin aligning to the object).
+            end: End of animation (finish aligning to the object at this frame, and then stay there).
+            from_: Use this object as self when doing the alignment. Defaults to self. This is necessary
+                for code animations. It is sometimes desirable to align, say, the top-left edge of one
+                character in a TextSelection to the top-left of another character.
 
-            This is a subtle feature that is missing in manim that made code animations difficult.
-        easing
-            The rate at which to perform the animation
-        direction
-            The critical point of to and from_to use for the alignment.
-        center_on_zero
-            If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
-            directions. This is beneficial for, say, centering the object at the origin (which has
-            a vector that consists of two zeros).
+                This is a subtle feature that is missing in manim that made code animations difficult.
+            easing: The easing function to use.
+            direction: The critical point of to and from_to use for the alignment.
+            center_on_zero: If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
+                directions. This is beneficial for, say, centering the object at the origin (which has
+                a vector that consists of two zeros).
 
-        Returns
-        -------
-        self
+        Returns:
+            self
 
-        Todo
-        ----
-        I'd like to get rid of center_on_zero.
+        Todo:
+            I'd like to get rid of center_on_zero.
         """
         from_ = from_ or self.geom
         lock = lock if lock is not None else end
@@ -295,21 +261,14 @@ class Transformable(Protocol):
     ) -> Self:
         """Lock on to a target.
 
-        Parameters
-        ----------
-        target
-            Object to lock onto
-        reference
-            Measure from this object. This is useful for TextSelections, where you want to align
-            to a particular character in the selection. Defaults to self.
-        start_frame
-            When to start locking on. Defaults to ALWAYS.
-        end_frame
-            When to end locking on. Defaults to -ALWAYS.
-        x
-            If true, lock on in the x dimension.
-        y
-            if true, lock on in the y dimension.
+        Args:
+            target: Object to lock onto
+            reference: Measure from this object. This is useful for TextSelections, where you want to align
+                to a particular character in the selection. Defaults to self.
+            start: When to start locking on. Defaults to ALWAYS.
+            end: When to end locking on. Defaults to -ALWAYS.
+            x: If true, lock on in the x dimension.
+            y: If true, lock on in the y dimension.
         """
         reference = reference or self.geom
         return self.apply_transform(
@@ -335,21 +294,12 @@ class Transformable(Protocol):
     ) -> Self:
         """Lock on to a target.
 
-        Parameters
-        ----------
-        target
-            Object to lock onto
-        reference
-            Measure from this object. This is useful for TextSelections, where you want to align
-            to a particular character in the selection. Defaults to self.
-        start_frame
-            When to start locking on. Defaults to ALWAYS.
-        end_frame
-            When to end locking on. Defaults to -ALWAYS.
-        x
-            If true, lock on in the x dimension.
-        y
-            if true, lock on in the y dimension.
+        Args:
+            target: Object to lock onto
+            reference: Measure from this object. This is useful for TextSelections, where you want to align
+                to a particular character in the selection. Defaults to self.
+            x: If true, lock on in the x dimension.
+            y: if true, lock on in the y dimension.
         """
         reference = reference or self.geom
         return self.apply_transform(
@@ -398,14 +348,11 @@ class Transformable(Protocol):
 class TransformControls(Freezeable):
     """Control how transforms are applied to the object.
 
-    Parameters
-    ----------
-    obj : Transformable
-        A reference to the object being transformed.
+    Args:
+        obj: A reference to the object being transformed.
 
-    Todo
-    ----
-    Passing obj seems a little awkward.
+    Todo:
+        Passing obj seems a little awkward.
     """
 
     animatable_properties = ("rotation", "scale", "delta_x", "delta_y")
@@ -426,9 +373,8 @@ class TransformControls(Freezeable):
         animated attributes on the object's controls. applying on the rotation,
         translations matrix at the specified frame.
 
-        Returns
-        -------
-        cairo.Matrix
+        Returns:
+            The transform matrix, before any transformations.
         """
         return computed(base_transform_matrix)(self.obj.raw_geom, self.delta_x, self.delta_y, self.rotation, self.scale)
 
@@ -475,19 +421,16 @@ def lock_on(
 ) -> Computed[cairo.Matrix]:
     """Lock one object's position onto another object.
 
-    Parameters
-    ----------
-    target
-    reference
-    start_frame
-        The first frame to begin translating.
-    end_frame
-        The final frame to end translating.
-    direction
-    x
-        If true, lock on in the x dimension.
-    y
-        If true, lock on in the y dimension.
+    Args:
+        target: The object to lock onto.
+        reference: The object to use as reference for self when locking on. This is useful, when
+                   the overall object, self, is large, and you want to more precisely lock onto a point.
+        frame: The reactive value for the scene's frame counter.
+        start: The first frame to begin translating.
+        end: The final frame to end translating.
+        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults to the center, ORIGIN.
+        x: If true, lock on in the x dimension.
+        y: If true, lock on in the y dimension.
     """
 
     to_x = get_position_along_dim(target, dim=0, direction=direction)
@@ -580,14 +523,12 @@ def align_to(
 def affine_transform(geom: GeometryT, matrix: cairo.Matrix | None) -> GeometryT:
     """Apply the cairo.Matrix as shapely affine transform to the provided geometry.
 
-    Parameters
-    ----------
-    geom
-    matrix
+    Args:
+        geom: Geometry to transform
+        matrix: Transformation matrix
 
-    Returns
-    -------
-    shapely.geometry.base.BaseGeometry | shapely.geometry.GeometryCollection
+    Returns:
+        The transformed geometry.
     """
     if matrix is not None:
         transform_params = [matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.x0, matrix.y0]
@@ -604,6 +545,19 @@ def translate(
     frame: ReactiveValue[int],
     ease: EasingFunctionT = cubic_in_out,
 ) -> Computed[cairo.Matrix]:
+    """Translate matrix.
+
+    Args:
+        start: Start frame
+        end: End frame
+        delta_x: Amount to translate in the x direction.
+        delta_y: Amount to translate in the y direction.
+        frame: Frame reactive value.
+        ease: Easing function.
+
+    Returns:
+        The time-varying transformation matrix.
+    """
     if start == end:
         # Do not need to animate/ease.
         x = delta_x
@@ -633,14 +587,17 @@ def rotate(
 ) -> Computed[cairo.Matrix]:
     """Rotate matrix.
 
-    Parameters
-    ----------
-    frame
-    before
+    Args:
+        start: Start frame
+        end: End frame
+        amount: Amount to rotate by
+        cx: Center x
+        cy: Center y
+        frame: Frame reactive value.
+        ease: Easing function.
 
-    Returns
-    -------
-    cairo.Matrix
+    Returns:
+        The time-varying transformation matrix.
     """
     magnitude = Animation(start, end, 0, amount, ease, animation_type=AnimationType.ADDITIVE)(0, frame)
 
@@ -666,14 +623,17 @@ def scale(
 ) -> Computed[cairo.Matrix]:
     """Scale matrix.
 
-    Parameters
-    ----------
-    frame
-    before
+    Args:
+        start: Start frame
+        end: End frame
+        amount: Amount to scale by
+        cx: Center x
+        cy: Center y
+        frame: Frame reactive value.
+        ease: Easing function.
 
-    Returns
-    -------
-    cairo.Matrix
+    Returns:
+        The time-varying transformation matrix.
     """
     magnitude = Animation(start, end, 1, amount, ease, animation_type=AnimationType.MULTIPLICATIVE)(1, frame)
 
@@ -695,19 +655,15 @@ def get_position_along_dim_now(
 ) -> float:
     """Get value of a position along a dimension at the current frame.
 
-    Parameters
-    ----------
-    geom: Variable[GeometryT]
-    direction: Direction
-        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-        to ORIGIN (center of the object).
-    dim : Literal[0, 1]
-        Dimension to query, where 0 is the horizontal direction and 1 is the vertical
-        direction. Defaults to 0.
+    Args:
+        geom: A Geometry
+        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+            to ORIGIN (center of the object).
+        dim: Dimension to query, where 0 is the horizontal direction and 1 is the vertical
+            direction. Defaults to 0.
 
-    Returns
-    -------
-    Computed[float]
+    Returns:
+        Position along dimension.
     """
     assert -1 <= direction[dim] <= 1
     bounds = geom.bounds
@@ -726,15 +682,12 @@ def get_position_along_dim(
 def get_critical_point_now(geom: GeometryT, direction: Direction = ORIGIN) -> tuple[float, float]:
     """Get value of a position along both dimensions at the current frame.
 
-    Parameters
-    ----------
-    direction: Direction
-        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-        to ORIGIN (center of the object).
+    Args:
+        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+                   to ORIGIN (center of the object).
 
-    Returns
-    -------
-    tuple[Computed[float], Computed[float]]
+    Returns:
+        The critical point as a tuple of the x and y directions.
     """
     x = get_position_along_dim_now(geom, direction, dim=0)
     y = get_position_along_dim_now(geom, direction, dim=1)
@@ -746,15 +699,12 @@ def get_critical_point(
 ) -> tuple[Computed[float], Computed[float]]:
     """Get value of a position along both dimensions at the current frame.
 
-    Parameters
-    ----------
-    direction: Direction
-        The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-        to ORIGIN (center of the object).
+    Args:
+        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
+                   to ORIGIN (center of the object).
 
-    Returns
-    -------
-    tuple[Computed[float], Computed[float]]
+    Returns:
+        The critical point as a tuple of reactive values in the x and y directions.
     """
     x = computed(get_position_along_dim_now)(geom, direction, dim=0)
     y = computed(get_position_along_dim_now)(geom, direction, dim=1)

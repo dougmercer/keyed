@@ -73,7 +73,6 @@ class Layer(Freezeable):
     if EXTRAS_INSTALLED:
 
         def apply_effect(self, effect: Effect) -> Self:
-            # TODO - Only enable if extras are installed.
             self.effects.append(effect)
             return self
 
@@ -116,22 +115,14 @@ class Layer(Freezeable):
 class Scene(Transformable, Freezeable):
     """A scene within which graphical objects are placed and manipulated.
 
-    Parameters
-    ----------
-    scene_name : str | None, optional
-        The name of the scene, used for naming output directories and files. Default is None.
-    num_frames : int, optional
-        The number of frames to render in the scene. Default is 60.
-    output_dir : Path, optional
-        The directory path where output files will be stored. Default is "media".
-    width : int, optional
-        The width of the scene in pixels. Default is 3840.
-    height : int, optional
-        The height of the scene in pixels. Default is 2160.
-    antialias : cairo.Antialias, optional
-        The antialiasing level for rendering the scene. Default is cairo.ANTIALIAS_DEFAULT.
-    freehand : bool, optional
-        Indicates whether to enable freehand drawing mode. Default is False.
+    Args:
+        scene_name: The name of the scene, used for naming output directories and files. Default is None.
+        num_frames: The number of frames to render in the scene. Default is 60.
+        output_dir: The directory path where output files will be stored. Default is "media".
+        width: The width of the scene in pixels. Default is 3840.
+        height: The height of the scene in pixels. Default is 2160.
+        antialias: The antialiasing level for rendering the scene. Default is cairo.ANTIALIAS_DEFAULT.
+        freehand: Indicates whether to enable freehand drawing mode. Default is False.
     """
 
     def __init__(
@@ -208,9 +199,8 @@ class Scene(Transformable, Freezeable):
     def full_output_dir(self) -> Path:
         """Full output directory.
 
-        Returns
-        -------
-        Path
+        Returns:
+            Path
         """
         assert self.scene_name is not None
         return self.output_dir / self.scene_name
@@ -219,10 +209,8 @@ class Scene(Transformable, Freezeable):
     def add(self, *content: Base) -> None:
         """Add one or more graphical objects to the scene.
 
-        Parameters
-        ----------
-        content : Base
-            One or more Base-derived objects to be added to the scene.
+        Args:
+            content: One or more Base-derived objects to be added to the scene.
         """
         self.default_layer.add(*content)
 
@@ -252,14 +240,10 @@ class Scene(Transformable, Freezeable):
     def draw(self, layers: Sequence[int] | None = None, delete: bool = True, open_dir: bool = False) -> None:
         """Draw the scene by rendering it to images.
 
-        Parameters
-        ----------
-        layers : Sequence[int] | None, optional
-            Specific layers to render. If None, all layers are rendered.
-        delete : bool, optional
-            Whether to delete old frames before drawing new ones. Default is True.
-        open_dir : bool, optional
-            Whether to open the output directory after drawing. Default is False.
+        Args:
+            layers: Specific layer(s) to render. If None, all layers are rendered.
+            delete: Whether to delete old frames before drawing new ones. Default is True.
+            open_dir: Whether to open the output directory after drawing. Default is False.
         """
         self._create_folder()
         if delete:
@@ -279,10 +263,8 @@ class Scene(Transformable, Freezeable):
     def draw_as_layers(self, open_dir: bool = False) -> None:
         """Draw each layer of the scene separately.
 
-        Parameters
-        ----------
-        open_dir : bool, optional
-            Whether to open the output directory after drawing. Default is False.
+        Args:
+            open_dir: Whether to open the output directory after drawing. Default is False.
         """
         self._create_folder()
         self.delete_old_frames()
@@ -398,16 +380,11 @@ class Scene(Transformable, Freezeable):
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         """Convert a frame of the scene to a NumPy array.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number to convert. Default is 0.
-        layers : Sequence[int] | None, optional
-            Specific layers to convert. If None, all layers are converted.
+        Args:
+            frame: The frame number to convert. Default is 0.
+            layers: Specific layer(s) to convert. If None, all layers are converted.
 
-        Returns
-        -------
-        np.ndarray
+        Returns:
             A NumPy array representing the raster image of the specified frame.
         """
         self.frame.value = frame
@@ -425,18 +402,12 @@ class Scene(Transformable, Freezeable):
         a user clicks on Code, which itself contains Lines, Tokens, and Chars (Text), this
         method will return the nearest Text.
 
-        Parameters
-        ----------
-        x : float
-            The x-coordinate to check.
-        y : float
-            The y-coordinate to check.
-        frame : int, optional
-            The frame number to check against. Default is 0.
+        Args:
+            x: The x-coordinate to check.
+            y: The y-coordinate to check.
+            frame: The frame number to check against. Default is 0.
 
-        Returns
-        -------
-        Base | None
+        Returns:
             The nearest object if found; otherwise, None.
         """
         from .extras import Editor
@@ -484,21 +455,16 @@ class Scene(Transformable, Freezeable):
     ) -> None:
         """Preview the scene in a window with specified quality and frame rate.
 
-        Parameters
-        ----------
-        quality : Quality, optional
-            The quality level of the preview. Default is Quality.high.
-        frame_rate : int, optional
-            The frame rate at which to preview the animation. Default is 24 fps.
+        Args:
+            quality: The quality level of the preview. Default is Quality.high.
+            frame_rate: The frame rate at which to preview the animation. Default is 24 fps.
         """
         create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
     def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
         """Get the drawing context for the scene.
 
-        Returns
-        -------
-        cairo.Context | FreeHandContext
+        Returns:
             The context to use for drawing.
         """
         ctx = cairo.Context(self.surface)
@@ -510,14 +476,7 @@ class Scene(Transformable, Freezeable):
     def raw_geom_now(self) -> shapely.geometry.Polygon:
         """Get the raw geometric representation of the scene at the specified frame.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number to fetch the geometry for. Default is 0.
-
-        Returns
-        -------
-        BaseGeometry
+        Returns:
             The geometric representation of the scene at the specified frame.
         """
         return shapely.box(
@@ -538,12 +497,9 @@ class Scene(Transformable, Freezeable):
     def to_video(self, frame_rate: int = 24, redraw: bool = True) -> None:
         """Export the scene as a video file.
 
-        Parameters
-        ----------
-        frame_rate : int, optional
-            The frame rate of the video. Default is 24 fps.
-        redraw : bool, optional
-            Whether to redraw all frames before exporting. Default is True.
+        Args:
+            frame_rate: The frame rate of the video. Default is 24 fps.
+            redraw: Whether to redraw all frames before exporting. Default is True.
         """
         self._create_folder()
         if redraw:
@@ -568,12 +524,9 @@ class Scene(Transformable, Freezeable):
     def to_video_direct(self, frame_rate: int = 24, open_dir: bool = False) -> None:
         """Export as a video by directly streaming frames to a video file using FFmpeg.
 
-        Parameters
-        ----------
-        frame_rate : int, optional
-            The frame rate of the video. Default is 24 fps.
-        open_dir : bool, optional
-            Whether to open the output directory after the video is created. Default is False.
+        Args:
+            frame_rate: The frame rate of the video. Default is 24 fps.
+            open_dir: Whether to open the output directory after the video is created. Default is False.
         """
         self._create_folder()
         command = [

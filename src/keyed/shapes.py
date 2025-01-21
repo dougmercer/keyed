@@ -32,36 +32,23 @@ class Shape(Base, Protocol):
     for drawing using a Cairo context. Implementing classes should provide specific
     drawing behavior.
 
-    Attributes
-    ----------
-    scene : Scene
-        The scene to which the shape belongs.
-    ctx : cairo.Context
-        The Cairo context used for drawing the shape.
-    color : tuple[float, float, float]
-        The color of the shape's stroke.
-    fill_color : tuple[float, float, float]
-        The color used to fill the shape.
-    alpha : Property
-        The opacity of the shape, where 0 is transparent and 1 is opaque.
-    dash : tuple[Sequence[float], float] | None
-        The dash pattern for the shape's outline. A tuple where the first element
-        is a sequence of dash lengths and the second element is the offset. None
-        indicates a solid line.
-    operator : cairo.Operator
-        The compositing operator used when rendering the shape.
-    draw_fill : bool
-        Whether the shape should be filled.
-    draw_stroke : bool
-        Whether the shape's outline should be drawn.
-    line_width : Property
-        The width of the outline stroke.
-    line_cap : cairo.LineCap
-        The style of the line ends among cairo.LINE_CAP_BUTT, cairo.LINE_CAP_ROUND,
-        or cairo.LINE_CAP_SQUARE.
-    line_join : cairo.LineJoin
-        Specifies how the joins between line segments are drawn among cairo.LINE_JOIN_MITER,
-        cairo.LINE_JOIN_ROUND, or cairo.LINE_JOIN_BEVEL.
+    Attributes:
+        scene: The scene to which the shape belongs.
+        ctx: The Cairo context used for drawing the shape.
+        color: The color of the shape's stroke.
+        fill_color: The color used to fill the shape.
+        alpha: The opacity of the shape, where 0 is transparent and 1 is opaque.
+        dash: The dash pattern for the shape's outline. A tuple where the first element
+            is a sequence of dash lengths and the second element is the offset. None
+            indicates a solid line.
+        operator: The compositing operator used when rendering the shape.
+        draw_fill: Whether the shape should be filled.
+        draw_stroke: Whether the shape's outline should be drawn.
+        line_width: The width of the outline stroke.
+        line_cap: The style of the line ends among cairo.LINE_CAP_BUTT, cairo.LINE_CAP_ROUND,
+            or cairo.LINE_CAP_SQUARE.
+        line_join: Specifies how the joins between line segments are drawn among cairo.LINE_JOIN_MITER,
+            cairo.LINE_JOIN_ROUND, or cairo.LINE_JOIN_BEVEL.
     """
 
     scene: Scene
@@ -110,10 +97,8 @@ class Shape(Base, Protocol):
         Temporarily sets various drawing properties such as line width, line cap, line join,
         dash pattern, and operator based on the shape's attributes.
 
-        Yields
-        ------
-        None
-            Yields control back to the caller within the context of the configured style.
+        Yields:
+            None: Yields control back to the caller within the context of the configured style.
         """
         try:
             self.ctx.save()
@@ -147,12 +132,9 @@ class Shape(Base, Protocol):
     def animate(self, property: str, animation: Animation) -> None:
         """Apply an animation to a property of the shape.
 
-        Parameters
-        ----------
-        property : str
-            The name of the property to animate.
-        animation : Animation
-            The animation object defining how the property changes over time.
+        Args:
+            property: The name of the property to animate.
+            animation: The animation object defining how the property changes over time.
         """
         parent: Shape | TransformControls
         if property in self.controls.animatable_properties:
@@ -169,18 +151,12 @@ class Shape(Base, Protocol):
 
         This can be used to restrict drawing to within the boundaries of the shape.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number for which to set the clipping path. Default is 0.
-        ctx : cairo.Context | None, optional
-            The Cairo context on which to apply the clipping path. If None, uses the shape's own
-            context.
+        Args:
+            ctx: The Cairo context on which to apply the clipping path. If None, uses the shape's own
+                context.
 
-        Yields
-        ------
-        None
-            Yields control back to the caller with the clipping path set.
+        Yields:
+            None: Yields control back to the caller with the clipping path set.
         """
         if ctx is not None:
             raise NotImplementedError("Need to update _draw_shape another methods to support arbitrary context.")
@@ -239,46 +215,26 @@ class Shape(Base, Protocol):
 class Rectangle(Shape):
     """A rectangle with optionally rounded corners.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene to which the rectangle belongs.
-    width : float, optional
-        The width of the rectangle. Default is 10.
-    height : float, optional
-        The height of the rectangle. Default is 10.
-    x : float, optional
-        The x-coordinate of the rectangle's position. Default is 10.
-    y : float, optional
-        The y-coordinate of the rectangle's position. Default is 10.
-    radius : float, optional
-        The radius of the corners of the rectangle. Default is 0 (sharp corners).
-    color : tuple[float, float, float], optional
-        The color of the rectangle's border. Default is (1, 1, 1) (white).
-    fill_color : tuple[float, float, float], optional
-        The fill color of the rectangle. Default is (1, 1, 1) (white).
-    alpha : float, optional
-        The opacity level of the rectangle. Default is 1.
-    dash : tuple[Sequence[float], float] | None, optional
-        The dash pattern for the outline of the rectangle. Default is None.
-    operator : cairo.Operator, optional
-        The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-    draw_fill : bool, optional
-        Whether to fill the rectangle. Default is True.
-    draw_stroke : bool, optional
-        Whether to draw the stroke of the rectangle. Default is True.
-    line_width : float, optional
-        The width of the line used to stroke the rectangle. Default is 2.
-    rotation : float, optional
-        The rotation angle of the rectangle, in radians. Default is 0.
-    round_tl : bool, optional
-        Whether to round the top-left corner. Default is True.
-    round_tr : bool, optional
-        Whether to round the top-right corner. Default is True.
-    round_br : bool, optional
-        Whether to round the bottom-right corner. Default is True.
-    round_bl : bool, optional
-        Whether to round the bottom-left corner. Default is True.
+    Args:
+        scene: The scene to which the rectangle belongs.
+        width: The width of the rectangle. Default is 10.
+        height: The height of the rectangle. Default is 10.
+        x: The x-coordinate of the rectangle's position. Default is 10.
+        y: The y-coordinate of the rectangle's position. Default is 10.
+        radius: The radius of the corners of the rectangle. Default is 0 (sharp corners).
+        color: The color of the rectangle's border. Default is (1, 1, 1) (white).
+        fill_color: The fill color of the rectangle. Default is (1, 1, 1) (white).
+        alpha: The opacity level of the rectangle. Default is 1.
+        dash: The dash pattern for the outline of the rectangle. Default is None.
+        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
+        draw_fill: Whether to fill the rectangle. Default is True.
+        draw_stroke: Whether to draw the stroke of the rectangle. Default is True.
+        line_width: The width of the line used to stroke the rectangle. Default is 2.
+        rotation: The rotation angle of the rectangle, in radians. Default is 0.
+        round_tl: Whether to round the top-left corner. Default is True.
+        round_tr: Whether to round the top-right corner. Default is True.
+        round_br: Whether to round the bottom-right corner. Default is True.
+        round_bl: Whether to round the bottom-left corner. Default is True.
     """
 
     def __init__(
@@ -348,10 +304,8 @@ class Rectangle(Shape):
     def _draw_shape(self) -> None:
         """Draw the rectangle at the specified frame.
 
-        Parameters
-        ----------
-        frame : int
-            The frame number to draw the shape.
+        Args:
+            frame: The frame number to draw the shape.
         """
         w = self._width.value
         h = self._height.value
@@ -397,9 +351,7 @@ class Rectangle(Shape):
     def raw_geom_now(self) -> BaseGeometry:
         """Return the geometric shape before any transformations.
 
-        Returns
-        -------
-        shapely.geometry.Polygon
+        Returns:
             The polygon representing the rectangle.
         """
         width: float = self._width.value
@@ -451,32 +403,19 @@ class Rectangle(Shape):
 class Circle(Shape):
     """A circle.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene to which the circle belongs.
-    x : float, optional
-        The x-coordinate of the center of the circle. Default is 10.
-    y : float, optional
-        The y-coordinate of the center of the circle. Default is 10.
-    radius : float, optional
-        The radius of the circle. Default is 1.
-    color : tuple[float, float, float], optional
-        The color of the circle's outline. Default is (1, 1, 1) (white).
-    fill_color : tuple[float, float, float], optional
-        The fill color of the circle. Default is (1, 1, 1) (white).
-    alpha : float, optional
-        The opacity level of the circle. Default is 1.
-    dash : tuple[Sequence[float], float] | None, optional
-        The dash pattern for the outline of the circle. Default is None.
-    operator : cairo.Operator, optional
-        The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-    draw_fill : bool, optional
-        Whether to fill the circle. Default is True.
-    draw_stroke : bool, optional
-        Whether to draw the stroke of the circle. Default is True.
-    line_width : float, optional
-        The width of the line used to stroke the circle. Default is 2.
+    Args:
+        scene: The scene to which the circle belongs.
+        x: The x-coordinate of the center of the circle. Default is 10.
+        y: The y-coordinate of the center of the circle. Default is 10.
+        radius: The radius of the circle. Default is 1.
+        color: The color of the circle's outline. Default is (1, 1, 1) (white).
+        fill_color: The fill color of the circle. Default is (1, 1, 1) (white).
+        alpha: The opacity level of the circle. Default is 1.
+        dash: The dash pattern for the outline of the circle. Default is None.
+        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
+        draw_fill: Whether to fill the circle. Default is True.
+        draw_stroke: Whether to draw the stroke of the circle. Default is True.
+        line_width: The width of the line used to stroke the circle. Default is 2.
     """
 
     def __init__(
@@ -522,10 +461,8 @@ class Circle(Shape):
     def _draw_shape(self) -> None:
         """Draw the circle at the specified frame.
 
-        Parameters
-        ----------
-        frame : int
-            The frame number to draw the shape.
+        Args:
+            frame: The frame number to draw the shape.
         """
         self.ctx.move_to(self.radius.value, 0)
         self.ctx.arc(0, 0, self.radius.value, 0, 2 * math.pi)
@@ -534,14 +471,7 @@ class Circle(Shape):
     def raw_geom_now(self) -> shapely.Polygon:
         """Return the geometry before any transformations.
 
-        Parameters
-        ----------
-        frame : int, optional
-            The frame number for which to generate the geometry. Default is 0.
-
-        Returns
-        -------
-        shapely.geometry.Polygon
+        Returns:
             The polygon representing the circle.
         """
         return shapely.Point(0, 0).buffer(self.radius.value)

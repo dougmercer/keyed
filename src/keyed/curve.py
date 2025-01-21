@@ -30,16 +30,14 @@ def as_xy(pt: shapely.Point) -> tuple[float, float]:
 def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     """Calculate the derivative of a cubic Bézier curve at a given parameter value.
 
-    Parameters
-    ----------
-    t : float
-        The parameter value, typically between 0 and 1, at which to evaluate the derivative.
-    p0, p1, p2, p3 : Vector
-        Control points of the cubic Bézier curve.
+    Args:
+        t: The parameter value, typically between 0 and 1, at which to evaluate the derivative.
+        p0: First control point of the cubic Bézier curve.
+        p1: Second control point.
+        p2: Third.
+        p3: Fourth.
 
-    Returns
-    -------
-    Vector
+    Returns:
         The derivative vector at parameter t.
     """
     assert p0.shape == (2,)
@@ -52,16 +50,13 @@ def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) 
 def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.floating[Any]:
     """Define function to integrate to calculate the arc length of a cubic Bézier curve.
 
-    Parameters
-    ----------
-    t : float
-        The parameter value at which to calculate the integrand.
-    p0, p1, p2, p3 : Vector
-        Control points of the cubic Bézier curve.
-
-    Returns
-    -------
-    np.float64
+    Args:
+        t: The parameter value at which to calculate the integrand.
+        p0: The first control point of the cubic Bézier curve.
+        p1: Second
+        p2: Third
+        p3: Fourth
+    Returns:
         The value of the integrand at t.
     """
     assert p0.shape == (2,)
@@ -74,14 +69,13 @@ def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.fl
 def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     """Calculate the length of a cubic Bézier curve using numerical integration.
 
-    Parameters
-    ----------
-    p0, p1, p2, p3 : Vector
-        Control points of the cubic Bézier curve.
+    Args:
+        p0: First control point of the cubic Bézier curve.
+        p1: Second
+        p2: Third
+        p3: Fourth
 
-    Returns
-    -------
-    float
+    Returns:
         The total length of the cubic Bézier curve.
     """
     assert p0.shape == (2,)
@@ -103,18 +97,15 @@ def de_casteljau(
 ) -> tuple[Vector, Vector, Vector, Vector]:
     """Find control points such that the new curve is equivalent to the orignal segment from 0 to t.
 
-    Parameters
-    ----------
-    t : float
-        The parameter at which to subdivide the curve.
-    p0, p1, p2, p3 : Vector
-        Control points of the cubic Bézier curve.
-    reverse : bool, optional
-        If True, reverse the control points before processing. Default is False.
+    Args:
+        t: The parameter at which to subdivide the curve.
+        p0: The first control point of the cubic Bézier curve.
+        p1: Second
+        p2: Third
+        p3: Fourth
+        reverse: If True, reverse the control points before processing. Default is False.
 
-    Returns
-    -------
-    tuple[Vector, Vector, Vector, Vector]
+    Returns:
         The new control points subdividing the original curve at t.
     """
     assert p0.shape == (2,)
@@ -146,16 +137,11 @@ def de_casteljau(
 def calculate_control_points(tension: float, points: list[tuple[float, float]] | Vector) -> tuple[Vector, Vector]:
     """Calculate the control points for a smooth curve through given points with specified tension.
 
-    Parameters
-    ----------
-    tension: float
-        Controls how tightly the curve bends (0 implies linear).
-    points: list[tuple[float, float]]
-        The points through which the curve must pass.
+    Args:
+        tension: Controls how tightly the curve bends (0 implies linear).
+        points: The points through which the curve must pass.
 
-    Returns
-    -------
-    tuple[nd.ndarray, np.ndarray]
+    Returns:
         The control points for each segment of the curve.
     """
     p = np.array(points)
@@ -175,33 +161,19 @@ def calculate_control_points(tension: float, points: list[tuple[float, float]] |
 class Curve(Shape):
     """Draw a curve through the a collection of object's centroids centroids.
 
-    Parameters
-    ----------
-    scene : Scene
-        The scene to which the curve belongs.
-    objects : Sequence[Base]
-        The objects through which the curve will pass.
-    color : tuple[float, float, float] or Color, optional
-        The color of the curve in RGB format. Default is (1, 1, 1).
-    fill_color : tuple[float, float, float] or Color, optional
-        The color of the curve's fill in RGB format. Default is (1, 1, 1).
-    alpha : float, optional
-        The transparency of the curve. Default is 1.
-    dash : tuple[Sequence[float], float] | None, optional
-        Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
-    operator : cairo.Operator, optional
-        The compositing operator to use for drawing. Default is :data:`cairo.OPERATOR_OVER`.
-    line_width : float, optional
-        The width of the curve line. Default is 1.
-    simplify : float | None, optional
-        The tolerance for simplifying the curve's path. Default is None.
-    tension : float, optional
-        The tension factor used in calculating control points for the curve. Default is 1.
+    Args:
+        scene: The scene to which the curve belongs.
+        objects: The objects through which the curve will pass.
+        color: The color of the curve in RGB format. Default is (1, 1, 1).
+        fill_color: The color of the curve's fill in RGB format. Default is (1, 1, 1).
+        alpha: The transparency of the curve. Default is 1.
+        dash: Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
+        operator: The compositing operator to use for drawing. Default is :data:`cairo.OPERATOR_OVER`.
+        line_width: The width of the curve line. Default is 1.
+        tension: The tension factor used in calculating control points for the curve. Default is 1.
 
-    Raises
-    ------
-    ValueError
-        If fewer than 2 objects are provided.
+    Raises:
+        ValueError: If fewer than 2 objects are provided.
     """
 
     def __init__(

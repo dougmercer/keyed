@@ -13,9 +13,8 @@ class Freezeable(Protocol):
     When an object is not frozen, we allow it to setattr but do not allow it to hash.
     Once an object is frozen, setattr breaks but a very simple id-based hash is enabled.
 
-    Todo
-    ----
-    Remove the need for this class by writing proper hash/eq methods for all classes.
+    Todo:
+        Remove the need for this class by writing proper hash/eq methods for all classes.
     """
 
     is_frozen: bool
@@ -44,14 +43,10 @@ T = TypeVar("T", bound=Callable[..., Any])
 def guard_frozen(method: T) -> T:
     """Check if the object is frozen before allowing method execution.
 
-    Parameters
-    ----------
-    method: Callable[..., Any]
-        The method to be decorated.
+    Args:
+        method: The method to be decorated.
 
-    Returns
-    -------
-    Callable[..., Any]
+    Returns:
         The decorated method.
     """
 
@@ -67,14 +62,10 @@ def guard_frozen(method: T) -> T:
 def freeze(method: T) -> T:
     """Call self.freeze() on the object before executing the method.
 
-    Parameters
-    ----------
-    method: Callable[..., Any]
-        The method to be decorated.
+    Args:
+        method: The method to be decorated.
 
-    Returns
-    -------
-    Callable[..., Any]
+    Returns:
         The decorated method.
     """
 

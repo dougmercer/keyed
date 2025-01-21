@@ -31,16 +31,14 @@ EasingFunctionT = Callable[[float], float]
 def easing_function(start: int, end: int, ease: EasingFunctionT, frame: ReactiveValue[int]) -> Computed[float]:
     """Create a reactive easing function.
 
-    Parameters
-    ----------
-    start: int
-    end: int
-    ease : Callable[[float], float]
-    frame : Variable[int]
+    Args:
+        start: Starting frame
+        end: Ending Frame
+        ease: Easing function
+        frame: Variable[int]
 
-    Parameters
-    ----------
-    Computed[float]
+    Returns:
+        Easing function as a reactive value.
     """
 
     @computed
@@ -254,16 +252,11 @@ def discretize(easing_func: EasingFunctionT, n: int = 10) -> EasingFunctionT:
 
     This will still need to be made "reactive" by calling easing_function(...).
 
-    Parameters
-    ----------
-    easing_func : Callable[[float], float]
-        The easing function to discretize.
-    n : int
-        The number of discrete steps.
+    Args:
+        easing_func: The easing function to discretize.
+        n: The number of discrete steps.
 
-    Returns
-    -------
-    Callable[[float], float]
+    Returns:
         The discretized easing function.
     """
     steps = n - 1
