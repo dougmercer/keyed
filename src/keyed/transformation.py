@@ -379,6 +379,12 @@ class Transformable(Protocol):
         bounds = (self.geom if with_transforms else self.raw_geom).bounds
         return bounds[3] - bounds[1]
 
+    def center_x(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.left(with_transforms) + self.right(with_transforms)) / 2
+
+    def center_y(self, with_transforms: bool = True) -> Computed[float]:
+        return (self.up(with_transforms) + self.down(with_transforms)) / 2
+
 
 class TransformControls(Freezeable):
     """Control how transforms are applied to the object.
