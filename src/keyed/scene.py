@@ -153,6 +153,28 @@ class Scene(Transformable, Freezeable):
         self.layers: list[Layer] = []
         self.default_layer = self.create_layer("default", z_index=0)
 
+    def nx(self, n: float) -> float:
+        """Convert normalized x coordinate (0-1) to pixel value.
+
+        Args:
+            n: Normalized coordinate between 0 and 1
+
+        Returns:
+            Pixel value
+        """
+        return n * self._width
+
+    def ny(self, n: float) -> float:
+        """Convert normalized y coordinate (0-1) to pixel value.
+
+        Args:
+            n: Normalized coordinate between 0 and 1
+
+        Returns:
+            Pixel value
+        """
+        return n * self._height
+
     def create_layer(
         self,
         name: str = "",
