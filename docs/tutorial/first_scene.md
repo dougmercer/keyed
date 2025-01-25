@@ -6,38 +6,8 @@ Let's create a simple animation of a bouncing ball with a title. This tutorial w
 
 Here's the complete code - feel free to run it now. After, we'll break down how it works.
 
-```python
-from keyed import *
-
-# Create a scene
-scene = Scene(width=1920, height=1080, num_frames=120)
-
-# Create a ball
-ball = (
-    Circle(scene, x=200, y=200, radius=50)
-    .center()
-    .translate(0, 300, start=0, end=24, easing=easing.bounce_out)
-    .scale(2, start=24, end=48, direction=DOWN)
-    .translate(0, -300, start=60, end=110, easing=easing.elastic_out)
-)
-
-# Make a floor for the ball to bounce on
-floor = (
-    Rectangle(scene, width=1920, height=1080/2 - 300 - 50, line_width=5, draw_fill=False)
-    .center()
-    .align_to(scene, direction=DOWN)
-)
-
-title = (
-    Text(scene, "Thanks for dropping by!", size=100)
-    .center()
-    .align_to(scene, direction=UP)
-    .translate(0, 100)
-)
-
-# Render the animation
-scene.add(floor, ball, title)
-scene.preview()  # Preview in a GUI window
+```python title="examples/first_scene.py"
+--8<-- "examples/first_scene.py"
 ```
 
 ## Breaking It Down
@@ -61,7 +31,7 @@ ball = (
     .translate(0, -300, start=60, end=110, easing=easing.elastic_out)
 )
 ```
-Here we create and animate the most interesting thing the animation - a [Circle][keyed.shapes.Circle]. We apply a few key framed transformations to the object.
+Here we create and animate the most interesting thing in the animation - a [Circle][keyed.shapes.Circle]. We apply a few key framed transformations to the object.
 
 - `.center()` - Centers the circle in the scene
 - First `.translate()` - Moves the ball down by 300 pixels with a bouncy easing
@@ -78,41 +48,31 @@ Notice how we specify start and end frames for each animation. The ball will:
 ### Adding the Floor
 
 ```python
-floor = (
-    Rectangle(scene, width=1920, height=1080/2 - 300 - 50, line_width=5, draw_fill=False)
-    .center()
-    .align_to(scene, direction=DOWN)
-)
+floor = Line(scene, x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), line_width=5)
 ```
 
-The floor is a simple [Rectangle][keyed.shapes.Rectangle] that:
+The floor is a simple [Line][keyed.line.Line] that:
 
-- Spans the width of the scene
-- Has a height calculated to be at the right position for the ball's bounce
-- Is centered and aligned to the bottom of the scene
-- Has no fill (only outline) with a 5-pixel line width
+- Spans the width of the scene. Here, we used the helper `[Scene.nx(...)][keyed.scene.Scene.nx]` to convert from a normalized value of 1 (100%) along the x direction to the true pixel value of 1920 (100% of the width of our scene).
+- Is positioned far enough from the bottom of the scene that it kind of looks like the ball is bouncing on a floor.
+
+Note that our Scene's cooridinate system is such that the top left corner of the scene is at coordinates `(0, 0)`, so when we specify `scene.ny(0.75)`, we're saying we should draw the line 75% of the height of the scene measured downwards from the top edge of the scene.
 
 ### Adding the Title
 ```python
-title = (
-    Text(scene, "Thanks for dropping by!", size=100)
-    .center()
-    .align_to(scene, direction=UP)
-    .translate(0, 100)
-)
+title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
 ```
 
 We create a [Text][keyed.code.Text] object that:
 
 - Contains our message
-- Is sized at 100 pixels
-- Is centered and aligned to the top of the scene
-- Is offset downward by 100 pixels
+- Has font size 100
+- Is moved to the center of the scene horizontally and 20% downward vertically
 
 ### Rendering the Animation
 ```python
 scene.add(floor, ball, title)
-scene.preview()  # Preview in a GUI window
+scene.preview()
 ```
 
 Finally, we:
