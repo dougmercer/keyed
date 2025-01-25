@@ -25,7 +25,7 @@ from signified import Computed, HasValue, ReactiveValue, Variable, unref
 from .animation import Animation, step
 from .constants import ALWAYS, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
-from .transformation import Transformable, align_to, get_critical_point, lock_on, rotate, scale, translate
+from .transformation import Transformable, align_to, get_critical_point, lock_on, move_to, rotate, scale, translate
 from .types import GeometryT, HasAlpha
 
 if TYPE_CHECKING:
@@ -409,6 +409,41 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         matrix = translate(start, end, x, y, self.scene.frame, easing)
         self.apply_transform(matrix)
+        return self
+
+    def move_to(
+        self,
+        x: HasValue[float],
+        y: HasValue[float],
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        """Move object to absolute coordinates.
+
+        Parameters
+        ----------
+        x : HasValue[float]
+            Target x coordinate
+        y : HasValue[float]
+            Target y coordinate
+        start : int, optional
+            Starting frame, by default ALWAYS
+        end : int, optional
+            Ending frame, by default ALWAYS
+        easing : EasingFunctionT, optional
+            Easing function, by default cubic_in_out
+
+        Returns
+        -------
+        Self
+            The transformed object
+        """
+        center = center if center is not None else self.geom  # type: ignore[assignment]
+        cx, cy = get_critical_point(center, direction)  # type: ignore[argument]
+        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
         return self
 
     def rotate(

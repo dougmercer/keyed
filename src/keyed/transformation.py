@@ -199,6 +199,41 @@ class Transformable(Protocol):
         """
         return self.apply_transform(translate(start, end, x, y, self.frame, easing))
 
+    def move_to(
+        self,
+        x: HasValue[float],
+        y: HasValue[float],
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        """Move object to absolute coordinates.
+
+        Parameters
+        ----------
+        x : HasValue[float]
+            Target x coordinate
+        y : HasValue[float]
+            Target y coordinate
+        start : int, optional
+            Starting frame, by default ALWAYS
+        end : int, optional
+            Ending frame, by default ALWAYS
+        easing : EasingFunctionT, optional
+            Easing function, by default cubic_in_out
+
+        Returns
+        -------
+        Self
+            The transformed object
+        """
+        center = center if center is not None else self.geom
+        cx, cy = get_critical_point(center, direction)
+        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
+        return self
+
     def align_to(
         self,
         to: Transformable,
@@ -574,6 +609,53 @@ def translate(
         return matrix
 
     return f(x, y)
+
+
+def move_to(
+    start: int,
+    end: int,
+    x: HasValue[float],
+    y: HasValue[float],
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    easing: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Create a transformation matrix that moves an object to absolute coordinates.
+
+    Parameters
+    ----------
+    start : int
+        Starting frame of the movement
+    end : int
+        Ending frame of the movement
+    x : HasValue[float]
+        Target x coordinate
+    y : HasValue[float]
+        Target y coordinate
+    frame : ReactiveValue[int]
+        Current frame
+    easing : EasingFunctionT
+        Easing function for the movement
+
+    Returns
+    -------
+    Computed[cairo.Matrix]
+        Transform matrix for the movement
+    """
+
+    @computed
+    def compute_matrix(x: float, y: float, cx: float, cy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(x - cx, y - cy)
+        return matrix
+
+    if start == end:
+        return compute_matrix(x, y, cx, cy)
+    else:
+        animated_x = Animation(start, end, cx, x, easing, AnimationType.ABSOLUTE)(cx, frame)
+        animated_y = Animation(start, end, cy, y, easing, AnimationType.ABSOLUTE)(cy, frame)
+        return compute_matrix(animated_x, animated_y, cx, cy)
 
 
 def rotate(
