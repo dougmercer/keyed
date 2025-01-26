@@ -10,7 +10,6 @@ from signified import Computed, HasValue, ReactiveValue, Signal, Variable, as_si
 
 from keyed.types import Cleanable
 
-from .animation import Animation
 from .base import Base
 from .color import as_color
 from .scene import Scene
@@ -142,21 +141,6 @@ class Line(Base):
             self.ctx.stroke()
             self.ctx.set_matrix(cairo.Matrix())
 
-    def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to a property of the shape.
-
-        Args:
-            property: The name of the property to animate.
-            animation: The animation object defining how the property changes over time.
-        """
-        if property in self.controls.animatable_properties:
-            parent = self.controls
-        else:
-            parent = self
-        p = getattr(parent, property)
-        assert isinstance(p, Variable)
-        setattr(parent, property, animation(p, self.frame))
-
     def cleanup(self) -> None:
         if isinstance(self.ctx, Cleanable):
             self.ctx.cleanup()
@@ -271,21 +255,6 @@ class BezierCurve(Base):
     #         self.ctx.set_source_rgba(*self.color, self.alpha.value)
     #         self.ctx.stroke()
     #         self.ctx.set_matrix(cairo.Matrix())
-
-    def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to a property of the shape.
-
-        Args:
-        property: The name of the property to animate.
-        animation: The animation object defining how the property changes over time.
-        """
-        if property in self.controls.animatable_properties:
-            parent = self.controls
-        else:
-            parent = self
-        p = getattr(parent, property)
-        assert isinstance(p, Variable)
-        setattr(parent, property, animation(p, self.frame))
 
     def cleanup(self) -> None:
         if isinstance(self.ctx, Cleanable):

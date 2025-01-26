@@ -92,14 +92,24 @@ class Base(Transformable, Protocol):
         """Draw the object on the scene at the current frame."""
         pass
 
-    def animate(self, property: str, animation: Animation) -> None:
-        """Animate a specified property of the object using the provided animation.
+    def animate(self, property: str, animation: Animation) -> Self:
+        """Apply an animation to a property of the shape.
+
+        Note:
+            You probably want to directly create a reactive value and provide it
+            as an argument for your object rather than using this.
+
+            This is a vestigial method that still exists almost entirely for
+            implementing the write_on method. It may be removed in the future.
 
         Args:
             property: The name of the property to animate.
-            animation: The animation to apply to the property.
+            animation: The animation object defining how the property changes over time.
         """
-        pass
+        p = getattr(self, property)
+        assert isinstance(p, Variable)
+        setattr(self, property, animation(p, self.frame))
+        return self
 
     def emphasize(
         self,
@@ -282,7 +292,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
         list.__init__(self, iterable)
 
-    def animate(self, property: str, animation: Animation) -> None:
+    def animate(self, property: str, animation: Animation) -> Self:
         """Animate a property across all objects in the selection using the provided animation.
 
         Args:

@@ -11,11 +11,10 @@ import shapely
 import shapely.geometry
 import shapely.ops
 from shapely.geometry.base import BaseGeometry
-from signified import HasValue, ReactiveValue, Signal, Variable, as_signal, unref
+from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
 from keyed.types import Cleanable
 
-from .animation import Animation
 from .base import Base
 from .color import Color, as_color
 from .context import ContextT
@@ -128,22 +127,6 @@ class Shape(Base, Protocol):
                 self._apply_stroke(self.ctx)
                 self.ctx.stroke()
             self.ctx.restore()
-
-    def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to a property of the shape.
-
-        Args:
-            property: The name of the property to animate.
-            animation: The animation object defining how the property changes over time.
-        """
-        parent: Shape | TransformControls
-        if property in self.controls.animatable_properties:
-            parent = self.controls
-        else:
-            parent = self
-        p = getattr(parent, property)
-        assert isinstance(p, Variable)
-        setattr(parent, property, animation(p, self.frame))
 
     @contextmanager
     def clip(self, ctx: ContextT | None = None) -> Generator[None, None, None]:

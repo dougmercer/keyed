@@ -12,13 +12,11 @@ import shapely
 import shapely.ops
 from pygments.token import Token as PygmentsToken
 from pygments.token import _TokenType as Pygments_TokenType
-from signified import HasValue, ReactiveValue, Signal, Variable, as_signal, unref
+from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
-from .animation import Animation
 from .base import BaseText, Selection
 from .color import as_color
 from .highlight import StyledToken
-from .transformation import TransformControls
 
 if TYPE_CHECKING:
     from .scene import Scene
@@ -147,22 +145,6 @@ class Text(BaseText):
         return (self.token_type is PygmentsToken.Text.Whitespace) or (
             self.token_type is PygmentsToken.Text and unref(self.text).strip() == ""
         )
-
-    def animate(self, property: str, animation: Animation) -> None:
-        """Apply an animation to a property of the Text object.
-
-        Args:
-            property: The property to animate.
-            animation: The animation to apply.
-        """
-        parent: TransformControls | Text
-        if property in self.controls.animatable_properties:
-            parent = self.controls
-        else:
-            parent = self
-        p = getattr(parent, property)
-        assert isinstance(p, Variable)
-        setattr(parent, property, animation(p, self.frame))
 
     @property
     def chars(self) -> TextSelection[Self]:

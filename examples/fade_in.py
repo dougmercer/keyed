@@ -9,9 +9,7 @@ code = Code(scene, styled_tokens, font_size=48)
 
 scene.add(code)
 
-code.chars[:10].animate(
-    "alpha",
-    Animation(start=0, end=24, start_value=0, end_value=1),
-)
+# Fade in the first 10 characters
+code.chars[:10].set("alpha", 0, 0).fade(1, 0, 24)
 
 scene.preview()
