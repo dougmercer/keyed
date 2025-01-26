@@ -177,7 +177,7 @@ class Base(Transformable, Protocol):
         )
         return r
 
-    def set(self, property: str, value: Any, frame: int = ALWAYS) -> None:
+    def set(self, property: str, value: Any, frame: int = ALWAYS) -> Self:
         """Set a property of the object at a specific frame.
 
         Args:
@@ -199,9 +199,11 @@ class Base(Transformable, Protocol):
                 # new.subscribe(p)  # TODO: Using subscribe directly causes color interpolation test to have infinite recursion?
 
         setattr(self, property, new)
+        return self
 
-    def set_literal(self, property: str, value: Any) -> None:
+    def set_literal(self, property: str, value: Any) -> Self:
         setattr(self, property, value)
+        return self
 
     def center(self, frame: int = ALWAYS) -> Self:
         """Center the object within the scene.
@@ -304,13 +306,14 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         """
         for item in self:
             item.animate(property, animation)
+        return self
 
     def draw(self) -> None:
         """Draws all objects in the selection on the scene at the specified frame."""
         for item in self:
             item.draw()
 
-    def set(self, property: str, value: Any, frame: int = 0) -> None:
+    def set(self, property: str, value: Any, frame: int = 0) -> Self:
         """Set a property to a new value for all objects in the selection at the specified frame.
 
         Args:
@@ -320,8 +323,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         """
         for item in self:
             item.set(property, value, frame)
+        return self
 
-    def set_literal(self, property: str, value: Any) -> None:
+    def set_literal(self, property: str, value: Any) -> Self:
         """Set a property to a new value for all objects in the selection at the specified frame.
 
         Args:
@@ -330,6 +334,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         """
         for item in self:
             item.set_literal(property, value)
+        return self
 
     def write_on(
         self,
@@ -338,7 +343,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         start: int,
         delay: int,
         duration: int,
-    ) -> None:
+    ) -> Self:
         """Sequentially animates a property across all objects in the selection.
 
         Args:
@@ -354,6 +359,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
             animation = lagged_animation(start=frame, end=frame + duration)
             item.animate(property, animation)
             frame += delay
+        return self
 
     @overload
     def __getitem__(self, key: SupportsIndex) -> T:

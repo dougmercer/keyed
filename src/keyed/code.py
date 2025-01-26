@@ -238,7 +238,7 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
         delay: int,
         duration: int,
         skip_whitespace: bool = True,
-    ) -> None:
+    ) -> Self:
         """Sequentially animates a property across all objects in the selection.
 
         Args:
@@ -257,6 +257,7 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
             animation = lagged_animation(start=frame, end=frame + duration)
             item.animate(property, animation)
             frame += delay
+        return self
 
     def is_whitespace(self) -> bool:
         """Determine if all objects in the selection are whitespace.
