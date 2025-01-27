@@ -24,7 +24,7 @@ from signified import Computed, HasValue, ReactiveValue, Variable, unref
 
 from .animation import Animation, step
 from .constants import ALWAYS, ORIGIN, Direction
-from .easing import EasingFunctionT, cubic_in_out
+from .easing import EasingFunctionT, cubic_in_out, linear_in_out
 from .transformation import Transformable, align_to, get_critical_point, lock_on, move_to, rotate, scale, translate
 from .types import GeometryT, HasAlpha
 
@@ -220,9 +220,9 @@ class Base(Transformable, Protocol):
     def cleanup(self) -> None:
         return None
 
-    def fade(self, value: HasValue[float], start: int, end: int) -> Self:
+    def fade(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = linear_in_out) -> Self:
         assert hasattr(self, "alpha")
-        self.alpha = Animation(start, end, self.alpha, value)(self.alpha, self.frame)
+        self.alpha = Animation(start, end, self.alpha, value, ease=ease)(self.alpha, self.frame)  # type: ignore[assignment]
         return self
 
 
