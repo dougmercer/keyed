@@ -121,9 +121,9 @@ nav:
   - Installation: install.md
   - Tutorial:
     - First Scene: tutorial/first_scene.md
-    - Animation: tutorial/animation.md
     - Easing: tutorial/easing.md
-    - Reactive Values: tutorial/reactive_values.md
+    - Transformations: tutorial/transformations.md
+    - Reactivity and Animation: tutorial/animation.md
     - Previewer: tutorial/previewer.md
   - API Reference:
     - Animation: api/animation.md
