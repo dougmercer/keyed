@@ -464,7 +464,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     def rotate(
         self,
-        amount: float,
+        amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
@@ -479,7 +479,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     def scale(
         self,
-        amount: float,
+        amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,

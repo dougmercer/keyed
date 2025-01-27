@@ -130,7 +130,7 @@ class Transformable(Protocol):
 
     def rotate(
         self,
-        amount: float,
+        amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
@@ -156,7 +156,7 @@ class Transformable(Protocol):
 
     def scale(
         self,
-        amount: float,
+        amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
@@ -667,7 +667,7 @@ def move_to(
 def rotate(
     start: int,
     end: int,
-    amount: float,
+    amount: HasValue[float],
     cx: HasValue[float],
     cy: HasValue[float],
     frame: ReactiveValue[int],
@@ -703,7 +703,7 @@ def rotate(
 def scale(
     start: int,
     end: int,
-    amount: float,
+    amount: HasValue[float],
     cx: HasValue[float],
     cy: HasValue[float],
     frame: ReactiveValue[int],

@@ -417,7 +417,7 @@ class Scene(Transformable, Freezeable):
         )
 
     @freeze
-    def find(self, x: float, y: float, frame: int = 0) -> Base | None:
+    def find(self, x: HasValue[float], y: HasValue[float], frame: int = 0) -> Base | None:
         """Find the nearest object on the canvas to the given x, y coordinates.
 
         For composite objects, this will return the most atomic object possible. Namely, if
@@ -433,6 +433,9 @@ class Scene(Transformable, Freezeable):
             The nearest object if found; otherwise, None.
         """
         from .extras import Editor
+
+        x = unref(x)
+        y = unref(y)
 
         try:
             point = shapely.Point(x, y)

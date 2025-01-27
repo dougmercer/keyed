@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager
-from typing import Generator, Iterable, Protocol, Self, Sequence
+from typing import Generator, Protocol, Self, Sequence
 
 import cairo
 import shapely
@@ -407,8 +407,8 @@ class Circle(Shape):
         x: HasValue[float] = 10,
         y: HasValue[float] = 10,
         radius: HasValue[float] = 1,
-        color: tuple[float, float, float] = (1, 1, 1),
-        fill_color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
+        fill_color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
         alpha: float = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
@@ -425,8 +425,8 @@ class Circle(Shape):
         self.controls.delta_y.value = y
         self.radius = as_signal(radius)
         self.alpha = as_signal(alpha)
-        self.color = Color(*color) if isinstance(color, Iterable) else color
-        self.fill_color = Color(*fill_color) if isinstance(fill_color, Iterable) else fill_color
+        self.color = as_color(color)
+        self.fill_color = as_color(fill_color)
         self.dash = dash
         self.operator = operator
         self.draw_fill = draw_fill
