@@ -110,7 +110,7 @@ def test_direction_div(a: float, b: float, scalar: float) -> None:
         assert (actual == expected).all()
     else:
         with pytest.raises(ValueError):
-            Direction(a, b) / scalar
+            Direction(a, b) / scalar  # type: ignore
 
 
 def test_direction_eq_invalid() -> None:
@@ -120,37 +120,37 @@ def test_direction_eq_invalid() -> None:
 
 def test_direction_add_invalid() -> None:
     with pytest.raises(TypeError):
-        Direction(1, 2) + "abc"
+        Direction(1, 2) + "abc"  # type: ignore
 
 
 def test_direction_sub_invalid() -> None:
     with pytest.raises(TypeError):
-        Direction(1, 2) - "abc"
+        Direction(1, 2) - "abc"  # type: ignore
 
 
 def test_direction_radd_invalid() -> None:
     with pytest.raises(TypeError):
-        "abc" + Direction(1, 2)
+        "abc" + Direction(1, 2)  # type: ignore
 
 
 def test_direction_rsub_invalid() -> None:
     with pytest.raises(TypeError):
-        "abc" - Direction(1, 2)
+        "abc" - Direction(1, 2)  # type: ignore
 
 
 def test_direction_mul_invalid() -> None:
     with pytest.raises(TypeError):
-        Direction(1, 2) * "abc"
+        Direction(1, 2) * "abc"  # type: ignore
 
 
 def test_direction_rmul_invalid() -> None:
     with pytest.raises(TypeError):
-        "abc" * Direction(1, 2)
+        "abc" * Direction(1, 2)  # type: ignore
 
 
 def test_direction_div_invalid() -> None:
     with pytest.raises(TypeError):
-        Direction(1, 2) / "abc"
+        Direction(1, 2) / "abc"  # type: ignore
 
 
 def test_direction_repr() -> None:

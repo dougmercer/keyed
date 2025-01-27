@@ -53,7 +53,7 @@ def test_phase(start: int, period: int, magnitude: float, center: float, phase: 
     )
     b = SinusoidalAnimation(start_frame=start, period=period, magnitude=magnitude, center=center, phase=0)
     a_val = a(None, Signal(start)).value
-    b_val = b(None, Signal(start + phase)).value
+    b_val = b(None, Signal(start + phase)).value  # type: ignore
     assert math.isclose(a_val, b_val, abs_tol=1e-5), (a_val, b_val)
 
 
@@ -106,15 +106,15 @@ def test_magnitude(start: int, period: int, center: float, magnitude: float) -> 
         expected = center + magnitude
         actual = a.value
         assert math.isclose(actual, expected, abs_tol=tol), (actual, expected)
-    with frame.at(start + quarter_period):
+    with frame.at(start + quarter_period):  # type: ignore
         expected = center
         actual = a.value
         assert math.isclose(actual, expected, abs_tol=tol), (actual, expected)
-    with frame.at(start + 2 * quarter_period):
+    with frame.at(start + 2 * quarter_period):  # type: ignore
         expected = center - magnitude
         actual = a.value
         assert math.isclose(actual, expected, abs_tol=tol), (actual, expected)
-    with frame.at(start + 3 * quarter_period):
+    with frame.at(start + 3 * quarter_period):  # type: ignore
         expected = center
         actual = a.value
         assert math.isclose(actual, expected, abs_tol=tol), (actual, expected)

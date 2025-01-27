@@ -6,9 +6,8 @@ from keyed.animation import step
 
 @pytest.mark.parametrize("frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)])
 def test_value_with_single_animation(frame: int, expected_value: tuple[float, float]) -> None:
-    frame = Signal(frame)
     prop = Signal(0)
-    anim = Animation(start=0, end=10, start_value=0, end_value=100)(prop, frame)
+    anim = Animation(start=0, end=10, start_value=0, end_value=100)(prop, Signal(frame))
     assert anim.value == expected_value
 
 
