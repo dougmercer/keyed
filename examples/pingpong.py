@@ -17,7 +17,7 @@ y_anim = PingPong(
         end_value=150,
         ease=easing.cubic_in_out,
     ),
-)(Signal(0), scene.frame)
+)(Signal(0.0), scene.frame)
 a.translate(0, y_anim)
 
 scene.preview()
