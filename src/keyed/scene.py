@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Iterable, Literal, Self, Sequence
 import cairo
 import numpy as np
 import shapely
-from signified import Signal
+from signified import HasValue, Signal, unref
 from tqdm import tqdm
 
 from .base import is_visible

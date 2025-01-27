@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Generator, Sequence, TypeVar, cast, overload
+from typing import Generator, Self, Sequence, TypeVar, cast, overload
 
 import cairo
 import numpy as np
@@ -10,18 +10,16 @@ from signified import Computed, HasValue, ReactiveValue, Signal, Variable, as_si
 
 from keyed.types import Cleanable
 
+from .animation import Animation
 from .base import Base
 from .color import as_color
+from .easing import EasingFunctionT, cubic_in_out
 from .scene import Scene
 
 __all__ = ["Line", "BezierCurve", "lerp", "de_casteljau"]
 
 
 T = TypeVar("T")
-
-
-# @overload
-# def lerp(x0: T, x1: T, progress: float) -> T: ...
 
 
 @overload
@@ -84,8 +82,8 @@ class Line(Base):
         super().__init__(scene)
         self.scene = scene
         self.ctx = scene.get_context()
-        self.start = Signal(0)
-        self.end = Signal(1)
+        self.start: ReactiveValue[float] = Signal(0)
+        self.end: ReactiveValue[float] = Signal(1)
         self.x0 = as_signal(x0)
         self.y0 = as_signal(y0)
         self.x1 = as_signal(x1)
@@ -152,6 +150,36 @@ class Line(Base):
         x1 = lerp(self.x0.value, self.x1.value, self.end.value)
         y1 = lerp(self.y0.value, self.y1.value, self.end.value)
         return shapely.LineString([[x0, y0], [x1, y1]])
+
+    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being drawn from start to end.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        return self
+
+    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being erased from end to start.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        return self
 
 
 class BezierCurve(Base):
@@ -302,6 +330,36 @@ class BezierCurve(Base):
         return shapely.LineString(
             [[x0.value, y0.value], [x1.value, y1.value], [x2.value, y2.value], [x3.value, y3.value]]
         )
+
+    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being drawn from start to end.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        return self
+
+    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being erased from end to start.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        return self
 
     def __repr__(self) -> str:
         return (

@@ -8,7 +8,10 @@ import numpy as np
 import numpy.typing as npt
 import shapely
 from scipy.integrate import quad
-from signified import Signal, computed
+from signified import HasValue, ReactiveValue, Signal, computed
+
+from keyed.animation import Animation
+from keyed.easing import EasingFunctionT, cubic_in_out
 
 from .base import Base
 from .color import Color, as_color
@@ -210,8 +213,8 @@ class Curve(Shape):
         self.buffer = Signal(buffer)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
-        self.start = Signal(0.0)
-        self.end = Signal(1.0)
+        self.start: ReactiveValue[float] = Signal(0.0)
+        self.end: ReactiveValue[float] = Signal(1.0)
 
         # Add dependencies from child objects
         for item in self.objects:
@@ -352,6 +355,36 @@ class Curve(Shape):
             draw_fill=draw_fill,
             draw_stroke=draw_stroke,
         )
+
+    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being drawn from start to end.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        return self
+
+    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+        """Animate the line being erased from end to start.
+
+        Args:
+            value: Value to animate to
+            start: Frame to start the animation
+            end: Frame to end the animation
+            easing: Easing function to use
+
+        Returns:
+            Self
+        """
+        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        return self
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(...)"

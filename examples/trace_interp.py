@@ -1,4 +1,4 @@
-from keyed import Animation, Code, Curve, Scene, easing, tokenize
+from keyed import Code, Curve, Scene, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()
@@ -9,16 +9,11 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1, x=100, y=100)
 
 scene.add(code)
 
-trace = Curve(
-    scene,
-    code.lines[0:4].chars,
-    alpha=0.5,
-    line_width=50,
-    tension=1,
-)
+trace = Curve(scene, code.lines[0:4].chars, alpha=0.5, line_width=50)
 
 scene.add(trace)
 
-trace.end = Animation(0, 24, 0, 1, easing.cubic_in_out)(trace.end, scene.frame)
+# Start with no line, then write on
+trace.set("end", 0).write_on(1, 0, 24)
 
 scene.preview()
