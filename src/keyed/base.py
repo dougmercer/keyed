@@ -19,7 +19,7 @@ from typing import (
 import cairo
 import shapely
 import shapely.affinity
-from signified import Computed, HasValue, ReactiveValue, Variable, unref
+from signified import Computed, HasValue, ReactiveValue, Variable, computed, unref
 
 from .animation import Animation, step
 from .constants import ALWAYS, ORIGIN, Direction
@@ -245,7 +245,7 @@ class BaseText(Base, Protocol):
         operator: cairo.Operator = cairo.OPERATOR_SCREEN,
         line_width: float = 1,
         tension: float = 1,
-    ) -> "Curve":
+    ) -> Curve:
         """Highlight text by drawing a curve passing through the text.
 
         Args:
@@ -383,13 +383,17 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     @property
     def geom(self) -> Computed[shapely.GeometryCollection]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Compute the transformed geometry at the specified frame before the provided transform."""
-        geoms = [obj.geom for obj in self]
+        """Return a reactive value of the geometry.
 
-        def f() -> shapely.GeometryCollection:
+        Returns:
+            A reactive value of the geometry.
+        """
+
+        @computed
+        def f(geoms: list[shapely.geometry.base.BaseGeometry]) -> shapely.GeometryCollection:
             return shapely.GeometryCollection([unref(geom) for geom in geoms])
 
-        return Computed(f, geoms)
+        return f([obj.geom for obj in self])
 
     @property
     def geom_now(self) -> shapely.GeometryCollection:
@@ -552,9 +556,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         for obj in self:
             obj.cleanup()
 
-    def fade(self, value: HasValue[float], start: int, end: int) -> Self:
+    def fade(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = linear_in_out) -> Self:
         for obj in self:
-            obj.fade(value, start, end)
+            obj.fade(value, start, end, ease)
         return self
 
 

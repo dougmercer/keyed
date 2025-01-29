@@ -52,7 +52,7 @@ class Transformable(Protocol):
 
     @property
     def geom(self) -> Computed[GeometryT]:
-        """Return the geometry at the current frame.
+        """Return a reactive value of the geometry.
 
         Returns:
             A reactive value of the geometry.
