@@ -21,7 +21,7 @@ METHODS = [
     Base.right,
     Base.down,
     Base.up,
-    # Base.__copy__,
+    # Base.clone,
     Base.draw,
     lambda obj: getattr(obj, "geom"),
     # Base.get_critical_point,

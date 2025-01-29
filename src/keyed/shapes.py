@@ -365,7 +365,7 @@ class Rectangle(Shape):
 
         return rect
 
-    def __copy__(self) -> Self:
+    def clone(self) -> Self:
         new_obj = self.__class__.__new__(self.__class__)
         new_obj.__dict__.update(self.__dict__)
 
@@ -459,7 +459,7 @@ class Circle(Shape):
         """
         return shapely.Point(0, 0).buffer(self.radius.value)
 
-    def __copy__(self) -> Self:
+    def clone(self) -> Self:
         new_obj = self.__class__.__new__(self.__class__)
         new_obj.__dict__.update(self.__dict__)
 

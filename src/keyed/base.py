@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from copy import copy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -264,9 +263,10 @@ class BaseText(Base, Protocol):
         """
         from .curve import Curve
 
+        # TODO - c should be c.clone(), but clone not implemented for text.
         return Curve(
             self.scene,
-            objects=[copy(c) for c in self.chars.filter_whitespace()],
+            objects=[c for c in self.chars.filter_whitespace()],
             color=color,
             alpha=alpha,
             dash=dash,
