@@ -16,10 +16,10 @@ circle = Circle(scene, radius=50, color=(0, 1, 1))
 points["center"].translate(300, 0, start=120, end=150)
 
 # Animate movements
-rect.move_to(points["center"].center_x(), points["center"].center_y(), start=0, end=30)
-circle.move_to(points["top"].center_x(), points["top"].center_y(), start=30, end=60, direction=DOWN)
-rect.move_to(points["bottom"].center_x(), points["bottom"].center_y(), start=60, end=90, direction=UP)
-circle.move_to(points["center"].center_x(), points["center"].center_y(), start=90, end=120)
+rect.move_to(points["center"].center_x, points["center"].center_y, start=0, end=30)
+circle.move_to(points["top"].center_x, points["top"].center_y, start=30, end=60, direction=DOWN)
+rect.move_to(points["bottom"].center_x, points["bottom"].center_y, start=60, end=90, direction=UP)
+circle.move_to(points["center"].center_x, points["center"].center_y, start=90, end=120)
 
 points["center"].translate(300, 0, start=120, end=150)
 

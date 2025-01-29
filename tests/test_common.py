@@ -17,13 +17,17 @@ DRAWABLES = [
 ]
 
 METHODS = [
-    Base.left,
-    Base.right,
-    Base.down,
-    Base.up,
     # Base.clone,
     Base.draw,
     lambda obj: getattr(obj, "geom"),
+    lambda obj: getattr(obj, "up"),
+    lambda obj: getattr(obj, "down"),
+    lambda obj: getattr(obj, "left"),
+    lambda obj: getattr(obj, "right"),
+    lambda obj: getattr(obj, "width"),
+    lambda obj: getattr(obj, "height"),
+    lambda obj: getattr(obj, "center_x"),
+    lambda obj: getattr(obj, "center_y"),
     # Base.get_critical_point,
     # Base.get_position_along_dim,
 ]

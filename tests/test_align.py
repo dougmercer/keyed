@@ -21,12 +21,12 @@ def test_align_to() -> None:
     c2_0 = code2.chars[0]
     c2_minus1 = code2.chars[-1]
     scene.frame.value = 6
-    assert c1_0.left().value == c2_0.left().value
-    assert c1_0.down().value != c2_0.down().value
+    assert c1_0.left.value == c2_0.left.value
+    assert c1_0.down.value != c2_0.down.value
     scene.frame.value = 18
-    assert c1_0.down().value == c2_0.down().value
+    assert c1_0.down.value == c2_0.down.value
     scene.frame.value = 30
-    assert c1_minus1.right().value == c2_minus1.right().value
+    assert c1_minus1.right.value == c2_minus1.right.value
     scene.frame.value = 54
-    assert c1_minus1.left().value == c2_minus1.left().value
-    assert c1_minus1.down().value == c2_minus1.down().value
+    assert c1_minus1.left.value == c2_minus1.left.value
+    assert c1_minus1.down.value == c2_minus1.down.value

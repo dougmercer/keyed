@@ -293,31 +293,39 @@ class Transformable(Protocol):
             )
         )
 
-    def down(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.geom if with_transforms else self.raw_geom).bounds[1]
+    @property
+    def down(self) -> Computed[float]:
+        return self.geom.bounds[1]
 
-    def up(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.geom if with_transforms else self.raw_geom).bounds[3]
+    @property
+    def up(self) -> Computed[float]:
+        return self.geom.bounds[3]
 
-    def left(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.geom if with_transforms else self.raw_geom).bounds[0]
+    @property
+    def left(self) -> Computed[float]:
+        return self.geom.bounds[0]
 
-    def right(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.geom if with_transforms else self.raw_geom).bounds[2]
+    @property
+    def right(self) -> Computed[float]:
+        return self.geom.bounds[2]
 
-    def width(self, with_transforms: bool = True) -> Computed[float]:
-        bounds = (self.geom if with_transforms else self.raw_geom).bounds
+    @property
+    def width(self) -> Computed[float]:
+        bounds = self.geom.bounds
         return bounds[2] - bounds[0]
 
-    def height(self, with_transforms: bool = True) -> Computed[float]:
-        bounds = (self.geom if with_transforms else self.raw_geom).bounds
+    @property
+    def height(self) -> Computed[float]:
+        bounds = self.geom.bounds
         return bounds[3] - bounds[1]
 
-    def center_x(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.left(with_transforms) + self.right(with_transforms)) / 2
+    @property
+    def center_x(self) -> Computed[float]:
+        return (self.left + self.right) / 2
 
-    def center_y(self, with_transforms: bool = True) -> Computed[float]:
-        return (self.up(with_transforms) + self.down(with_transforms)) / 2
+    @property
+    def center_y(self) -> Computed[float]:
+        return (self.up + self.down) / 2
 
 
 class TransformControls(Freezeable):
