@@ -519,34 +519,7 @@ class Scene(Transformable, Freezeable):
                 layer.freeze()
             super().freeze()
 
-    def to_video(self, frame_rate: int = 24, redraw: bool = True) -> None:
-        """Export the scene as a video file.
-
-        Args:
-            frame_rate: The frame rate of the video. Default is 24 fps.
-            redraw: Whether to redraw all frames before exporting. Default is True.
-        """
-        self._create_folder()
-        if redraw:
-            self.draw()
-        command = [
-            "ffmpeg",
-            "-y",
-            "-framerate",
-            str(frame_rate),
-            "-i",
-            str(self.full_output_dir / r"all_%03d.png"),
-            "-c:v",
-            "prores_ks",
-            "-profile:v",
-            "4444",
-            "-pix_fmt",
-            "yuva444p10le",
-            str(self.full_output_dir / "all.mov"),
-        ]
-        subprocess.run(command)
-
-    def to_video_direct(self, frame_rate: int = 24, open_dir: bool = False) -> None:
+    def to_video(self, frame_rate: int = 24, open_dir: bool = False) -> None:
         """Export as a video by directly streaming frames to a video file using FFmpeg.
 
         Args:
@@ -578,6 +551,105 @@ class Scene(Transformable, Freezeable):
             "-r",
             str(frame_rate),
             str(self.full_output_dir / f"{self.scene_name}.mov"),
+        ]
+
+        with Popen(command, stdin=PIPE) as ffmpeg:
+            for frame in range(self.num_frames):
+                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
+
+        if open_dir:
+            self._open_folder()
+
+    def to_gif(self, frame_rate: int = 24, open_dir: bool = False, loop: int = 0) -> None:
+        """Export the scene directly to a GIF file by streaming frames to FFmpeg.
+
+        Parameters
+        ----------
+        frame_rate : int, optional
+            The frame rate of the GIF. Default is 24 fps.
+        open_dir : bool, optional
+            Whether to open the output directory after the GIF is created. Default is False.
+        loop : int, optional
+            Number of times to loop the GIF. Default is 0 (infinite).
+            Set to -1 for no looping, or a positive number for that many loops.
+            Note: A value of 1 means play twice (one loop), 2 means play thrice, etc.
+        """
+        self._create_folder()
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-vcodec",
+            "rawvideo",
+            "-s",
+            f"{self._width}x{self._height}",
+            "-pix_fmt",
+            "bgra",
+            "-r",
+            str(frame_rate),
+            "-i",
+            "-",
+            "-vf",
+            "split[s0][s1];[s0]palettegen=stats_mode=full[p];[s1][p]paletteuse=dither=sierra2_4a",
+            "-loop",
+            str(loop),
+            "-r",
+            str(frame_rate),
+            str(self.full_output_dir / f"{self.scene_name}.gif"),
+        ]
+
+        with Popen(command, stdin=PIPE) as ffmpeg:
+            for frame in range(self.num_frames):
+                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
+
+        if open_dir:
+            self._open_folder()
+
+    def to_webm(self, frame_rate: int = 24, quality: int = 40, open_dir: bool = False) -> None:
+        """Export the scene directly to a WebM file by streaming frames to FFmpeg.
+
+        Parameters
+        ----------
+        frame_rate : int, optional
+            The frame rate of the video. Default is 24 fps.
+        quality : int, optional
+            The CRF (Constant Rate Factor) value for VP9. Range: 0-63, lower is better quality.
+            Default is 40 which provides good compression while maintaining quality.
+        open_dir : bool, optional
+            Whether to open the output directory after the video is created. Default is False.
+        """
+        self._create_folder()
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-vcodec",
+            "rawvideo",
+            "-s",
+            f"{self._width}x{self._height}",
+            "-pix_fmt",
+            "bgra",
+            "-r",
+            str(frame_rate),
+            "-i",
+            "-",
+            "-c:v",
+            "libvpx-vp9",
+            "-pix_fmt",
+            "yuva420p",
+            "-crf",
+            str(quality),
+            "-b:v",
+            "0",  # Use CRF for quality control
+            "-row-mt",
+            "1",  # Enable row-based multithreading
+            "-r",
+            str(frame_rate),
+            str(self.full_output_dir / f"{self.scene_name}.webm"),
         ]
 
         with Popen(command, stdin=PIPE) as ffmpeg:
