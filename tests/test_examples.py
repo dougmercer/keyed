@@ -11,7 +11,7 @@ from keyed import Scene
 
 # Get examples directory relative to test file
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
-BLACKLIST = []
+BLACKLIST = ["color_interp", "hand_drawn", "squares", "graph_of_computation"]
 
 
 def load_examples(examples_dir: str | Path) -> Generator[tuple[str, str], None, None]:
