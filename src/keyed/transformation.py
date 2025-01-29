@@ -68,60 +68,6 @@ class Transformable(Protocol):
         m = self.controls.matrix
         return affine_transform(unref(self.raw_geom), m.value)
 
-    def left_now(self, with_transforms: bool = True) -> float:
-        """Get the left critical point.
-
-        Args:
-            with_transforms : Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
-
-        Returns:
-            The left critical point.
-        """
-        g = self.geom_now if with_transforms else self.raw_geom_now
-        return g.bounds[0]
-
-    def right_now(self, with_transforms: bool = True) -> float:
-        """Get the right critical point.
-
-        Args:
-            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
-
-        Returns:
-            The right critical point.
-        """
-        g = self.geom_now if with_transforms else self.raw_geom_now
-        return g.bounds[2]
-
-    def down_now(self, with_transforms: bool = True) -> float:
-        """Get the down critical point.
-
-        Args:
-            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
-
-        Returns:
-            The down critical point.
-        """
-        g = self.geom_now if with_transforms else self.raw_geom_now
-        return g.bounds[1]
-
-    def up_now(self, with_transforms: bool = True) -> float:
-        """Get the up critical point.
-
-        Args:
-            with_transforms: Retrieve the coordinate after all transforms if True. Otherwise, use raw_geom.
-
-        Returns:
-            The up critical point.
-        """
-        g = self.geom_now if with_transforms else self.raw_geom_now
-        return g.bounds[3]
-
-    def width_now(self, with_transforms: bool = True) -> float:
-        return self.right_now(with_transforms) - self.left_now(with_transforms)
-
-    def height_now(self, with_transforms: bool = True) -> float:
-        return self.up_now(with_transforms) - self.down_now(with_transforms)
-
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix
         # Invalidate cached geometry
@@ -346,18 +292,6 @@ class Transformable(Protocol):
                 y=y,
             )
         )
-
-    # def left_now(self, with_transforms: bool = True) -> float:
-    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, LEFT)[0]
-
-    # def right_now(self, with_transforms: bool = True) -> float:
-    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, RIGHT)[0]
-
-    # def down_now(self, with_transforms: bool = True) -> float:
-    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, DOWN)[1]
-
-    # def up_now(self, with_transforms: bool = True) -> float:
-    #     return get_critical_point_now(self.geom_now if with_transforms else self.raw_geom_now, UP)[1]
 
     def down(self, with_transforms: bool = True) -> Computed[float]:
         return (self.geom if with_transforms else self.raw_geom).bounds[1]
