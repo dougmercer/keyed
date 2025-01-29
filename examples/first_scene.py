@@ -1,7 +1,7 @@
 from keyed import *
 
 # Create a scene
-scene = Scene(width=1920, height=1080, num_frames=120)
+scene = Scene("bouncing_ball", width=1920, height=1080, num_frames=120)
 
 # Create a ball
 ball = (

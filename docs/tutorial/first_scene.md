@@ -10,6 +10,10 @@ Here's the complete code - feel free to run it now. After, we'll break down how 
 --8<-- "examples/first_scene.py"
 ```
 
+<video controls>
+<source src="../../media/bouncing_ball.webm" type="video/webm">
+</video>
+
 ## Breaking It Down
 
 ### Creating the Scene
