@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Literal, Protocol, Self, runtime_checkable
+from typing import Any, Callable, Literal, Protocol, Self, runtime_checkable
 
 import cairo
 import shapely
@@ -23,17 +23,36 @@ class Transformable(Protocol):
 
     controls: TransformControls
     frame: Signal[int]
-    _geom_cached: Computed[GeometryT] | None
-    _raw_geom_cached: Computed[GeometryT] | None
     _dependencies: list[Any]
+    _cache: dict[str, Computed[Any]]
 
     def __init__(self, frame: Signal[int]) -> None:
         super().__init__()
         self.frame = frame
         self.controls = TransformControls(self)
         self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
-        self._geom_cached: Computed[GeometryT] | None = None
-        self._raw_geom_cached: Computed[GeometryT] | None = None
+        self._cache: dict[str, Computed[Any]] = {}
+
+    def _get_cached_computed(self, name: str, factory: Callable[[], Computed[Any]]) -> Computed[Any]:
+        """Get a cached computed value, creating it if it doesn't exist.
+
+        This is intended to reduce the number of reactive values created when accessing methods like `geom`.
+
+        Args:
+            name: The name to cache the computed value under
+            factory: A function that creates the computed value
+
+        Returns:
+            The cached computed value
+        """
+        if name not in self._cache:
+            self._cache[name] = factory()
+        return self._cache[name]
+
+    def invalidate_cache(self) -> Self:
+        """Clear all cached computed values."""
+        self._cache.clear()
+        return self
 
     @property
     def raw_geom_now(self) -> GeometryT:
@@ -46,22 +65,15 @@ class Transformable(Protocol):
 
     @property
     def raw_geom(self) -> Computed[GeometryT]:
-        if self._raw_geom_cached is None:
-            self._raw_geom_cached = Computed(lambda: self.raw_geom_now, self._dependencies)
-        return self._raw_geom_cached
+        """Return a reactive value of the raw geometry."""
+        return self._get_cached_computed("raw_geom", lambda: Computed(lambda: self.raw_geom_now, self._dependencies))
 
     @property
     def geom(self) -> Computed[GeometryT]:
-        """Return a reactive value of the geometry.
-
-        Returns:
-            A reactive value of the geometry.
-        """
-        # Check if there is a value in the cache
-        if self._geom_cached is None:
-            # Bind to the current matrix.
-            self._geom_cached = computed(affine_transform)(self.raw_geom, self.controls.matrix)
-        return self._geom_cached
+        """Return a reactive value of the transformed geometry."""
+        return self._get_cached_computed(
+            "geom", lambda: computed(affine_transform)(self.raw_geom, self.controls.matrix)
+        )
 
     @property
     def geom_now(self) -> GeometryT:
@@ -71,7 +83,8 @@ class Transformable(Protocol):
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix
         # Invalidate cached geometry
-        self._geom_cached = None
+        self.invalidate_cache()
+        # self._cache.pop('geom', None)
         return self
 
     def rotate(
@@ -295,37 +308,35 @@ class Transformable(Protocol):
 
     @property
     def down(self) -> Computed[float]:
-        return self.geom.bounds[1]
+        return self._get_cached_computed("down", lambda: self.geom.bounds[1])
 
     @property
     def up(self) -> Computed[float]:
-        return self.geom.bounds[3]
+        return self._get_cached_computed("up", lambda: self.geom.bounds[3])
 
     @property
     def left(self) -> Computed[float]:
-        return self.geom.bounds[0]
+        return self._get_cached_computed("left", lambda: self.geom.bounds[0])
 
     @property
     def right(self) -> Computed[float]:
-        return self.geom.bounds[2]
+        return self._get_cached_computed("right", lambda: self.geom.bounds[2])
 
     @property
     def width(self) -> Computed[float]:
-        bounds = self.geom.bounds
-        return bounds[2] - bounds[0]
+        return self._get_cached_computed("width", lambda: self.right - self.left)
 
     @property
     def height(self) -> Computed[float]:
-        bounds = self.geom.bounds
-        return bounds[3] - bounds[1]
+        return self._get_cached_computed("height", lambda: self.up - self.down)
 
     @property
     def center_x(self) -> Computed[float]:
-        return (self.left + self.right) / 2
+        return self._get_cached_computed("center_x", lambda: (self.left + self.right) / 2)
 
     @property
     def center_y(self) -> Computed[float]:
-        return (self.up + self.down) / 2
+        return self._get_cached_computed("center_y", lambda: (self.up + self.down) / 2)
 
 
 class TransformControls(Freezeable):
