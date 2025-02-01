@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import argparse
+import ast
 import sys
-from typing import TYPE_CHECKING, NoReturn
+from pathlib import Path
+from typing import TYPE_CHECKING, NoReturn, Optional
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -20,6 +23,8 @@ from PySide6.QtWidgets import (
 )
 from shapely.affinity import affine_transform
 from shapely.geometry import Point
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
+from watchdog.observers import Observer
 
 from .quality import Quality, QualitySetting
 
@@ -279,3 +284,170 @@ def create_animation_window(scene: Scene, frame_rate: int = 24, quality: Quality
     window = MainWindow(scene, quality=quality.value, frame_rate=frame_rate)
     window.show()
     sys.exit(app.exec())
+
+
+"""CLI-based scene viewer with live reloading."""
+
+
+
+# from keyed.qt_preview import MainWindow, QualitySetting
+
+
+class SceneEvaluator:
+    """Evaluates Python files and extracts Scene objects."""
+
+    def __init__(self, globals_dict: Optional[dict] = None):
+        from keyed import Scene
+
+        self.globals = globals_dict or {}
+        # Add necessary imports to globals
+        self.globals.update(
+            {
+                "Scene": Scene,
+                "Quality": Quality,
+            }
+        )
+
+    def evaluate_file(self, file_path: Path) -> Optional[Scene]:
+        """Evaluate a Python file and return the first Scene object found.
+
+        Args:
+            file_path: Path to the Python file to evaluate
+
+        Returns:
+            The first Scene object found in the file, or None if no scene is found
+        """
+        from keyed import Scene
+
+        with open(file_path) as f:
+            file_content = f.read()
+
+        # Parse the AST to look for Scene assignments
+        tree = ast.parse(file_content)
+
+        # Execute the file in our controlled globals
+        exec(compile(tree, filename=str(file_path), mode="exec"), self.globals)
+
+        # Look for Scene instances in the globals
+        for var_value in self.globals.values():
+            if isinstance(var_value, Scene):
+                return var_value
+
+
+class FileWatcher(QThread):
+    """Watch for file changes and notify when updates occur."""
+
+    file_changed = Signal()
+
+    def __init__(self, file_path: Path):
+        super().__init__()
+        self.file_path = file_path
+        self.observer = Observer()
+        self.running = True
+
+    def run(self):
+        """Start watching the file for changes."""
+        event_handler = SceneFileHandler(self.file_path, self.file_changed)
+        self.observer.schedule(event_handler, str(self.file_path.parent), recursive=False)
+        self.observer.start()
+
+        while self.running:
+            self.observer.join(1)
+
+    def stop(self):
+        """Stop watching for file changes."""
+        self.running = False
+        self.observer.stop()
+        self.observer.join()
+
+
+class SceneFileHandler(FileSystemEventHandler):
+    """Handle file system events for the scene file."""
+
+    def __init__(self, file_path: Path, callback: Signal):
+        self.file_path = file_path
+        self.callback = callback
+
+    def on_modified(self, event: FileSystemEvent):
+        """Called when the watched file is modified."""
+        if not event.is_directory and Path(event.src_path).resolve() == self.file_path.resolve():
+            self.callback.emit()
+
+
+class LiveReloadWindow(MainWindow):
+    """MainWindow that can update its scene without reloading."""
+
+    def update_scene(self, new_scene: Scene):
+        """Update the window with a new scene instance.
+
+        Args:
+            new_scene: The new Scene instance to display
+        """
+        # Preserve current state
+        current_frame = self.current_frame
+        was_playing = self.playing
+
+        # Update scene
+        self.scene = new_scene
+
+        # Update UI for new scene
+        self.slider.setMaximum(new_scene.num_frames - 1)
+        if current_frame >= new_scene.num_frames:
+            current_frame = 0
+
+        # Update display
+        self.current_frame = current_frame
+        self.update_canvas(current_frame)
+        self.update_frame_counter()
+
+        # Restore playback if it was playing
+        if was_playing and not self.playing:
+            self.toggle_play()
+
+
+def main():
+    """Main entry point for the scene viewer CLI."""
+    parser = argparse.ArgumentParser(description="Live-reloading scene viewer")
+    parser.add_argument("file", type=Path, help="Python file containing a Scene definition")
+    parser.add_argument("--frame-rate", type=int, default=24, help="Frame rate for playback")
+    parser.add_argument(
+        "--quality", type=str, choices=["low", "medium", "high", "very_high"], default="high", help="Render quality"
+    )
+    args = parser.parse_args()
+
+    if not args.file.exists():
+        print(f"File not found: {args.file}", file=sys.stderr)
+        sys.exit(1)
+
+    # Initialize scene evaluator
+    evaluator = SceneEvaluator()
+
+    # Get initial scene
+    scene = evaluator.evaluate_file(args.file)
+    if not scene:
+        print(f"No Scene object found in {args.file}", file=sys.stderr)
+        sys.exit(1)
+
+    # Create application and window
+    app = QApplication(sys.argv)
+    quality = getattr(Quality, args.quality).value
+    window = LiveReloadWindow(scene, quality=quality, frame_rate=args.frame_rate)
+    window.show()
+
+    # Setup file watcher
+    watcher = FileWatcher(args.file)
+
+    def handle_file_changed():
+        """Handle updates to the scene file."""
+        if new_scene := evaluator.evaluate_file(args.file):
+            window.update_scene(new_scene)
+
+    watcher.file_changed.connect(handle_file_changed)
+    watcher.start()
+
+    try:
+        exit_code = app.exec()
+    finally:
+        watcher.stop()
+
+    sys.exit(exit_code)
