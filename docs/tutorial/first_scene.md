@@ -4,15 +4,25 @@ Let's create a simple animation of a bouncing ball with a title. This tutorial w
 
 ## The Complete Code
 
-Here's the complete code - feel free to run it now. After, we'll break down how it works.
+Here's the complete code.
 
 ```python title="examples/first_scene.py"
 --8<-- "examples/first_scene.py"
 ```
 
+Paste it into a file called `first_scene.py`.
+
+You can use the `keyed` command line interface to preview this animation by running,
+
+```console
+keyed first_scene.py
+```
+
 <video controls>
 <source src="../../media/bouncing_ball.webm" type="video/webm">
 </video>
+
+Let's break down how it works.
 
 ## Breaking It Down
 
@@ -49,7 +59,7 @@ Notice how we specify start and end frames for each animation. The ball will:
 - Rest briefly (frames 48-60)
 - Elastically snap back up to it's initial position (frames 60-110)
 
-### Adding the Floor
+### Creating the Floor
 
 ```python
 floor = Line(scene, x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), line_width=5)
@@ -62,7 +72,7 @@ The floor is a simple [Line][keyed.line.Line] that:
 
 Note that our Scene's cooridinate system is such that the top left corner of the scene is at coordinates `(0, 0)`, so when we specify `scene.ny(0.75)`, we're saying we should draw the line 75% of the height of the scene measured downwards from the top edge of the scene.
 
-### Adding the Title
+### Creating the Title
 ```python
 title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
 ```
@@ -73,16 +83,18 @@ We create a [Text][keyed.code.Text] object that:
 - Has font size 100
 - Is moved to the center of the scene horizontally and 20% downward vertically
 
-### Rendering the Animation
+### Adding our objects to the scene
 ```python
 scene.add(floor, ball, title)
-
 ```
 
-Finally, we:
+Here, we added the floor, ball, and title to the scene. The order in which we add them defines the order in which they'll be rendered onto the scene. Here, the `floor` is the bottom-most element, followed by the ball (which will be drawn on top of it), and finally the title.
 
-- Add all our objects to the scene
-- Preview the animation in a window
+Without adding them to the scene, our animation would be empty.
+
+## The `keyed` CLI
+
+Finally, when we run the `keyed` CLI, it opens a previewer window and displays the scene.
 
 ## What did we learn?
 This simple example demonstrates several key concepts in Keyed:
