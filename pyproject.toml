@@ -147,4 +147,4 @@ docstring-code-line-length = "dynamic"
 known-first-party = ["keyed_*", "helpers"]
 
 [project.scripts]
-keyed = "keyed.previewer.qt_preview:main"
+keyed = "keyed.cli:main"

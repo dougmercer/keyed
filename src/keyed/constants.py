@@ -2,7 +2,8 @@
 
 import importlib.util
 from dataclasses import dataclass
-from typing import Any, Self, SupportsIndex, cast
+from enum import Enum
+from typing import Any, Iterator, Self, SupportsIndex, cast
 
 import numpy as np
 
@@ -19,6 +20,8 @@ __all__ = [
     "UR",
     "ALWAYS",
     "EXTRAS_INSTALLED",
+    "Quality",
+    "QualitySetting",
 ]
 
 
@@ -107,3 +110,32 @@ ALWAYS = -9_999_999
 This is a weird hack, and I'm not thrilled about it."""
 
 EXTRAS_INSTALLED = importlib.util.find_spec("keyed_extras") is not None
+
+
+@dataclass
+class QualitySetting:
+    """Animation quality setting."""
+
+    width: int
+    height: int
+
+    def __post_init__(self) -> None:
+        assert self.width / self.height == 16 / 9, "Not 16:9"
+        assert self.width <= 1920, "Too big to fit on preview window"
+
+    def __str__(self) -> str:
+        return f"{self.width}x{self.height}"
+
+    def __iter__(self) -> Iterator[int]:
+        yield self.width
+        yield self.height
+
+
+class Quality(Enum):
+    """Enum of animation quality settings."""
+
+    very_low = QualitySetting(width=1024, height=576)
+    low = QualitySetting(width=1152, height=648)
+    medium = QualitySetting(width=1280, height=720)
+    high = QualitySetting(width=1600, height=900)
+    very_high = QualitySetting(width=1920, height=1080)
