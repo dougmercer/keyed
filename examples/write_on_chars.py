@@ -16,5 +16,3 @@ code.chars[:].write_on(
     duration=1,
     start=0,
 )
-
-scene.preview()

@@ -43,5 +43,3 @@ editor.scroll_to(1, 0, 24)
 
 editor.align_to(scene, start=24, lock=48, center_on_zero=True)
 editor.scale(2, 48, 60).rotate(180, 60, 72)
-
-scene.preview()

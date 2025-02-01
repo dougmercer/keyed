@@ -8,5 +8,3 @@ circle = Circle(scene, x=2000, y=1000, radius=500, draw_fill=False, line_width=1
 rect.translate(1000, 0, 0, 90)
 
 scene.add(rect, circle)
-
-scene.preview()

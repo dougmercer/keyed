@@ -25,5 +25,3 @@ points["center"].translate(300, 0, start=120, end=150)
 
 # Add everything to scene
 scene.add(rect, circle, *points.values())
-
-scene.preview()

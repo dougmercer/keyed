@@ -83,5 +83,3 @@ s.add(
     line0123_interp,
     value,
 )
-
-s.preview()

@@ -13,4 +13,3 @@ c.stroke_pattern = make_checkerboard(200, 10)
 
 c.center()
 s.add(c)
-s.preview()

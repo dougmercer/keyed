@@ -24,5 +24,3 @@ for d in [UR, RIGHT, DR, DOWN, DL, LEFT, UL, UP, ORIGIN]:
     start_frame += 8
 
 scene.translate(0, 100)
-
-scene.preview()

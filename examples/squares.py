@@ -17,4 +17,3 @@ for n in range(0, 20):
 #             continue
 #         r = Rectangle(s, length, length, x=0, y=0, alpha=0.01).center()
 #         s.add(r)
-s.preview()

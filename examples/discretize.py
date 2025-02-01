@@ -8,5 +8,3 @@ for i in range(5):
     a = PingPong(Animation(0, 12, 100, 1200, ease=easing.discretize(easing.linear_in_out, 2 + i * 4)), n=100)
     c.translate(a(1, s.frame), 0)
     s.add(c)
-
-s.preview()

@@ -23,5 +23,3 @@ code2.chars[8:18].write_on(
 )
 
 scene.scale(2, 0, 24, center=Circle(scene, 200, 100).geom)
-
-scene.preview()

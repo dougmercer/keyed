@@ -16,5 +16,3 @@ for frame in range(30, 200, 30):
         circle.set("fill_color", color.value, frame)
 
 s.add(r, circle)
-
-s.preview()

@@ -12,5 +12,3 @@ r = (
 )
 
 scene.add(r)
-
-scene.preview()

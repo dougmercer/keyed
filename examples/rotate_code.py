@@ -10,5 +10,3 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1)
 scene.add(code)
 
 code.rotate(-90, 0, 6)
-
-scene.preview()

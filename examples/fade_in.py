@@ -11,5 +11,3 @@ scene.add(code)
 
 # Fade in the first 10 characters
 code.chars[:10].set("alpha", 0, 0).fade(1, 0, 24)
-
-scene.preview()

@@ -8,5 +8,3 @@ c1 = Circle(scene, radius=50, alpha=0.5, fill_color=(0, 0, 1), x=400, y=400).sca
 c2 = Circle(scene, radius=50, alpha=0.5, fill_color=(1, 0, 0), x=400, y=400).scale(3, 0, 18)
 
 scene.add(c1, c2)
-
-scene.preview()

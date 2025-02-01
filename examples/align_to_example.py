@@ -15,5 +15,3 @@ code2.align_to(code1.chars[0], from_=code2.chars[0].geom, start=12, end=18, dire
 code2.align_to(code1.chars[-1], from_=code2.chars[-1].geom, start=24, end=30, direction=RIGHT)
 code2.translate(x=300, y=300, start=36, end=42)
 code2.align_to(code1.chars[-1], from_=code2.chars[-1].geom, start=48, end=54, direction=DL)
-
-scene.preview()

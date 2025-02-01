@@ -8,5 +8,3 @@ scene = Scene(scene_name="draw_selection", num_frames=24, width=1920, height=108
 code = Code(scene, styled_tokens, font_size=48)
 
 scene.add(code.tokens[:10])
-
-scene.preview()

@@ -14,5 +14,3 @@ not_center.rotate(start=18, end=24, amount=90, easing=easing.cubic_in_out, cente
 not_center.rotate(start=32, end=48, amount=360, easing=easing.cubic_in_out, center=g)
 
 scene.add(not_center, center)
-
-scene.preview()

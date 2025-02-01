@@ -21,5 +21,3 @@ for x, y in points:
     scene.add(Circle(scene, x=x, y=y, radius=5, color=(1, 0, 0)))
 
 scene.add(t)
-
-scene.preview()

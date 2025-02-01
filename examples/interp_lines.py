@@ -19,5 +19,3 @@ curve.set("end", 0).write_on(1, 12, 24)
 
 
 s.add(line, curve)
-
-s.preview()

@@ -14,5 +14,3 @@ scene.add(code)
 scene.add(curve)
 
 curve.set("end", 0).write_on(1, 0, 24)
-
-scene.preview()

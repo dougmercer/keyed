@@ -18,5 +18,3 @@ t = Curve(
 )
 
 scene.add(t)
-
-scene.preview()

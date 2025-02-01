@@ -14,5 +14,3 @@ r2.rotate(90, 12, 24, easing=linear_in_out)
 r2.rotate(-90, 24, 60, center=r.geom, direction=DOWN, easing=linear_in_out)
 
 s.translate(200, 0, 30, 36)
-
-s.preview()

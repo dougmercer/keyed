@@ -17,5 +17,3 @@ s.scale(3, 12, 18)
 s.translate(800, 0, 24, 30)
 s.rotate(90, 36, 42)
 s.rotate(-90, 48, 52)
-
-scene.preview()

@@ -15,4 +15,3 @@ diameter = circle.radius * 2
 rect = Rectangle(s, width=diameter, height=diameter, fill_color=(0, 1, 1)).lock_on(circle)
 
 s.add(rect, circle)
-s.preview()

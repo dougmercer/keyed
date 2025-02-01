@@ -76,7 +76,7 @@ We create a [Text][keyed.code.Text] object that:
 ### Rendering the Animation
 ```python
 scene.add(floor, ball, title)
-scene.preview()
+
 ```
 
 Finally, we:

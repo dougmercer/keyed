@@ -22,5 +22,3 @@ scene.add(r)
 
 # emphs = [c.emphasize() for c in code.chars]
 # scene.add(*emphs)
-
-scene.preview()

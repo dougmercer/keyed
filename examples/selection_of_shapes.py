@@ -15,5 +15,3 @@ scene.add(s)
 
 s.rotate(90, 18, 24)
 s.center()
-
-scene.preview()

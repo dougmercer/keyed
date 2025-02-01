@@ -15,5 +15,3 @@ scene.add(trace)
 
 # Start with no line, then write on
 trace.set("end", 0).write_on(1, 0, 24)
-
-scene.preview()

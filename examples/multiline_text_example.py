@@ -10,5 +10,3 @@ styled_tokens = tokenize(content)
 code = Code(scene, styled_tokens, font_size=36)
 
 scene.add(code)
-
-scene.preview()

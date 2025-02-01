@@ -36,4 +36,3 @@ text.translate(b, 0)
 c2 = text.emphasize()
 
 scene.add(c2)
-scene.preview()

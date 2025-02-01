@@ -50,4 +50,3 @@ text.scale(1.5, start=0, end=30).scale(1 / 1.5, start=30, end=60)
 rect.rotate(360, start=0, end=60)
 
 # Render the scene
-scene.preview()

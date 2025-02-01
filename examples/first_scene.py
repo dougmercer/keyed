@@ -19,4 +19,3 @@ title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), 
 
 # Render the animation
 scene.add(floor, ball, title)
-scene.preview()

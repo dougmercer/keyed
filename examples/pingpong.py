@@ -19,5 +19,3 @@ y_anim = PingPong(
     ),
 )(Signal(0.0), scene.frame)
 a.translate(0, y_anim)
-
-scene.preview()

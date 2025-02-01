@@ -25,5 +25,3 @@ code2.chars[-5:].write_on(
     duration=1,
     start=24,
 )
-
-scene.preview()

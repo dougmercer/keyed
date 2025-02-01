@@ -18,4 +18,3 @@ p = Polygon(s, polygon_with_hole, fill_color=(0, 0.8, 0.2), color=(0.5, 0.1, 0),
 (p.scale(4, 0, 6).translate(100, 0, -1, -1).translate(0, 50, 12, 18).rotate(90, 24, 30).rotate(-180, 36, 48))
 
 s.add(p)
-s.preview()

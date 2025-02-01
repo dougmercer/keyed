@@ -11,5 +11,3 @@ scene.add(code)
 scene.rotate(360, 0, 12)
 scene.scale(2, 16, 30, center=code.geom)
 scene.translate(100, 100, 36, 42)
-
-scene.preview()

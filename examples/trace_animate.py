@@ -16,5 +16,3 @@ scene.add(trace)
 trace.translate(0, 100, 0, 10)
 
 code.lines[:4].translate(100, 0, 0, 10)
-
-scene.preview()

@@ -89,4 +89,3 @@ xa = Line(s, x_right[0], x_right[1], a_left[0], a_left[1], line_width=10, dash=(
 ab = Line(s, a_right[0], a_right[1], b_left[0], b_left[1], line_width=10, dash=((20, 20), 10))
 
 s.add(*nodes, xy, yz, xa, ab)
-s.preview()

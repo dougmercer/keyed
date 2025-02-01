@@ -21,5 +21,3 @@ cx, cy = get_critical_point(curve.geom)
 centroid_circle = Circle(s, x=cx, y=cy, radius=40)
 
 s.add(curve, centroid_circle)
-
-s.preview()

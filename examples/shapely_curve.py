@@ -27,5 +27,3 @@ scene.add(trace2, trace)
 #     obj.end.add_animation(Animation(2, 26, 0, 1, easing.CubicEaseInOut))
 
 code.lines[:4].translate(100, 0, 0, 10)
-
-scene.preview()

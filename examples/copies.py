@@ -13,4 +13,3 @@ c3.translate(0, 100, 0, 12)
 c3.translate(100, 0, 12, 24)
 
 scene.add(c1, c2, c3)
-scene.preview()

@@ -9,5 +9,3 @@ h = code.highlight(line_width=40, color=(1, 0, 0), alpha=0.5)
 h.translate(0, 10, 0, 6)
 
 scene.add(code, h)
-
-scene.preview()

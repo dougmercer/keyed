@@ -10,5 +10,3 @@ scene.add(code)
 
 code.lines[3:].rotate(-10, 0, 12)
 code.lines[0].rotate(180, 0, 12)
-
-scene.preview()

@@ -55,5 +55,3 @@ scene.add(editor)
 # e = editor.emphasize()
 
 # scene.add(e)
-
-scene.preview()
