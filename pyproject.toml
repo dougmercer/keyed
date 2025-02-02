@@ -12,6 +12,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "pyav",
     "pillow",
     "pycairo",
     "pydantic",
@@ -21,7 +22,6 @@ dependencies = [
     "signified",
     "taichi",
     "tqdm",
-    "pyside6",
 ]
 
 [project.optional-dependencies]
@@ -41,7 +41,11 @@ docs = [
     "mkdocstrings[python]",
     "mkdocs-material-extensions",
 ]
-all = ["keyed[lint,test,docs]"]
+previewer = [
+    "pyside6",
+    "watchdog",
+]
+all = ["keyed[lint,test,docs,previewer]"]
 
 [tool.setuptools.package-data]
 keyed = ["py.typed"]
