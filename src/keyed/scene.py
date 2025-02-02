@@ -560,6 +560,46 @@ class Scene(Transformable, Freezeable):
         if open_dir:
             self._open_folder()
 
+    def to_video_av(self, frame_rate: int = 24, open_dir: bool = False) -> None:
+        """Export as a video by directly streaming frames using PyAV.
+
+        Args:
+            frame_rate: The frame rate of the video. Default is 24 fps.
+            open_dir: Whether to open the output directory after the video is created. Default is False.
+        """
+        import av
+
+        self._create_folder()
+        output_path = str(self.full_output_dir / f"{self.scene_name}.mov")
+
+        # Configure output container
+        container = av.open(output_path, mode="w")
+
+        # Create video stream
+        stream = container.add_stream("prores_ks", rate=frame_rate)
+        stream.pix_fmt = "yuv444p10le"  # ProRes 4444
+        stream.width = self._width
+        stream.height = self._height
+
+        # Write frames
+        for frame_idx in range(self.num_frames):
+            # Create frame
+            frame = av.VideoFrame.from_ndarray(self.asarray(frame_idx), format="bgra")
+
+            # Encode and write the frame
+            for packet in stream.encode(frame):
+                container.mux(packet)
+
+        # Flush any remaining packets
+        for packet in stream.encode():
+            container.mux(packet)
+
+        # Close the container
+        container.close()
+
+        if open_dir:
+            self._open_folder()
+
     def to_gif(self, frame_rate: int = 24, open_dir: bool = False, loop: int = 0) -> None:
         """Export the scene directly to a GIF file by streaming frames to FFmpeg.
 

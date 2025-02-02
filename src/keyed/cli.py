@@ -5,7 +5,8 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 
 from .constants import Quality
-from .previewer import SceneEvaluator, LiveReloadWindow, FileWatcher
+from .previewer import FileWatcher, LiveReloadWindow, SceneEvaluator
+
 
 def main():
     """Main entry point for the scene viewer CLI."""

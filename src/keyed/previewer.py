@@ -288,7 +288,6 @@ def create_animation_window(scene: Scene, frame_rate: int = 24, quality: Quality
 """CLI-based scene viewer with live reloading."""
 
 
-
 # from keyed.qt_preview import MainWindow, QualitySetting
 
 
