@@ -1,13 +1,18 @@
-FROM --platform=linux/amd64 python:3.11-slim
+ARG PLATFORM=linux/amd64
+FROM --platform=${PLATFORM} python:3.11-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    ## Cairo
     libcairo2 \
     libcairo2-dev \
-    qtbase5-dev \
     pkg-config \
     python3-dev \
     gcc \
+    ## ffmpeg
+    ffmpeg \
+    ## qt5
+    qtbase5-dev \
     libxrandr2 \
     libxinerama1 \
     libxcursor1 \

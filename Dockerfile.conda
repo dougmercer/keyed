@@ -1,0 +1,23 @@
+ARG PLATFORM=linux/amd64
+FROM --platform=${PLATFORM} condaforge/mambaforge:latest
+
+# Create conda environment
+COPY environment.yml .
+RUN mamba create -y -n keyed -c conda-forge \
+    "python<3.13" \
+    cairo \
+    pycairo \
+    pip
+
+SHELL ["conda", "run", "-n", "keyed", "/bin/bash", "-c"]
+
+# Copy package files
+COPY src/  ./src/
+COPY tests/ ./tests/
+COPY pyproject.toml ./
+
+# Install the package
+RUN pip install --no-cache-dir ".[test]"
+
+# Run tests
+RUN pytest tests/
