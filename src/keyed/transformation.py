@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Literal, Protocol, Self, runtime_checkable
+from typing import Any, Callable, Literal, Protocol, Self
 
 import cairo
 import shapely
@@ -17,8 +17,7 @@ from .helpers import Freezeable
 from .types import GeometryT
 
 
-@runtime_checkable
-class Transformable(Protocol):
+class Transformable:
     """A base class for things that have a geometry."""
 
     controls: TransformControls

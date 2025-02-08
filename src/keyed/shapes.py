@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager
-from typing import Generator, Protocol, Self, Sequence
+from typing import Generator, Self, Sequence
 
 import cairo
 import shapely
@@ -24,12 +24,10 @@ from .transformation import TransformControls
 __all__ = ["Circle", "Rectangle"]
 
 
-class Shape(Base, Protocol):
+class Shape(Base):
     """Base class for drawable shapes that can be added to a scene.
 
-    This class defines a protocol for shapes which include common properties and methods
-    for drawing using a Cairo context. Implementing classes should provide specific
-    drawing behavior.
+    Subclasses should provide specific drawing behavior.
 
     Attributes:
         scene: The scene to which the shape belongs.

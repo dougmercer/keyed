@@ -346,7 +346,7 @@ if PREVIEW_AVAILABLE:
 
         def run(self):
             """Start watching the file for changes."""
-            event_handler = SceneFileHandler(self.file_path, self.file_changed)
+            event_handler = SceneFileHandler(self.file_path, self.file_changed) # type: ignore
             self.observer.schedule(event_handler, str(self.file_path.parent), recursive=False)
             self.observer.start()
 
@@ -368,8 +368,8 @@ if PREVIEW_AVAILABLE:
 
         def on_modified(self, event: FileSystemEvent):
             """Called when the watched file is modified."""
-            if not event.is_directory and Path(event.src_path).resolve() == self.file_path.resolve():
-                self.callback.emit()
+            if not event.is_directory and Path(event.src_path).resolve() == self.file_path.resolve(): # type: ignore
+                self.callback.emit() # type: ignore
 
     class LiveReloadWindow(MainWindow):
         """MainWindow that can update its scene without reloading."""

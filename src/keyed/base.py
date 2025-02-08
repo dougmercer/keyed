@@ -7,13 +7,11 @@ from typing import (
     Any,
     Callable,
     Iterable,
-    Protocol,
     Self,
     Sequence,
     SupportsIndex,
     TypeVar,
     overload,
-    runtime_checkable,
 )
 
 import cairo
@@ -67,9 +65,8 @@ class Lifetime:
         return (self.start <= frame) and (self.end >= frame)
 
 
-@runtime_checkable
-class Base(Transformable, Protocol):
-    """Base protocol class for drawable objects in an animation scene.
+class Base(Transformable):
+    """Base class for drawable objects in an animation scene.
 
     Attributes:
         scene: The scene to which the object belongs.
@@ -225,7 +222,7 @@ class Base(Transformable, Protocol):
         return self
 
 
-class BaseText(Base, Protocol):
+class BaseText(Base):
     """Provide text-based features for drawable objects in a scene."""
 
     @property
@@ -378,11 +375,11 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     @property
     def raw_geom_now(self) -> shapely.Polygon:
-        """Not really used. Only here to comply with a protocol."""
+        """Not really used. Only here to comply with the best class."""
         raise NotImplementedError("Don't call this method on Selections.")
 
     @property
-    def geom(self) -> Computed[shapely.GeometryCollection]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def geom(self) -> Computed[shapely.GeometryCollection[shapely.geometry.base.BaseGeometry]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a reactive value of the geometry.
 
         Returns:
