@@ -14,6 +14,7 @@ from .extras import *  # noqa
 from .highlight import *  # noqa
 from .line import *  # noqa
 from .polygon import *  # noqa
+from .plot import *  # noqa
 from .scene import *  # noqa
 from .shapes import *  # noqa
 from .transformation import *  # noqa
