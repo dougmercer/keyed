@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Literal, Protocol, Self
+from typing import Any, Callable, Literal, Self
 
 import cairo
 import shapely

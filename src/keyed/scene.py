@@ -578,8 +578,8 @@ class Scene(Transformable, Freezeable):
         # Create video stream
         stream = container.add_stream("prores_ks", rate=frame_rate)
         stream.pix_fmt = "yuv444p10le"  # type: ignore
-        stream.width = self._width # type: ignore
-        stream.height = self._height # type: ignore
+        stream.width = self._width  # type: ignore
+        stream.height = self._height  # type: ignore
 
         # Write frames
         for frame_idx in range(self.num_frames):
@@ -587,11 +587,11 @@ class Scene(Transformable, Freezeable):
             frame = av.VideoFrame.from_ndarray(self.asarray(frame_idx), format="bgra")
 
             # Encode and write the frame
-            for packet in stream.encode(frame): # type: ignore
+            for packet in stream.encode(frame):  # type: ignore
                 container.mux(packet)
 
         # Flush any remaining packets
-        for packet in stream.encode(): # type: ignore
+        for packet in stream.encode():  # type: ignore
             container.mux(packet)
 
         # Close the container

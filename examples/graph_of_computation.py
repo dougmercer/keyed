@@ -1,20 +1,21 @@
+import random
+
+from signified import Signal, computed
+
 from keyed import (
-    Scene,
-    Circle,
-    Line,
-    Text,
-    Selection,
-    Direction,
-    get_critical_point,
-    RIGHT,
     LEFT,
+    RIGHT,
     Animation,
-    PingPong,
+    Circle,
+    Direction,
+    Line,
+    Scene,
+    Selection,
+    Text,
+    get_critical_point,
 )
 from keyed.animation import step
 from keyed.color import Color
-from signified import Signal, computed
-import random
 
 s = Scene("graph_of_comp", num_frames=300)
 

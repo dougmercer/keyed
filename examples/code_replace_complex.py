@@ -1,4 +1,4 @@
-from keyed import LEFT, Animation, AnimationType, Circle, Code, Scene, lag_animation, tokenize
+from keyed import LEFT, AnimationType, Circle, Code, Scene, lag_animation, tokenize
 
 scene = Scene(scene_name="code_replace_complex", num_frames=90)
 
