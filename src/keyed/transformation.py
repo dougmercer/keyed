@@ -305,6 +305,82 @@ class Transformable:
             )
         )
 
+    def shear(
+        self,
+        angle_x: HasValue[float] = 0,
+        angle_y: HasValue[float] = 0,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+    ) -> Self:
+        """Shear the object.
+
+        Args:
+            amount: Amount to scale by.
+            start: The frame to start scaling.
+            end: The frame to end scaling.
+            easing: The easing function to use.
+            center: The object around which to rotate.
+            direction: The relative critical point of the center.
+
+        Returns:
+            self
+        """
+        center = center if center is not None else self.geom
+        cx, cy = get_critical_point(center, ORIGIN)
+        return self.apply_transform(
+            shear(
+                start=start,
+                end=end,
+                angle_x=angle_x,
+                angle_y=angle_y,
+                cx=cx,
+                cy=cy,
+                frame=self.frame,
+                ease=easing,
+            )
+        )
+
+    def stretch(
+        self,
+        scale_x: HasValue[float],
+        scale_y: HasValue[float],
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        """Stretch the object.
+
+        Args:
+            scale_x: Amount to scale by in x direction.
+            scale_y: Amount to scale by in y direction.
+            start: The frame to start scaling.
+            end: The frame to end scaling.
+            easing: The easing function to use.
+            center: The object around which to rotate.
+            direction: The relative critical point of the center.
+
+        Returns:
+            self
+        """
+        center = center if center is not None else self.geom
+        cx, cy = get_critical_point(center, direction)
+        return self.apply_transform(
+            stretch(
+                start=start,
+                end=end,
+                scale_x=scale_x,
+                scale_y=scale_y,
+                cx=cx,
+                cy=cy,
+                frame=self.frame,
+                ease=easing,
+            )
+        )
+
     @property
     def down(self) -> Computed[float]:
         return self._get_cached_computed("down", lambda: self.geom.bounds[1])
@@ -686,6 +762,117 @@ def scale(
         return matrix
 
     return f(magnitude, cx, cy)
+
+
+def stretch(
+    start: int,
+    end: int,
+    scale_x: HasValue[float],
+    scale_y: HasValue[float],
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Create a non-uniform scaling transformation matrix.
+
+    This transformation allows independent scaling in x and y directions, centered
+    around a specified point. Unlike the basic scale transform, this allows
+    for effects like squash and stretch animation.
+
+    Args:
+        start: Starting frame for the animation
+        end: Ending frame for the animation
+        scale_x: Scale factor for x-axis
+        scale_y: Scale factor for y-axis
+        cx: X coordinate of the center point
+        cy: Y coordinate of the center point
+        frame: Current frame
+        ease: Easing function to apply
+
+    Returns:
+        A computed transformation matrix
+
+    Example:
+        ```python
+        # Stretch an object to twice its height while keeping width the same
+        obj.apply_transform(stretch(
+            start=0, end=30,
+            scale_x=1.0, scale_y=2.0,
+            cx=obj.center_x, cy=obj.center_y,
+            frame=scene.frame
+        ))
+        ```
+    """
+    # Animate both scale factors independently
+    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+
+    @computed
+    def f(sx: float, sy: float, cx: float, cy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(cx, cy)
+        matrix.scale(sx, sy)
+        matrix.translate(-cx, -cy)
+        return matrix
+
+    return f(sx, sy, cx, cy)
+
+
+def shear(
+    start: int,
+    end: int,
+    angle_x: HasValue[float],
+    angle_y: HasValue[float],
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Create a shear transformation matrix.
+
+    A shear transformation slants the shape by a specified amount in either the
+    x or y direction.
+
+    Args:
+        start: Starting frame for the animation
+        end: Ending frame for the animation
+        angle_x: Angle in degrees to shear along x-axis
+        angle_y: Angle in degrees to shear along y-axis
+        direction: Direction to apply shear ("x" or "y")
+        cx: X coordinate of the center point
+        cy: Y coordinate of the center point
+        frame: Current frame
+        ease: Easing function to apply
+
+    Returns:
+        A computed transformation matrix
+
+    Example:
+        ```python
+        # Shear an object horizontally
+        obj.apply_transform(shear(
+            start=0, end=30,
+            amount=0.5,
+            direction="x",
+            cx=obj.center_x, cy=obj.center_y,
+            frame=scene.frame
+        ))
+        ```
+    """
+    tan = computed(lambda angle: math.tan(math.radians(angle)))
+    x_magnitude = Animation(start, end, 0, tan(angle_x), ease)(0, frame)
+    y_magnitude = Animation(start, end, 0, tan(angle_y), ease)(0, frame)
+
+    @computed
+    def f(x_mag: float, y_mag: float, cx: float, cy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(cx, cy)
+        matrix = cairo.Matrix(1, y_mag, x_mag, 1, 0, 0) * matrix  # type: ignore
+        matrix.translate(-cx, -cy)
+        return matrix
+
+    return f(x_magnitude, y_magnitude, cx, cy)
 
 
 def get_position_along_dim_now(

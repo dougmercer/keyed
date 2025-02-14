@@ -22,7 +22,18 @@ from signified import Computed, HasValue, ReactiveValue, Variable, computed, unr
 from .animation import Animation, step
 from .constants import ALWAYS, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
-from .transformation import Transformable, align_to, get_critical_point, lock_on, move_to, rotate, scale, translate
+from .transformation import (
+    Transformable,
+    align_to,
+    get_critical_point,
+    lock_on,
+    move_to,
+    rotate,
+    scale,
+    shear,
+    stretch,
+    translate,
+)
 from .types import GeometryT, HasAlpha
 
 if TYPE_CHECKING:
@@ -490,6 +501,37 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
         matrix = scale(start, end, amount, cx, cy, self.scene.frame, easing)
+        self.apply_transform(matrix)
+        return self
+
+    def stretch(
+        self,
+        scale_x: HasValue[float],
+        scale_y: HasValue[float],
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
+        matrix = stretch(start, end, scale_x, scale_y, cx, cy, self.scene.frame, easing)
+        self.apply_transform(matrix)
+        return self
+
+    def shear(
+        self,
+        angle_x: HasValue[float] = 0,
+        angle_y: HasValue[float] = 0,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+    ) -> Self:
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, ORIGIN)  # type: ignore[argument]
+        matrix = shear(start, end, angle_x, angle_y, cx, cy, self.scene.frame, easing)
         self.apply_transform(matrix)
         return self
 
