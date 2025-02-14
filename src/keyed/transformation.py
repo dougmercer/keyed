@@ -317,12 +317,12 @@ class Transformable:
         """Shear the object.
 
         Args:
-            amount: Amount to scale by.
+            angle_x: Angle (in degrees) to shear by along x direction.
+            angle_y: Angle (in degrees) to shear by along x direction.
             start: The frame to start scaling.
             end: The frame to end scaling.
             easing: The easing function to use.
             center: The object around which to rotate.
-            direction: The relative critical point of the center.
 
         Returns:
             self
@@ -423,8 +423,6 @@ class TransformControls(Freezeable):
     Todo:
         Passing obj seems a little awkward.
     """
-
-    animatable_properties = ("rotation", "scale", "delta_x", "delta_y")
 
     def __init__(self, obj: Transformable) -> None:
         super().__init__()
@@ -839,7 +837,6 @@ def shear(
         end: Ending frame for the animation
         angle_x: Angle in degrees to shear along x-axis
         angle_y: Angle in degrees to shear along y-axis
-        direction: Direction to apply shear ("x" or "y")
         cx: X coordinate of the center point
         cy: Y coordinate of the center point
         frame: Current frame
