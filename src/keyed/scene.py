@@ -519,14 +519,21 @@ class Scene(Transformable, Freezeable):
                 layer.freeze()
             super().freeze()
 
-    def to_video(self, frame_rate: int = 24, open_dir: bool = False) -> None:
+    def to_video(self, frame_rate: int = 24, open_dir: bool = False, output_path: Path | None = None) -> None:
         """Export as a video by directly streaming frames to a video file using FFmpeg.
 
         Args:
             frame_rate: The frame rate of the video. Default is 24 fps.
             open_dir: Whether to open the output directory after the video is created. Default is False.
+            output_path: Optional specific path to write the output file. If not provided,
+                will use the default scene output directory structure.
         """
-        self._create_folder()
+        if output_path is None:
+            self._create_folder()
+            output_path = self.full_output_dir / f"{self.scene_name}.mov"
+        else:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
         command = [
             "ffmpeg",
             "-y",
@@ -550,7 +557,7 @@ class Scene(Transformable, Freezeable):
             "yuva444p10le",
             "-r",
             str(frame_rate),
-            str(self.full_output_dir / f"{self.scene_name}.mov"),
+            str(output_path),
         ]
 
         with Popen(command, stdin=PIPE) as ffmpeg:
@@ -558,7 +565,7 @@ class Scene(Transformable, Freezeable):
                 ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
 
         if open_dir:
-            self._open_folder()
+            subprocess.run(["open", str(output_path.parent)])
 
     def to_video_av(self, frame_rate: int = 24, open_dir: bool = False) -> None:
         """Export as a video by directly streaming frames using PyAV.
@@ -600,21 +607,25 @@ class Scene(Transformable, Freezeable):
         if open_dir:
             self._open_folder()
 
-    def to_gif(self, frame_rate: int = 24, open_dir: bool = False, loop: int = 0) -> None:
+    def to_gif(
+        self, frame_rate: int = 24, open_dir: bool = False, loop: int = 0, output_path: Path | None = None
+    ) -> None:
         """Export the scene directly to a GIF file by streaming frames to FFmpeg.
 
-        Parameters
-        ----------
-        frame_rate : int, optional
-            The frame rate of the GIF. Default is 24 fps.
-        open_dir : bool, optional
-            Whether to open the output directory after the GIF is created. Default is False.
-        loop : int, optional
-            Number of times to loop the GIF. Default is 0 (infinite).
-            Set to -1 for no looping, or a positive number for that many loops.
-            Note: A value of 1 means play twice (one loop), 2 means play thrice, etc.
+        Args:
+            frame_rate: The frame rate of the GIF. Default is 24 fps.
+            open_dir: Whether to open the output directory after the GIF is created. Default is False.
+            loop: Number of times to loop the GIF. Default is 0 (infinite).
+                Set to -1 for no looping, or a positive number for that many loops.
+                Note: A value of 1 means play twice (one loop), 2 means play thrice, etc.
+            output_path: Optional specific path to write the output file. If not provided,
+                will use the default scene output directory structure.
         """
-        self._create_folder()
+        if output_path is None:
+            self._create_folder()
+            output_path = self.full_output_dir / f"{self.scene_name}.gif"
+        else:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
         command = [
             "ffmpeg",
@@ -637,7 +648,7 @@ class Scene(Transformable, Freezeable):
             str(loop),
             "-r",
             str(frame_rate),
-            str(self.full_output_dir / f"{self.scene_name}.gif"),
+            str(output_path),
         ]
 
         with Popen(command, stdin=PIPE) as ffmpeg:
@@ -645,22 +656,27 @@ class Scene(Transformable, Freezeable):
                 ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
 
         if open_dir:
-            self._open_folder()
+            subprocess.run(["open", str(output_path.parent)])
 
-    def to_webm(self, frame_rate: int = 24, quality: int = 40, open_dir: bool = False) -> None:
+    def to_webm(
+        self, frame_rate: int = 24, quality: int = 40, open_dir: bool = False, output_path: Path | None = None
+    ) -> None:
         """Export the scene directly to a WebM file by streaming frames to FFmpeg.
 
-        Parameters
-        ----------
-        frame_rate : int, optional
-            The frame rate of the video. Default is 24 fps.
-        quality : int, optional
-            The CRF (Constant Rate Factor) value for VP9. Range: 0-63, lower is better quality.
-            Default is 40 which provides good compression while maintaining quality.
-        open_dir : bool, optional
-            Whether to open the output directory after the video is created. Default is False.
+        Args:
+            frame_rate: The frame rate of the video. Default is 24 fps.
+            quality: The CRF (Constant Rate Factor) value for VP9. Range: 0-63, lower is better quality.
+                Default is 40 which provides good compression while maintaining quality.
+            open_dir: Whether to open the output directory after the video is created. Default is False.
+            output_path: Optional specific path to write the output file. If not provided,
+                will use the default scene output directory structure.
         """
-        self._create_folder()
+        if output_path is None:
+            self._create_folder()
+            output_path = self.full_output_dir / f"{self.scene_name}.webm"
+        else:
+            # Ensure parent directories exist
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
         command = [
             "ffmpeg",
@@ -689,7 +705,7 @@ class Scene(Transformable, Freezeable):
             "1",  # Enable row-based multithreading
             "-r",
             str(frame_rate),
-            str(self.full_output_dir / f"{self.scene_name}.webm"),
+            str(output_path),
         ]
 
         with Popen(command, stdin=PIPE) as ffmpeg:
@@ -697,4 +713,5 @@ class Scene(Transformable, Freezeable):
                 ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
 
         if open_dir:
-            self._open_folder()
+            # Open the directory containing the output file
+            subprocess.run(["open", str(output_path.parent)])

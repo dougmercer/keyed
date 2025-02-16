@@ -112,7 +112,7 @@ This is a weird hack, and I'm not thrilled about it."""
 EXTRAS_INSTALLED = importlib.util.find_spec("keyed_extras") is not None
 
 
-@dataclass
+@dataclass(frozen=True)
 class QualitySetting:
     """Animation quality setting."""
 
