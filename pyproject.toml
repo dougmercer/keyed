@@ -22,6 +22,7 @@ dependencies = [
     "signified",
     "taichi",
     "tqdm",
+    "typer",
 ]
 
 [project.optional-dependencies]
