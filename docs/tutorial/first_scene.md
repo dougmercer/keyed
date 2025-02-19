@@ -18,7 +18,7 @@ You can use the `keyed` command line interface to preview this animation by runn
 keyed first_scene.py
 ```
 
-<video controls>
+<video autoplay loop muted playsinline>
 <source src="../../media/bouncing_ball.webm" type="video/webm">
 </video>
 
@@ -42,6 +42,8 @@ ball = (
     .center()
     .translate(0, 300, start=0, end=24, easing=easing.bounce_out)
     .scale(2, start=24, end=48, direction=DOWN)
+    .stretch(2, 0.5, start=50, end=60, direction=DOWN)
+    .stretch(0.5, 2, start=60, end=65, easing=easing.cubic_in, direction=DOWN)
     .translate(0, -300, start=60, end=110, easing=easing.elastic_out)
 )
 ```
@@ -50,13 +52,16 @@ Here we create and animate the most interesting thing in the animation - a [Circ
 - `.center()` - Centers the circle in the scene
 - First `.translate()` - Moves the ball down by 300 pixels with a bouncy easing
 - `.scale()` - Doubles the size of the ball, scaling from the bottom [DOWN][keyed.constants.DOWN]
+- First `.stretch()` - Double the size of the ball in the x direction while shrinking the ball to half size the Y direction. Again using the [DOWN][keyed.constants.DOWN] direction so that the bottom center of the ball remains stationary.
+- Second `.stretch()` - Undoing the first stretch.
 - Second `.translate()` - Moves the ball up with a snappy elastic easing
 
 Notice how we specify start and end frames for each animation. The ball will:
 
 - Drop and bounce (frames 0-24)
 - Scale up (frames 24-48)
-- Rest briefly (frames 48-60)
+- Rest briefly (frames 48-50)
+- Stretch and unstretch (frames 50-65)
 - Elastically snap back up to it's initial position (frames 60-110)
 
 ### Creating the Floor
@@ -95,24 +100,3 @@ Without adding them to the scene, our animation would be empty.
 ## The `keyed` CLI
 
 Finally, when we run the `keyed` CLI, it opens a previewer window and displays the scene.
-
-## What did we learn?
-This simple example demonstrates several key concepts in Keyed:
-
-- Scene creation and object management
-- Basic shapes and text
-- Transformations and animations
-- Easing functions
-- Scene composition and rendering
-
-Try modifying the code to:
-
-- Change the timing of animations
-- Use different easing functions
-- Add more objects
-- Modify the colors and styles
-- Change the text message
-
-<!-- ## What's next?
-
-Next, let's take a closer look at the transformations available. -->
