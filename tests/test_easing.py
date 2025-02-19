@@ -29,11 +29,11 @@ known_values = [
     (easing.elastic_in, [0, -0.022097086912079622, 1]),
     (easing.elastic_out, [0, 1.0220970869120796, 1]),
     (easing.elastic_in_out, [0, 0.5, 1]),
-    (easing.back_in, [0, -0.375, 1]),
-    (easing.back_out, [0, 1.375, 1]),
+    (easing.back_in, [0, -0.0876975, 1]),
+    (easing.back_out, [0, 1.0876975, 1]),
     (easing.back_in_out, [0, 0.5, 1]),
-    (easing.bounce_in, [0, 0.28125000000000044, 1]),
-    (easing.bounce_out, [0, 0.7187499999999996, 1]),
+    (easing.bounce_in, [0, 0.234375, 1]),
+    (easing.bounce_out, [0, 0.765625, 1]),
     (easing.bounce_in_out, [0, 0.5, 1]),
 ]
 
