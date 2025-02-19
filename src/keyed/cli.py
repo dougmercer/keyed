@@ -5,10 +5,9 @@ from enum import Enum
 from pathlib import Path
 
 import typer
-from PySide6.QtWidgets import QApplication
 
 from keyed.constants import Quality, QualitySetting
-from keyed.previewer import FileWatcher, LiveReloadWindow, SceneEvaluator
+from keyed.parser import SceneEvaluator
 
 app = typer.Typer()
 
@@ -55,6 +54,10 @@ def preview(
     ),
 ) -> None:
     """Preview a scene in a live-reloading window."""
+    from PySide6.QtWidgets import QApplication
+
+    from keyed.previewer import FileWatcher, LiveReloadWindow
+
     if not file.exists():
         typer.echo(f"File not found: {file}", err=True)
         raise typer.Exit(1)
