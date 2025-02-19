@@ -24,12 +24,7 @@ WORKDIR /keyed
 
 # Copy package files
 COPY src/  ./src/
-COPY tests/ ./tests/
 COPY pyproject.toml ./
 
 # Install the package
-RUN pip install --no-cache-dir ".[all]"
-RUN pip install --no-cache-dir pyav
-
-# Run tests
-RUN pytest tests/
+RUN pip install --no-cache-dir ".[previewer]"

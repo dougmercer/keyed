@@ -13,11 +13,7 @@ SHELL ["conda", "run", "-n", "keyed", "/bin/bash", "-c"]
 
 # Copy package files
 COPY src/  ./src/
-COPY tests/ ./tests/
 COPY pyproject.toml ./
 
 # Install the package
-RUN pip install --no-cache-dir ".[test]"
-
-# Run tests
-RUN pytest tests/
+RUN pip install --no-cache-dir "."
