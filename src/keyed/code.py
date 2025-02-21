@@ -56,8 +56,8 @@ class Text(BaseText):
         scene: Scene,
         text: HasValue[str],
         size: float = 24,
-        x: HasValue[float] = 10.0,
-        y: HasValue[float] = 10.0,
+        x: HasValue[float] | None = None,
+        y: HasValue[float] | None = None,
         font: str = "Anonymous Pro",
         color: tuple[float, float, float] = (1, 1, 1),
         token_type: Pygments_TokenType | None = None,
@@ -77,10 +77,10 @@ class Text(BaseText):
         self.slant = slant
         self.weight = weight
         self.size: ReactiveValue[float] = as_signal(size)
-        self.x = x
-        self.y = y
-        self.controls.delta_x.value = x
-        self.controls.delta_y.value = y
+        self.x = x if x is not None else scene.nx(0.5)
+        self.y = y if y is not None else scene.ny(0.5)
+        self.controls.delta_x.value = self.x
+        self.controls.delta_y.value = self.y
         self.ctx = scene.get_context()
         self.code = code
         self.operator = operator

@@ -223,8 +223,8 @@ class Rectangle(Shape):
         scene: Scene,
         width: HasValue[float] = 10,
         height: HasValue[float] = 10,
-        x: HasValue[float] = 10,
-        y: HasValue[float] = 10,
+        x: HasValue[float] | None = None,
+        y: HasValue[float] | None = None,
         radius: HasValue[float] = 0,
         color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
         fill_color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
@@ -243,10 +243,10 @@ class Rectangle(Shape):
         super().__init__(scene)
         self.scene = scene
         self.ctx = scene.get_context()
-        self.x = x
-        self.y = y
-        self.controls.delta_x.value = x
-        self.controls.delta_y.value = y
+        self.x = x if x is not None else scene.nx(0.5)
+        self.y = y if y is not None else scene.ny(0.5)
+        self.controls.delta_x.value = self.x
+        self.controls.delta_y.value = self.y
         self.controls.rotation.value = rotation
         self._width = as_signal(width)
         self._height = as_signal(height)
@@ -283,49 +283,53 @@ class Rectangle(Shape):
         )
 
     def _draw_shape(self) -> None:
-        """Draw the rectangle at the specified frame.
-
-        Args:
-            frame: The frame number to draw the shape.
-        """
+        """Draw the rectangle."""
         w = self._width.value
         h = self._height.value
         r = self.radius.value
 
-        # Start at the top-left corner
+        # Calculate the corners relative to center
+        left = -w / 2
+        right = w / 2
+        top = -h / 2
+        bottom = h / 2
+
+        # Start at the top-middle if we're rounding the top-left corner
         if self.round_tl and r > 0:
-            start_x, start_y = r, 0
+            start_x = left + r
         else:
-            start_x, start_y = 0, 0
-        self.ctx.move_to(start_x, start_y)
+            start_x = left
+        self.ctx.move_to(start_x, top)
 
         # Top-right corner
         if self.round_tr and r > 0:
-            self.ctx.line_to(w - r, 0)
-            self.ctx.arc(w - r, r, r, 3 * math.pi / 2, 2 * math.pi)  # Draw arc clockwise
+            self.ctx.line_to(right - r, top)
+            self.ctx.arc(right - r, top + r, r, -math.pi / 2, 0)
         else:
-            self.ctx.line_to(w, 0)
+            self.ctx.line_to(right, top)
 
         # Bottom-right corner
         if self.round_br and r > 0:
-            self.ctx.line_to(w, h - r)
-            self.ctx.arc(w - r, h - r, r, 0, math.pi / 2)
+            self.ctx.line_to(right, bottom - r)
+            self.ctx.arc(right - r, bottom - r, r, 0, math.pi / 2)
         else:
-            self.ctx.line_to(w, h)
+            self.ctx.line_to(right, bottom)
 
         # Bottom-left corner
         if self.round_bl and r > 0:
-            self.ctx.line_to(r, h)
-            self.ctx.arc(r, h - r, r, math.pi / 2, math.pi)
+            self.ctx.line_to(left + r, bottom)
+            self.ctx.arc(left + r, bottom - r, r, math.pi / 2, math.pi)
         else:
-            self.ctx.line_to(0, h)
+            self.ctx.line_to(left, bottom)
 
-        # Closing the path back to the start
-        self.ctx.line_to(0, r)  # Explicit line to the start of the arc if rounding
+        # Top-left corner
         if self.round_tl and r > 0:
-            self.ctx.arc(r, r, r, math.pi, 3 * math.pi / 2)
+            self.ctx.line_to(left, top + r)
+            self.ctx.arc(left + r, top + r, r, math.pi, 3 * math.pi / 2)
+        else:
+            self.ctx.line_to(left, top)
 
-        # Explicitly close the path to ensure there is no gap
+        # Close the path
         self.ctx.close_path()
 
     @property
@@ -339,8 +343,12 @@ class Rectangle(Shape):
         height: float = self._height.value
         radius: float = self.radius.value
 
-        # Create a basic rectangle
-        rect = shapely.geometry.box(0, 0, width, height)
+        # Create a basic rectangle centered at origin
+        left = -width / 2
+        right = width / 2
+        top = -height / 2
+        bottom = height / 2
+        rect = shapely.geometry.box(left, top, right, bottom)
 
         if radius == 0 or not any([self.round_tl, self.round_tr, self.round_br, self.round_bl]):
             # No rounding needed
@@ -348,10 +356,10 @@ class Rectangle(Shape):
 
         # Subtract corner squares where rounding is required
         corners = {
-            "tl": shapely.geometry.Point(radius, radius),
-            "tr": shapely.geometry.Point(width - radius, radius),
-            "br": shapely.geometry.Point(width - radius, height - radius),
-            "bl": shapely.geometry.Point(radius, height - radius),
+            "tl": shapely.geometry.Point(left + radius, top + radius),
+            "tr": shapely.geometry.Point(right - radius, top + radius),
+            "br": shapely.geometry.Point(right - radius, bottom - radius),
+            "bl": shapely.geometry.Point(left + radius, bottom - radius),
         }
 
         # Buffer the corners that need to be rounded
@@ -402,8 +410,8 @@ class Circle(Shape):
     def __init__(
         self,
         scene: Scene,
-        x: HasValue[float] = 10,
-        y: HasValue[float] = 10,
+        x: HasValue[float] | None = None,
+        y: HasValue[float] | None = None,
         radius: HasValue[float] = 1,
         color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
         fill_color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
@@ -417,10 +425,10 @@ class Circle(Shape):
         super().__init__(scene)
         self.scene = scene
         self.ctx = scene.get_context()
-        self.x = x
-        self.y = y
-        self.controls.delta_x.value = x
-        self.controls.delta_y.value = y
+        self.x = x if x is not None else scene.nx(0.5)
+        self.y = y if y is not None else scene.ny(0.5)
+        self.controls.delta_x.value = self.x
+        self.controls.delta_y.value = self.y
         self.radius = as_signal(radius)
         self.alpha = as_signal(alpha)
         self.color = as_color(color)
@@ -440,13 +448,10 @@ class Circle(Shape):
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, radius={self.radius})"
 
     def _draw_shape(self) -> None:
-        """Draw the circle at the specified frame.
-
-        Args:
-            frame: The frame number to draw the shape.
-        """
-        self.ctx.move_to(self.radius.value, 0)
-        self.ctx.arc(0, 0, self.radius.value, 0, 2 * math.pi)
+        """Draw the circle."""
+        r = self.radius.value
+        self.ctx.move_to(r, 0)
+        self.ctx.arc(0, 0, r, 0, 2 * math.pi)
 
     @property
     def raw_geom_now(self) -> shapely.Polygon:
