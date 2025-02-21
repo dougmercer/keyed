@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from .base import Base
     from .extras import FreeHandContext
 
-__all__ = ["Scene"]
+__all__ = ["Scene", "Layer"]
 
 
 class Blend(Enum):
