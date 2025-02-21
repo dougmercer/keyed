@@ -10,8 +10,8 @@ points = {
 }
 
 # Create test objects
-rect = Rectangle(scene, width=200, height=100, color=(1, 1, 0))
-circle = Circle(scene, radius=50, color=(0, 1, 1))
+rect = Rectangle(scene, x=110, y=60, width=200, height=100, color=(1, 1, 0))
+circle = Circle(scene, x=10, y=10, radius=50, color=(0, 1, 1))
 
 points["center"].translate(300, 0, start=120, end=150)
 

@@ -11,7 +11,7 @@ code = Code(scene, styled_tokens, font_size=48, alpha=1)
 
 scene.add(code)
 
-code.chars.translate(100, 0, 0, 12)
+code.translate(100, 0, 0, 12)
 
 r = code.lines[0].emphasize(
     operator=cairo.OPERATOR_SCREEN,

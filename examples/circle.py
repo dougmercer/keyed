@@ -19,7 +19,7 @@ a = PingPong(
 
 circle.translate(0, a(circle.controls.delta_y, scene.frame))
 
-text = Text(scene, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0), token_type=None)
+text = Text(scene, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0))
 scene.add(text)
 
 b = PingPong(

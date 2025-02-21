@@ -160,19 +160,13 @@ class Base(Transformable):
         """
         from .shapes import Rectangle
 
-        bounds = self.geom.bounds
-        x = bounds[0]
-        y = bounds[1]
-        width = bounds[2] - x + buffer
-        height = bounds[3] - y + buffer
-
         r = Rectangle(
             self.scene,
             color=color,
-            x=x - 0.5 * buffer,
-            y=y - 0.5 * buffer,
-            width=width,
-            height=height,
+            x=self.center_x,
+            y=self.center_y,
+            width=self.width + buffer,
+            height=self.height + buffer,
             fill_color=fill_color,
             alpha=alpha,
             dash=dash,

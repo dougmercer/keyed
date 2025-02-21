@@ -2,8 +2,8 @@ from keyed import DOWN, Rectangle, Scene
 from keyed.easing import linear_in_out
 
 s = Scene(width=1920, height=1080)
-r = Rectangle(s, width=100, height=20, x=100, y=100)
-r2 = Rectangle(s, width=100, height=20, x=100, y=200)
+r = Rectangle(s, width=100, height=20, x=150, y=110)
+r2 = Rectangle(s, width=100, height=20, x=150, y=210)
 
 r.translate(300, 0, 0, 24)
 
