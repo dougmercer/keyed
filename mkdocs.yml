@@ -57,6 +57,12 @@ markdown_extensions:
   tables:
   toc:
     permalink: true
+  pymdownx.emoji:
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    options:
+      custom_icons:
+        - overrides/.icons
 
   # Python Markdown Extensions
   pymdownx.betterem:
@@ -138,6 +144,11 @@ nav:
     - Implementation Details: api/impl.md
   - Examples: examples.md
   - Gotchyas: gotchyas.md
+  - Extras (Sponsors only):
+    - index: extras/index.md
+    - Extras-Only Features: extras/goals.md
+    - Fair Use Policy: extras/fairuse.md
+    - Keyed Extras: https://google.com
 
 plugins:
   - search
@@ -148,3 +159,6 @@ plugins:
           import:
           - https://dougmercer.github.io/signified/objects.inv
   - autorefs
+
+extra_css:
+  - stylesheets/extra.css
