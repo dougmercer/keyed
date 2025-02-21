@@ -2,7 +2,6 @@ ARG PLATFORM=linux/amd64
 FROM --platform=${PLATFORM} condaforge/mambaforge:latest
 
 # Create conda environment
-COPY environment.yml .
 RUN mamba create -y -n keyed -c conda-forge \
     "python<3.13" \
     cairo \
