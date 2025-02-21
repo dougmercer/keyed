@@ -1,11 +1,10 @@
-"""Drawable objects related to Code."""
+"""Drawable objects related to Text."""
 
 from __future__ import annotations
 
 import itertools
-import math
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Generator, Self, TypeVar
+from typing import TYPE_CHECKING, Callable, Generator, Self, Sequence, TypeVar
 
 import cairo
 import shapely
@@ -14,41 +13,34 @@ from pygments.token import Token as PygmentsToken
 from pygments.token import _TokenType as Pygments_TokenType
 from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
-from .base import BaseText, Selection
+from .base import Base, Selection
 from .color import as_color
 from .highlight import StyledToken
+from .line import Line as StraightLine
 
 if TYPE_CHECKING:
+    from .curve import Curve
     from .scene import Scene
 
 
 __all__ = ["Text", "Code", "TextSelection"]
 
 
-class Text(BaseText):
-    """A simple, single line text object.
-
-    For code objects, this will be a single character, as this allows each character
-    to be individually animated.
+class Text(Base):
+    """A single line of text that can be drawn on screen.
 
     Args:
-        scene: The scene in which the text is displayed.
-        text: The content of the text object.
-        size: The font size of the text. Default is 24.
-        x: The x-coordinate for the position of the text. Default is 10.
-        y: The y-coordinate for the position of the text. Default is 10.
-        font: The font family of the text. Default is "Anonymous Pro".
-        color: The color of the text in RGB format. Default is (1, 1, 1).
-        token_type: The token type from Pygments, if applicable.
-        alpha: The opacity level of the text. Default is 1.
-        slant: The font slant. Default is :data:`cairo.FONT_SLANT_NORMAL`.
-        weight: The font weight. Default is :data:`cairo.FONT_WEIGHT_NORMAL`.
-        code: Reference to the parent :class:`keyed.code.Code` object, if part of a code block.
-        operator: The compositing operator used to render the text. Default is :data:`cairo.OPERATOR_OVER`.
-
-    TODO:
-        The code object is provided to support reverse the nearest-character lookup in
-        the Preview window. It would be nice if this were not necessary.
+        scene: Scene to draw on
+        text: Text content to display
+        size: Font size. Default is 24.
+        x: X position. Default uses scene center.
+        y: Y position. Default uses scene center.
+        font: Font family name. Default is "Anonymous Pro".
+        color: RGB color tuple. Default is white.
+        alpha: Opacity from 0-1. Default is 1.
+        slant: Font slant style. Default is normal.
+        weight: Font weight. Default is normal.
+        operator: Cairo operator for blending. Default is OVER.
     """
 
     def __init__(
@@ -60,17 +52,14 @@ class Text(BaseText):
         y: HasValue[float] | None = None,
         font: str = "Anonymous Pro",
         color: tuple[float, float, float] = (1, 1, 1),
-        token_type: Pygments_TokenType | None = None,
         alpha: float = 1.0,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
-        code: Code | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
         super().__init__(scene)
         self.scene = scene
         self.text = as_signal(text)
-        self.token_type = token_type
         self.font = font
         self.color = as_color(color)
         self.alpha = as_signal(alpha)
@@ -82,32 +71,17 @@ class Text(BaseText):
         self.controls.delta_x.value = self.x
         self.controls.delta_y.value = self.y
         self.ctx = scene.get_context()
-        self.code = code
         self.operator = operator
         self._dependencies.extend([self.size, self.text])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
     def __repr__(self) -> str:
-        line_str = f"line={self.code.find_line(self)}, " if self.code is not None else ""
-        token_str = f"token={self.code.find_token(self)}, " if self.code is not None else ""
-        char_str = f"char={self.code.find_char(self)}" if self.code is not None else ""
-        return (
-            f"{self.__class__.__name__}(text={unref(self.text)!r}, "
-            f"x={self.x:2}, y={self.y:2}, "
-            f"{line_str}"
-            f"{token_str}"
-            f"{char_str}"
-            ")"
-        )
+        return f"{self.__class__.__name__}(text={unref(self.text)!r}, x={self.x:2}, y={self.y:2})"
 
     @contextmanager
     def style(self) -> Generator[None, None, None]:
-        """Create a context manager that sets the text style within a specified frame.
-
-        Yields:
-            None: No value is yielded, but style settings are applied and then cleaned up.
-        """
+        """Set up the font context for drawing."""
         try:
             self.ctx.save()
             self.ctx.set_operator(self.operator)
@@ -119,7 +93,7 @@ class Text(BaseText):
             self.ctx.restore()
 
     def draw(self) -> None:
-        """Draw the text object at a specific frame."""
+        """Draw the text to the scene."""
         with self.style():
             self.ctx.new_path()
             self.ctx.transform(self.controls.matrix.value)
@@ -127,41 +101,30 @@ class Text(BaseText):
 
     @property
     def extents(self) -> cairo.TextExtents:
-        """Calculate the text dimensions (extents) at the current frame.
-
-        Returns:
-            The calculated text extents.
-        """
-
+        """Get the text dimensions."""
         with self.style():
             return self.ctx.text_extents(unref(self.text))
 
-    def is_whitespace(self) -> bool:
-        """Determine if the text object consists only of whitespace.
+    def underline(self, offset: float = 2, **kwargs) -> StraightLine:
+        """Add an underline effect.
+
+        Args:
+            offset: Distance below baseline. Default is 2.
+            **kwargs: Additional arguments passed to Line constructor.
 
         Returns:
-            True if the text is whitespace, False otherwise.
+            Line object representing the underline.
         """
-        return (self.token_type is PygmentsToken.Text.Whitespace) or (
-            self.token_type is PygmentsToken.Text and unref(self.text).strip() == ""
+        x0 = self.left.value
+        x1 = self.right.value
+        y = self.down.value + offset
+        return StraightLine(
+            self.scene, x0=x0, y0=y, x1=x1, y1=y, color=unref(self.color).rgb, alpha=self.alpha.value, **kwargs
         )
 
     @property
-    def chars(self) -> TextSelection[Self]:
-        """Return a TextSelection of chars in the char (just itself)."""
-        return TextSelection([self])
-
-    @property
     def raw_geom_now(self) -> shapely.Polygon:
-        """Calculate the geometry before any transformations.
-
-        Note:
-            This may still vary over time. For example, the font size can be animated.
-
-        Returns:
-            The geometric representation of the text.
-        """
-
+        """Get text bounds geometry before transforms."""
         extents = self.extents
         x = extents.x_bearing
         y = extents.y_bearing
@@ -169,64 +132,130 @@ class Text(BaseText):
         h = extents.height
         return shapely.box(x, y, x + w, y + h)
 
-    # def __copy__(self) -> Self:
-    #     new = type(self)(
-    #         scene=self.scene,
-    #         x=self.x,
-    #         y=self.y,
-    #         text=self.text,
-    #         font=self.font,
-    #         color=self.color,
-    #         token_type=self.token_type,
-    #         slant=self.slant,
-    #         weight=self.weight,
-    #         code=self.code,
-    #     )
-    #     new.alpha.follow(self.alpha)
-    #     new.size.follow(self.size)
-    #     new.controls.follow(self.controls)
-    #     return new
 
-    def max_containing_font_size(self, max_width: float, max_height: float) -> float:
-        """Determine the maximum font size that fits within given dimensions.
+class _Character(Base):
+    """A single character within a Token of code.
 
-        Args:
-            max_width: Maximum width available for the text.
-            max_height: Maximum height available for the text.
+    Not meant to be instantiated directly - created by Code class.
 
-        Returns:
-            The maximum font size that fits within the specified dimensions.
-        """
-        self.ctx.select_font_face(self.font, self.slant, self.weight)
+    Args:
+        scene: Scene to draw on
+        char: The character to display
+        token_type: Pygments token type for syntax highlighting
+        style: Style information from syntax highlighter
+        code: Parent Code object
+        x: X position
+        y: Y position
+        font: Font family. Default is "Anonymous Pro".
+        size: Font size. Default is 24.
+        alpha: Opacity from 0-1. Default is 1.
+        operator: Cairo operator for blending. Default is OVER.
+    """
 
-        # Initialize variables to determine the maximum fitting font size
-        min_size: float = 12
-        max_size: float = 200
-        precision: float = 0.1
+    def __init__(
+        self,
+        scene: Scene,
+        char: str,
+        token_type: Pygments_TokenType,
+        style: StyledToken,
+        code: Code,
+        x: float,
+        y: float,
+        font: str = "Anonymous Pro",
+        size: float = 24,
+        alpha: float = 1,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+    ):
+        super().__init__(scene)
+        self.scene = scene
+        self.text = as_signal(char)
+        self.token_type = token_type
+        self.code = code
+        self.font = font
+        self.color = as_color(style.color)
+        self.alpha = as_signal(alpha)
+        self.size = as_signal(size)
+        self.slant = style.to_cairo()["slant"]
+        self.weight = style.to_cairo()["weight"]
+        self.x = x
+        self.y = y
+        self.controls.delta_x.value = self.x
+        self.controls.delta_y.value = self.y
+        self.ctx = scene.get_context()
+        self.operator = operator
+        self._dependencies.extend([self.size, self.text])
+        assert isinstance(self.controls.matrix, Signal)
+        self.controls.matrix.value = self.controls.base_matrix()
 
-        while max_size - min_size > precision:
-            current_size = (max_size + min_size) / 2
-            self.ctx.set_font_size(current_size)
-            _, _, width, height, *_ = self.ctx.text_extents(unref(self.text))
+    def __repr__(self) -> str:
+        line_str = f"line={self.code.find_line(self)}, "
+        token_str = f"token={self.code.find_token(self)}, "
+        char_str = f"char={self.code.find_char(self)}"
+        return (
+            f"{self.__class__.__name__}(text={unref(self.text)!r}, "
+            f"x={self.x:2}, y={self.y:2}, "
+            f"{line_str}"
+            f"{token_str}"
+            f"{char_str}"
+            ")"
+        )
 
-            # Check if the text fits within the maximum dimensions
-            if width <= max_width and height <= max_height:
-                min_size = current_size  # Text fits, try a larger size
-            else:
-                max_size = current_size  # Too big, try a smaller size
+    @contextmanager
+    def style(self) -> Generator[None, None, None]:
+        """Set up the font context for drawing."""
+        try:
+            self.ctx.save()
+            self.ctx.set_operator(self.operator)
+            self.ctx.select_font_face(self.font, self.slant, self.weight)
+            self.ctx.set_font_size(self.size.value)
+            self.ctx.set_source_rgba(*unref(self.color).rgb, self.alpha.value)
+            yield None
+        finally:
+            self.ctx.restore()
 
-        # Round down to the nearest font size rounded to tenths place
-        return math.floor(min_size * 10) / 10
+    def draw(self) -> None:
+        """Draw the character to the scene."""
+        with self.style():
+            self.ctx.new_path()
+            self.ctx.transform(self.controls.matrix.value)
+            self.ctx.show_text(unref(self.text))
+
+    @property
+    def extents(self) -> cairo.TextExtents:
+        """Get the character dimensions."""
+        with self.style():
+            return self.ctx.text_extents(unref(self.text))
+
+    def is_whitespace(self) -> bool:
+        """Check if this character is whitespace."""
+        return (self.token_type is PygmentsToken.Text.Whitespace) or (
+            self.token_type is PygmentsToken.Text and unref(self.text).strip() == ""
+        )
+
+    @property
+    def raw_geom_now(self) -> shapely.Polygon:
+        """Get character bounds geometry before transforms."""
+        extents = self.extents
+        x = extents.x_bearing
+        y = extents.y_bearing
+        w = extents.width
+        h = extents.height
+        return shapely.box(x, y, x + w, y + h)
+
+    @property
+    def chars(self) -> TextSelection[_Character]:
+        """Return a selection containing just this character."""
+        return TextSelection([self])
 
 
-TextT = TypeVar("TextT", bound=BaseText)
+CodeTextT = TypeVar("CodeTextT", _Character, "_Token", "_Line")
 
 
-class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
+class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
     """A sequence of BaseText objects, allowing collective transformations and animations."""
 
     @property
-    def chars(self) -> TextSelection[Text]:
+    def chars(self) -> TextSelection[_Character]:
         """Return a TextSelection of single characters."""
         return TextSelection(itertools.chain.from_iterable(item.chars for item in self))
 
@@ -267,10 +296,7 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
         """
         return all(obj.is_whitespace() for obj in self)
 
-    # def __copy__(self) -> Self:
-    #     return type(self)(list(self))
-
-    def contains(self, query: Text) -> bool:
+    def contains(self, query: _Character) -> bool:
         """Check if the query text is within the TextSelection's characters."""
         return query in self.chars
 
@@ -282,27 +308,60 @@ class TextSelection(BaseText, Selection[TextT]):  # type: ignore[misc]
         """
         return TextSelection(obj for obj in self if not obj.is_whitespace())
 
-    # def freeze(self) -> None:
-    #     """Freeze the object to enable caching."""
-    #     if not self.is_frozen:
-    #         for char in self.chars:
-    #             char.freeze()
-    #         super().freeze()
+    def highlight(
+        self,
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
+        line_width: float = 1,
+        tension: float = 1,
+    ) -> Curve:
+        """Highlight text by drawing a curve passing through the text.
+
+        Args:
+            color: The color to use for highlighting as an RGB tuple.
+            alpha: The transparency level of the highlight.
+            dash: Dash pattern for the highlight stroke.
+            operator: The compositing operator to use for rendering the highlight.
+            line_width: The width of the highlight stroke.
+            tension: The tension for the curve fitting the text. A value of 0 will draw a
+                linear path betwee points, where as a non-zero value will allow some
+                slack in the bezier curve connecting each set of points.
+
+        Returns:
+            A Curve passing through all characters in the underlying text.
+        """
+        from .curve import Curve
+
+        # TODO - c should be c.clone(), but clone not implemented for text.
+        return Curve(
+            self.scene,
+            objects=[c for c in self.chars.filter_whitespace()],
+            color=color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            line_width=line_width,
+            tension=tension,
+        )
 
 
-class Token(TextSelection[Text]):
-    """Represents a syntactic token as part of code, typically consisting of multiple characters.
+class _Token(TextSelection[_Character]):
+    """A collection of characters representing a syntax token.
+
+    Not meant to be instantiated directly - created by Code class.
 
     Args:
-        scene: The scene in which the token is displayed.
-        token: The style and content information for the token.
-        x: The initial x-coordinate for the position of the token.
-        y: The initial y-coordinate for the position of the token.
-        font: The font family used for the token text. Default is "Anonymous Pro".
-        font_size: The font size used for the token text. Default is 24.
-        alpha: The opacity level of the token text. Default is 1.
-        code: Reference to the parent Code object, if part of a code block.
-        operator: The compositing operator used to render the token. Default is :data:`cairo.OPERATOR_OVER`.
+        scene: Scene to draw on
+        token: Token style information
+        x: X position
+        y: Y position
+        code: Parent Code object
+        font: Font family. Default is "Anonymous Pro".
+        font_size: Font size. Default is 24.
+        alpha: Opacity from 0-1. Default is 1.
+        operator: Cairo operator for blending. Default is OVER.
     """
 
     def __init__(
@@ -311,26 +370,26 @@ class Token(TextSelection[Text]):
         token: StyledToken,
         x: float,
         y: float,
+        code: Code,
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
-        code: Code | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
-        self._token = token
-        objects: list[Text] = []
+        objects: list[_Character] = []
         for char in token.text:
             objects.append(
-                Text(
+                _Character(
                     scene,
                     char,
-                    **token.to_cairo(),
+                    token.token_type,
+                    token,
+                    code=code,
                     x=x,
                     y=y,
                     size=font_size,
                     font=font,
                     alpha=alpha,
-                    code=code,
                     operator=operator,
                 )
             )
@@ -339,14 +398,15 @@ class Token(TextSelection[Text]):
         super().__init__(objects)
 
     @property
-    def extents(self) -> cairo.TextExtents:
-        """Calculate the combined text extents of all characters in the token at a specified frame.
+    def chars(self) -> TextSelection[_Character]:
+        """Get characters in this token."""
+        return TextSelection(self)
 
-        Returns:
-            The calculated text extents for the token.
-        """
+    @property
+    def extents(self) -> cairo.TextExtents:
+        """Get the combined text extents of all characters."""
         _extents = [char.extents for char in self]
-        # Calculating combined extents
+        # Calculate combined extents
         min_x_bearing = _extents[0].x_bearing
         min_y_bearing = min(e.y_bearing for e in _extents)
         max_y_bearing = max(e.y_bearing + e.height for e in _extents)
@@ -355,38 +415,30 @@ class Token(TextSelection[Text]):
         total_x_advance = sum(e.x_advance for e in _extents)
         total_y_advance = sum(e.y_advance for e in _extents)
         return cairo.TextExtents(
-            x_bearing=min_x_bearing,  # type: ignore[arg-type]
-            y_bearing=min_y_bearing,  # type: ignore[call-args]
+            x_bearing=min_x_bearing,  # type: ignore
+            y_bearing=min_y_bearing,  # type: ignore
             width=total_width,  # type: ignore
             height=max_height,  # type: ignore
             x_advance=total_x_advance,  # type: ignore
             y_advance=total_y_advance,  # type: ignore
         )
 
-    @property
-    def chars(self) -> TextSelection[Text]:
-        """Return a TextSelection of tokens in the token."""
-        return TextSelection(self)
 
-    # def __copy__(self) -> Self:
-    #     new = type(self)(scene=self.scene, token=self._token, x=0, y=0)
-    #     list.__init__(new, [copy(obj) for obj in self])
-    #     return new
+class _Line(TextSelection[_Token]):
+    """A line of code consisting of syntax tokens.
 
-
-class Line(TextSelection[Token]):
-    """A line of code, consisting of tokens.
+    Not meant to be instantiated directly - created by Code class.
 
     Args:
-        scene: The scene in which the line is displayed.
-        tokens: A list of styled tokens that make up the line.
-        x: The x-coordinate for the position of the line.
-        y: The y-coordinate for the position of the line.
-        font: The font family used for the line text. Default is "Anonymous Pro".
-        font_size: The font size used for the line text. Default is 24.
-        alpha: The opacity level of the line text. Default is 1.
-        code: Reference to the parent Code object, if part of a code block.
-        operator: The compositing operator used to render the line. Default is :data:`cairo.OPERATOR_OVER`.
+        scene: Scene to draw on
+        tokens: List of token style information
+        x: X position
+        y: Y position
+        code: Parent Code object
+        font: Font family. Default is "Anonymous Pro".
+        font_size: Font size. Default is 24.
+        alpha: Opacity from 0-1. Default is 1.
+        operator: Cairo operator for blending. Default is OVER.
     """
 
     def __init__(
@@ -395,17 +447,16 @@ class Line(TextSelection[Token]):
         tokens: list[StyledToken],
         x: float,
         y: float,
+        code: Code,
         font: str = "Anonymous Pro",
         font_size: int = 24,
         alpha: float = 1,
-        code: Code | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
-        self._tokens = tokens
-        objects: list[Token] = []
+        objects: list[_Token] = []
         for token in tokens:
             objects.append(
-                Token(
+                _Token(
                     scene,
                     token,
                     x=x,
@@ -421,22 +472,17 @@ class Line(TextSelection[Token]):
         super().__init__(objects)
 
     @property
-    def chars(self) -> TextSelection[Text]:
-        """Return a TextSelection of chars in the line."""
+    def chars(self) -> TextSelection[_Character]:
+        """Get all characters in this line."""
         return TextSelection(itertools.chain(*self))
 
     @property
-    def tokens(self) -> TextSelection[Token]:
-        """Return a TextSelection of tokens in the line."""
+    def tokens(self) -> TextSelection[_Token]:
+        """Get all tokens in this line."""
         return TextSelection(self)
 
-    # def __copy__(self) -> Self:
-    #     new = type(self)(scene=self.scene, tokens=self._tokens, x=0, y=0)
-    #     list.__init__(new, [copy(obj) for obj in self])
-    #     return new
 
-
-class Code(TextSelection[Line]):
+class Code(TextSelection[_Line]):
     """A code block.
 
     Args:
@@ -490,10 +536,10 @@ class Code(TextSelection[Line]):
         if line:
             lines.append(line)
 
-        objects: TextSelection[Line] = TextSelection()
+        objects: TextSelection[_Line] = TextSelection()
         for line in lines:
             objects.append(
-                Line(
+                _Line(
                     scene,
                     tokens=line,
                     x=x,
@@ -518,38 +564,32 @@ class Code(TextSelection[Line]):
         ctx.set_font_size(self.font_size)
 
     @property
-    def tokens(self) -> TextSelection[Token]:
+    def tokens(self) -> TextSelection[_Token]:
         """Return a TextSelection of tokens in the code object."""
         return TextSelection(itertools.chain(*self.lines))
 
     @property
-    def lines(self) -> TextSelection[Line]:
+    def lines(self) -> TextSelection[_Line]:
         """Return a TextSelection of lines in the code object."""
         return TextSelection(self)
 
-    def find_line(self, query: Text) -> int:
+    def find_line(self, query: _Character) -> int:
         """Find the line index of a given character."""
         for idx, line in enumerate(self.lines):
             if line.contains(query):
                 return idx
         return -1
 
-    def find_token(self, query: Text) -> int:
+    def find_token(self, query: _Character) -> int:
         """Find the token index of a given character."""
         for index, token in enumerate(self.tokens):
             if token.contains(query):
                 return index
         return -1
 
-    def find_char(self, query: Text) -> int:
+    def find_char(self, query: _Character) -> int:
         """Find the charecter index of a given character."""
         for index, char in enumerate(self.chars):
             if char == query:
                 return index
         return -1
-
-    # def __copy__(self) -> Self:
-    #     """Create a weird copy thing that I'm not sure if I still need."""
-    #     new = type(self)(scene=self.scene, tokens=self._tokens, x=10, y=10)
-    #     list.__init__(new, TextSelection([copy(obj) for obj in self]))
-    #     return new

@@ -37,13 +37,11 @@ from .transformation import (
 from .types import GeometryT, HasAlpha
 
 if TYPE_CHECKING:
-    from .code import Text, TextSelection
-    from .curve import Curve
     from .scene import Scene
     from .shapes import Rectangle
 
 
-__all__ = ["Base", "BaseText", "Selection"]
+__all__ = ["Base", "Selection"]
 
 
 class Lifetime:
@@ -225,57 +223,6 @@ class Base(Transformable):
         assert hasattr(self, "alpha")
         self.alpha = Animation(start, end, self.alpha, value, ease=ease)(self.alpha, self.frame)  # type: ignore[assignment]
         return self
-
-
-class BaseText(Base):
-    """Provide text-based features for drawable objects in a scene."""
-
-    @property
-    def chars(self) -> TextSelection[Text]:
-        """Return a selection of Text objects representing individual characters."""
-        ...
-
-    def is_whitespace(self) -> bool:
-        """Determine if the text content is whitespace."""
-        ...
-
-    def highlight(
-        self,
-        color: tuple[float, float, float] = (1, 1, 1),
-        alpha: float = 1,
-        dash: tuple[Sequence[float], float] | None = None,
-        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
-        line_width: float = 1,
-        tension: float = 1,
-    ) -> Curve:
-        """Highlight text by drawing a curve passing through the text.
-
-        Args:
-            color: The color to use for highlighting as an RGB tuple.
-            alpha: The transparency level of the highlight.
-            dash: Dash pattern for the highlight stroke.
-            operator: The compositing operator to use for rendering the highlight.
-            line_width: The width of the highlight stroke.
-            tension: The tension for the curve fitting the text. A value of 0 will draw a
-                linear path betwee points, where as a non-zero value will allow some
-                slack in the bezier curve connecting each set of points.
-
-        Returns:
-            A Curve passing through all characters in the underlying text.
-        """
-        from .curve import Curve
-
-        # TODO - c should be c.clone(), but clone not implemented for text.
-        return Curve(
-            self.scene,
-            objects=[c for c in self.chars.filter_whitespace()],
-            color=color,
-            alpha=alpha,
-            dash=dash,
-            operator=operator,
-            line_width=line_width,
-            tension=tension,
-        )
 
 
 T = TypeVar("T", bound=Base)
