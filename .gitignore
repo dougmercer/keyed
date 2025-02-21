@@ -18,3 +18,5 @@ _old
 *.html
 testing
 docs/keyed
+junit
+coverage.xml
