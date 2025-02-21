@@ -5,14 +5,22 @@ from typing import Sequence, Union
 
 import cairo
 import shapely
+from shapely.affinity import translate
 from shapely.geometry.base import BaseGeometry
-from signified import HasValue, Signal, as_signal, unref
+from signified import HasValue, Signal, as_signal, computed, unref
 
 from .color import Color, as_color
 from .scene import Scene
 from .shapes import Shape
 
 __all__ = ["Geometry"]
+
+
+@computed
+def center(geometry, scene):
+    """Returns a geometry translated such that its centroid is at (0,0)."""
+    centroid = geometry.centroid
+    return translate(geometry, xoff=-centroid.x + scene.nx(0.5), yoff=-centroid.y + scene.ny(0.5))
 
 
 class Geometry(Shape):
@@ -51,11 +59,13 @@ class Geometry(Shape):
         buffer: float = 0,
         draw_fill: bool = True,
         draw_stroke: bool = True,
+        center_geometry: bool = True,
     ):
         super().__init__(scene)
         self.scene = scene
         self.ctx = scene.get_context()
-        self.geometry = as_signal(geometry)
+        g = as_signal(geometry)
+        self.geometry = center(g, scene) if center_geometry else g
         self.color = as_color(color)
         self.fill_color = as_color(fill_color)
         self.alpha = Signal(alpha)
