@@ -131,6 +131,10 @@ class Line(Base):
         y0 = lerp(self.y0.value, self.y1.value, self.start.value)
         x1 = lerp(self.x0.value, self.x1.value, self.end.value)
         y1 = lerp(self.y0.value, self.y1.value, self.end.value)
+
+        if x0 == x1 and y0 == y1:
+            return
+
         with self.style():
             self.ctx.set_matrix(self.controls.matrix.value)
             self.ctx.move_to(x0, y0)
@@ -311,9 +315,12 @@ class BezierCurve(Base):
 
     def draw(self) -> None:
         """Draw the shape within its styled context, applying transformations."""
+        x0, y0, x1, y1, x2, y2, x3, y3 = self.control_points()
+        if x0 == x3 and y0 == y3:
+            return
+
         with self.style():
             self.ctx.set_matrix(self.controls.matrix.value)
-            x0, y0, x1, y1, x2, y2, x3, y3 = self.control_points()
 
             # Draw the curve using the calculated control points
             self.ctx.move_to(x0.value, y0.value)
