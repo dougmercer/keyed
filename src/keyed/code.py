@@ -16,7 +16,6 @@ from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 from .base import Base, Selection
 from .color import as_color
 from .highlight import StyledToken
-from .line import Line as StraightLine
 
 if TYPE_CHECKING:
     from .curve import Curve
@@ -104,23 +103,6 @@ class Text(Base):
         """Get the text dimensions."""
         with self.style():
             return self.ctx.text_extents(unref(self.text))
-
-    def underline(self, offset: float = 2, **kwargs) -> StraightLine:
-        """Add an underline effect.
-
-        Args:
-            offset: Distance below baseline. Default is 2.
-            **kwargs: Additional arguments passed to Line constructor.
-
-        Returns:
-            Line object representing the underline.
-        """
-        x0 = self.left.value
-        x1 = self.right.value
-        y = self.down.value + offset
-        return StraightLine(
-            self.scene, x0=x0, y0=y, x1=x1, y1=y, color=unref(self.color).rgb, alpha=self.alpha.value, **kwargs
-        )
 
     @property
     def raw_geom_now(self) -> shapely.Polygon:
