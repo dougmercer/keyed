@@ -330,74 +330,6 @@ class Scene(Transformable, Freezeable):
         )
         return output_surface
 
-    # @freeze
-    # def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
-    #     self.frame.value = frame
-    #     layers_to_render = self.layers if layers is None else [self.layers[idx] for idx in layers]
-
-    #     # Create a new ImageSurface for the final output
-    #     output_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
-    #     output_ctx = cairo.Context(output_surface)
-
-    #     for layer in layers_to_render:
-    #         layer_surface = layer.rasterize(frame)
-
-    #         # If the layer surface is SVG, convert it to ImageSurface
-    #         if isinstance(layer_surface, cairo.SVGSurface):
-    #             temp_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
-    #             temp_ctx = cairo.Context(temp_surface)
-    #             temp_ctx.set_source_surface(layer_surface, 0, 0)
-    #             temp_ctx.paint()
-    #             layer_surface = temp_surface
-
-    #         # Composite the layer onto the output surface
-    #         output_ctx.set_operator(layer.blend.value)
-    #         output_ctx.set_source_surface(layer_surface, 0, 0)
-    #         output_ctx.paint()
-
-    #     return output_surface
-
-    # def rasterize(self, frame: int, layers: Sequence[int] | None = None) -> cairo.ImageSurface:
-    #     """Convert a frame of the scene to a raster image.
-
-    #     Parameters
-    #     ----------
-    #     frame : int
-    #         The frame number to rasterize.
-    #     layers : Sequence[int] | None, optional
-    #         Specific layers to rasterize. If None, all layers are rasterized.
-
-    #     Returns
-    #     -------
-    #     cairo.ImageSurface
-    #         The raster image of the specified frame.
-    #     """
-
-    #     self.frame.value = frame
-    #     layers_to_render = (
-    #         (content for idx, content in enumerate(self.layers) if idx in layers)
-    #         if layers is not None else self.layers
-    #     )
-    #     scene_raster = None
-    #     for layer in layers_to_render:
-    #         layer_surface = layer.rasterize(frame)
-    #         # Transfer the layer raster onto the scene raster
-    #         if scene_raster is not None:
-    #             scene_ctx = cairo.Context(scene_raster)
-    #             scene_ctx.set_operator(layer.blend.value)
-    #             scene_ctx.set_source_surface(layer_surface, 0, 0)
-    #             scene_ctx.paint()
-    #         elif isinstance(layer_surface, cairo.SVGSurface):
-    #             surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self._width, self._height)
-    #             ctx = cairo.Context(surface)
-    #             ctx.set_source_surface(layer_surface, 0, 0)
-    #             ctx.paint()
-    #             scene_raster = surface
-    #         else:
-    #             scene_raster = layer_surface
-    #     assert scene_raster is not None
-    #     return scene_raster
-
     @freeze
     def asarray(self, frame: int = 0, layers: Sequence[int] | None = None) -> np.ndarray:
         """Convert a frame of the scene to a NumPy array.
@@ -713,5 +645,4 @@ class Scene(Transformable, Freezeable):
                 ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
 
         if open_dir:
-            # Open the directory containing the output file
             subprocess.run(["open", str(output_path.parent)])
