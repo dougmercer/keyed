@@ -383,11 +383,11 @@ class Transformable:
 
     @property
     def down(self) -> Computed[float]:
-        return self._get_cached_computed("down", lambda: self.geom.bounds[1])
+        return self._get_cached_computed("down", lambda: self.geom.bounds[3])
 
     @property
     def up(self) -> Computed[float]:
-        return self._get_cached_computed("up", lambda: self.geom.bounds[3])
+        return self._get_cached_computed("up", lambda: self.geom.bounds[1])
 
     @property
     def left(self) -> Computed[float]:
@@ -403,7 +403,7 @@ class Transformable:
 
     @property
     def height(self) -> Computed[float]:
-        return self._get_cached_computed("height", lambda: self.up - self.down)
+        return self._get_cached_computed("height", lambda: self.down - self.up)
 
     @property
     def center_x(self) -> Computed[float]:
