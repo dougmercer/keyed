@@ -8,6 +8,7 @@ import typer
 
 from keyed.constants import Quality, QualitySetting
 from keyed.parser import SceneEvaluator
+from keyed.renderer import VideoFormat
 
 app = typer.Typer()
 
@@ -120,11 +121,11 @@ def render(
 
     # Render based on format
     if format == OutputFormat.WEBM:
-        scene.to_webm(frame_rate=frame_rate, quality=quality, output_path=output)
+        scene.render(format=VideoFormat.WEBM, frame_rate=frame_rate, output_path=output, quality=quality)
     elif format == OutputFormat.MOV:
-        scene.to_video(frame_rate=frame_rate, output_path=output)
+        scene.render(format=VideoFormat.MOV_PRORES, frame_rate=frame_rate, output_path=output)
     elif format == OutputFormat.GIF:
-        scene.to_gif(frame_rate=frame_rate, output_path=output)
+        scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=output)
 
 
 if __name__ == "__main__":

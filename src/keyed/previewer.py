@@ -11,6 +11,7 @@ from shapely.affinity import affine_transform
 from shapely.geometry import Point
 
 from .constants import Quality, QualitySetting
+from .renderer import VideoFormat
 
 if TYPE_CHECKING:
     from keyed import Base, Scene
@@ -192,7 +193,8 @@ if PREVIEW_AVAILABLE:
             self.scene.draw_as_layers(open_dir=True)
 
         def save_as_video(self) -> None:
-            self.scene.to_video(self.frame_rate, open_dir=True)
+            self.scene.render(format=VideoFormat.MOV_PRORES, frame_rate=self.frame_rate)
+            self.scene._open_folder()
 
         def keyPressEvent(self, event: QKeyEvent) -> None:
             if event.key() == Qt.Key.Key_Right:

@@ -7,7 +7,6 @@ import warnings
 from enum import Enum
 from functools import cache
 from pathlib import Path
-from subprocess import PIPE, Popen
 from typing import TYPE_CHECKING, Iterable, Literal, Self, Sequence
 
 import cairo
@@ -23,6 +22,7 @@ from .constants import EXTRAS_INSTALLED
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .previewer import Quality, create_animation_window
+from .renderer import RenderEngine, Renderer, VideoFormat
 from .transformation import Transformable, TransformControls
 
 if TYPE_CHECKING:
@@ -152,6 +152,7 @@ class Scene(Transformable, Freezeable):
         self.controls.matrix.value = self.controls.base_matrix()
         self.layers: list[Layer] = []
         self.default_layer = self.create_layer("default", z_index=0)
+        self.renderer = Renderer(self)
 
     def nx(self, n: float) -> float:
         """Convert normalized x coordinate (0-1) to pixel value.
@@ -451,198 +452,18 @@ class Scene(Transformable, Freezeable):
                 layer.freeze()
             super().freeze()
 
-    def to_video(self, frame_rate: int = 24, open_dir: bool = False, output_path: Path | None = None) -> None:
-        """Export as a video by directly streaming frames to a video file using FFmpeg.
-
-        Args:
-            frame_rate: The frame rate of the video. Default is 24 fps.
-            open_dir: Whether to open the output directory after the video is created. Default is False.
-            output_path: Optional specific path to write the output file. If not provided,
-                will use the default scene output directory structure.
-        """
-        if output_path is None:
-            self._create_folder()
-            output_path = self.full_output_dir / f"{self.scene_name}.mov"
-        else:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        command = [
-            "ffmpeg",
-            "-y",
-            "-f",
-            "rawvideo",
-            "-vcodec",
-            "rawvideo",
-            "-s",
-            f"{self._width}x{self._height}",
-            "-pix_fmt",
-            "bgra",
-            "-r",
-            str(frame_rate),
-            "-i",
-            "-",
-            "-vcodec",
-            "prores_ks",
-            "-profile:v",
-            "4444",
-            "-pix_fmt",
-            "yuva444p10le",
-            "-r",
-            str(frame_rate),
-            str(output_path),
-        ]
-
-        with Popen(command, stdin=PIPE) as ffmpeg:
-            for frame in range(self.num_frames):
-                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
-
-        if open_dir:
-            subprocess.run(["open", str(output_path.parent)])
-
-    def to_video_av(self, frame_rate: int = 24, open_dir: bool = False) -> None:
-        """Export as a video by directly streaming frames using PyAV.
-
-        Args:
-            frame_rate: The frame rate of the video. Default is 24 fps.
-            open_dir: Whether to open the output directory after the video is created. Default is False.
-        """
-        import av
-
-        self._create_folder()
-        output_path = str(self.full_output_dir / f"{self.scene_name}.mov")
-
-        # Configure output container
-        container = av.open(output_path, mode="w")
-
-        # Create video stream
-        stream = container.add_stream("prores_ks", rate=frame_rate)
-        stream.pix_fmt = "yuv444p10le"  # type: ignore
-        stream.width = self._width  # type: ignore
-        stream.height = self._height  # type: ignore
-
-        # Write frames
-        for frame_idx in range(self.num_frames):
-            # Create frame
-            frame = av.VideoFrame.from_ndarray(self.asarray(frame_idx), format="bgra")
-
-            # Encode and write the frame
-            for packet in stream.encode(frame):  # type: ignore
-                container.mux(packet)
-
-        # Flush any remaining packets
-        for packet in stream.encode():  # type: ignore
-            container.mux(packet)
-
-        # Close the container
-        container.close()
-
-        if open_dir:
-            self._open_folder()
-
-    def to_gif(
-        self, frame_rate: int = 24, open_dir: bool = False, loop: int = 0, output_path: Path | None = None
+    def render(
+        self,
+        format: VideoFormat = VideoFormat.MOV_PRORES,
+        engine: RenderEngine = RenderEngine.FFMPEG,
+        output_path: Path | None = None,
+        frame_rate: int = 24,
+        **kwargs,
     ) -> None:
-        """Export the scene directly to a GIF file by streaming frames to FFmpeg.
-
-        Args:
-            frame_rate: The frame rate of the GIF. Default is 24 fps.
-            open_dir: Whether to open the output directory after the GIF is created. Default is False.
-            loop: Number of times to loop the GIF. Default is 0 (infinite).
-                Set to -1 for no looping, or a positive number for that many loops.
-                Note: A value of 1 means play twice (one loop), 2 means play thrice, etc.
-            output_path: Optional specific path to write the output file. If not provided,
-                will use the default scene output directory structure.
-        """
-        if output_path is None:
-            self._create_folder()
-            output_path = self.full_output_dir / f"{self.scene_name}.gif"
-        else:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        command = [
-            "ffmpeg",
-            "-y",
-            "-f",
-            "rawvideo",
-            "-vcodec",
-            "rawvideo",
-            "-s",
-            f"{self._width}x{self._height}",
-            "-pix_fmt",
-            "bgra",
-            "-r",
-            str(frame_rate),
-            "-i",
-            "-",
-            "-vf",
-            "split[s0][s1];[s0]palettegen=stats_mode=full[p];[s1][p]paletteuse=dither=sierra2_4a",
-            "-loop",
-            str(loop),
-            "-r",
-            str(frame_rate),
-            str(output_path),
-        ]
-
-        with Popen(command, stdin=PIPE) as ffmpeg:
-            for frame in range(self.num_frames):
-                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
-
-        if open_dir:
-            subprocess.run(["open", str(output_path.parent)])
-
-    def to_webm(
-        self, frame_rate: int = 24, quality: int = 40, open_dir: bool = False, output_path: Path | None = None
-    ) -> None:
-        """Export the scene directly to a WebM file by streaming frames to FFmpeg.
-
-        Args:
-            frame_rate: The frame rate of the video. Default is 24 fps.
-            quality: The CRF (Constant Rate Factor) value for VP9. Range: 0-63, lower is better quality.
-                Default is 40 which provides good compression while maintaining quality.
-            open_dir: Whether to open the output directory after the video is created. Default is False.
-            output_path: Optional specific path to write the output file. If not provided,
-                will use the default scene output directory structure.
-        """
-        if output_path is None:
-            self._create_folder()
-            output_path = self.full_output_dir / f"{self.scene_name}.webm"
-        else:
-            # Ensure parent directories exist
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        command = [
-            "ffmpeg",
-            "-y",
-            "-f",
-            "rawvideo",
-            "-vcodec",
-            "rawvideo",
-            "-s",
-            f"{self._width}x{self._height}",
-            "-pix_fmt",
-            "bgra",
-            "-r",
-            str(frame_rate),
-            "-i",
-            "-",
-            "-c:v",
-            "libvpx-vp9",
-            "-pix_fmt",
-            "yuva420p",
-            "-crf",
-            str(quality),
-            "-b:v",
-            "0",  # Use CRF for quality control
-            "-row-mt",
-            "1",  # Enable row-based multithreading
-            "-r",
-            str(frame_rate),
-            str(output_path),
-        ]
-
-        with Popen(command, stdin=PIPE) as ffmpeg:
-            for frame in range(self.num_frames):
-                ffmpeg.stdin.write(self.asarray(frame).tobytes())  # type: ignore[union-attr]
-
-        if open_dir:
-            subprocess.run(["open", str(output_path.parent)])
+        self.renderer.render(
+            format=format,
+            engine=engine,
+            output_path=output_path,
+            frame_rate=frame_rate,
+            **kwargs,
+        )
