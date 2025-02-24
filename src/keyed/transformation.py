@@ -159,8 +159,8 @@ class Transformable:
 
     def move_to(
         self,
-        x: HasValue[float],
-        y: HasValue[float],
+        x: HasValue[float] | None,
+        y: HasValue[float] | None,
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
@@ -646,8 +646,8 @@ def translate(
 def move_to(
     start: int,
     end: int,
-    x: HasValue[float],
-    y: HasValue[float],
+    x: HasValue[float] | None,
+    y: HasValue[float] | None,
     cx: HasValue[float],
     cy: HasValue[float],
     frame: ReactiveValue[int],
@@ -655,25 +655,16 @@ def move_to(
 ) -> Computed[cairo.Matrix]:
     """Create a transformation matrix that moves an object to absolute coordinates.
 
-    Parameters
-    ----------
-    start : int
-        Starting frame of the movement
-    end : int
-        Ending frame of the movement
-    x : HasValue[float]
-        Target x coordinate
-    y : HasValue[float]
-        Target y coordinate
-    frame : ReactiveValue[int]
-        Current frame
-    easing : EasingFunctionT
-        Easing function for the movement
+    Args:
+        start: Starting frame of the movement.
+        end: Ending frame of the movement.
+        x: Target x coordinate. If None, ignore.
+        y: Target y coordinate. If None, ignore.
+        frame: Current frame.
+        easing: Easing function for the movement.
 
-    Returns
-    -------
-    Computed[cairo.Matrix]
-        Transform matrix for the movement
+    Returns:
+        matrix: Transform matrix for the movement
     """
 
     @computed
@@ -685,8 +676,8 @@ def move_to(
     if start == end:
         return compute_matrix(x, y, cx, cy)
     else:
-        animated_x = Animation(start, end, cx, x, easing, AnimationType.ABSOLUTE)(cx, frame)
-        animated_y = Animation(start, end, cy, y, easing, AnimationType.ABSOLUTE)(cy, frame)
+        animated_x = Animation(start, end, cx, x, easing, AnimationType.ABSOLUTE)(cx, frame) if x is not None else cx
+        animated_y = Animation(start, end, cy, y, easing, AnimationType.ABSOLUTE)(cy, frame) if y is not None else cy
         return compute_matrix(animated_x, animated_y, cx, cy)
 
 

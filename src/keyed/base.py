@@ -382,8 +382,8 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     def move_to(
         self,
-        x: HasValue[float],
-        y: HasValue[float],
+        x: HasValue[float] | None,
+        y: HasValue[float] | None,
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
