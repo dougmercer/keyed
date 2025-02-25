@@ -7,15 +7,15 @@ from keyed import (
     RIGHT,
     Animation,
     Circle,
+    Color,
     Direction,
     Line,
     Scene,
     Selection,
     Text,
     get_critical_point,
+    step,
 )
-from keyed.animation import step
-from keyed.color import Color
 
 s = Scene("graph_of_comp", num_frames=300)
 

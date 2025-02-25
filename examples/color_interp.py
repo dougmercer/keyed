@@ -1,5 +1,4 @@
-from keyed import Animation, Circle, PingPong, Rectangle, Scene
-from keyed.color import Color
+from keyed import Animation, Circle, Color, PingPong, Rectangle, Scene
 
 s = Scene(num_frames=180, freehand=True)
 

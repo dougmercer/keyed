@@ -1,5 +1,4 @@
-from keyed import Circle, Scene
-from keyed.color import Color
+from keyed import Circle, Color, Scene
 
 scene = Scene(scene_name="render_layers", num_frames=48, width=1920, height=1080)
 

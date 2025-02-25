@@ -1,6 +1,5 @@
 """A key-frame focused animation engine."""
 
-from . import color  # noqa
 from . import easing  # noqa
 from . import highlight  # noqa
 from . import previewer  # noqa
