@@ -7,7 +7,7 @@ from . import previewer  # noqa
 from .animation import *  # noqa
 from .annotations import *  # noqa
 from .base import *  # noqa
-from .code import *  # noqa
+from .text import *  # noqa
 from .constants import *  # noqa
 from .color import *  # noqa
 from .curve import *  # noqa

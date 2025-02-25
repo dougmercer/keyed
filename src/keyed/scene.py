@@ -15,8 +15,7 @@ import shapely
 from signified import HasValue, Signal, unref
 from tqdm import tqdm
 
-from .base import is_visible
-from .code import Selection
+from .base import Selection, is_visible
 from .compositor import BlendMode, composite_layers
 from .constants import EXTRAS_INSTALLED
 from .effects import Effect
