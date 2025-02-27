@@ -189,7 +189,7 @@ class Renderer:
             stream.pix_fmt = "yuva420p"  # type: ignore
             stream.width = self.scene._width  # type: ignore
             stream.height = self.scene._height  # type: ignore
-            stream.options = {"crf": str(kwargs.get("quality", 40)), "b:v": "0"}
+            stream.options = {"crf": str(kwargs.get("quality", 40)), "b:v": "0"}  # type: ignore
         elif format == VideoFormat.GIF:
             raise NotImplementedError("GIF rendering with PyAV is not supported. Use FFmpeg.")
         else:
