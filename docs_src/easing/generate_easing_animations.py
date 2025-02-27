@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from keyed import Scene, easing, Circle, Line, Text, UP, DOWN
+from keyed.renderer import VideoFormat
 from keyed.plot import EasingVisualizer
 
 def create_easing_visualization(easing_func, name):
@@ -85,7 +86,7 @@ def create_easing_visualization(easing_func, name):
     )
 
     # Export as webm
-    scene.to_webm(quality=20, output_path=Path(f"docs/media/easing/{name}.webm"))
+    scene.render(VideoFormat.WEBM, quality=20, output_path=Path(f"docs/media/easing/{name}.webm"))
 
 def generate_all_animations():
     # Get all easing functions (excluding internal helpers)

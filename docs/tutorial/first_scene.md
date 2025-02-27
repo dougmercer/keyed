@@ -82,7 +82,7 @@ Note that our Scene's cooridinate system is such that the top left corner of the
 title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
 ```
 
-We create a [Text][keyed.code.Text] object that:
+We create a [Text][keyed.text.Text] object that:
 
 - Contains our message
 - Has font size 100

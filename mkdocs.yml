@@ -130,20 +130,19 @@ nav:
     - Easing: tutorial/easing.md
     - Transformations: tutorial/transformations.md
     - Reactivity and Animation: tutorial/animation.md
-    - Previewer: tutorial/previewer.md
   - API Reference:
     - Animation: api/animation.md
     - Easing: api/easing.md
     - Transformations: api/transforms.md
     - Scene: api/scene.md
     - Shapes, Lines, and Curves: api/shapes.md
-    - Text: api/code.md
+    - Text: api/text.md
     - Colors: api/colors.md
     - Effects: api/effects.md
     - Utilities: api/utils.md
     - Implementation Details: api/impl.md
-  - Examples: examples.md
-  - Gotchyas: gotchyas.md
+  - Gallery:
+    - index: gallery/index.md
   - Extras (Sponsors only):
     - index: extras/index.md
     - Extras-Only Features: extras/goals.md

@@ -1,0 +1,15 @@
+scenes:
+  - name: first_scene
+    title: "Bouncing Ball Animation"
+    description: "A simple bouncing ball animation"
+    src_path: "examples/first_scene.py"
+    
+  - name: curve_interp
+    title: "Interpolate lines and curves"
+    description: "Smoothly interpolate lines and curves."
+    src_path: "examples/curve_interp.py"
+
+  - name: code_replace_complex
+    title: "Replace a portion of code."
+    description: "Replace a portion of code."
+    src_path: "examples/code_replace_complex.py"
