@@ -20,14 +20,16 @@ import shapely.affinity
 from signified import Computed, HasValue, ReactiveValue, Variable, computed, unref
 
 from .animation import Animation, step
-from .constants import ALWAYS, ORIGIN, Direction
+from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
 from .transformation import (
     Transformable,
     align_to,
     get_critical_point,
     lock_on,
+    match_size,
     move_to,
+    next_to,
     rotate,
     scale,
     shear,
@@ -368,6 +370,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
             obj.apply_transform(matrix)
         return self
 
+    ## Note:
+    # For the below methods, for some reason self.frame does not reactively update, but self.scene.frame does.
+
     def translate(
         self,
         x: HasValue[float],
@@ -412,7 +417,9 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         """
         center = center if center is not None else self.geom  # type: ignore[assignment]
         cx, cy = get_critical_point(center, direction)  # type: ignore[argument]
-        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
+        self.apply_transform(
+            move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.scene.frame, easing=easing)
+        )
         return self
 
     def rotate(
@@ -524,6 +531,74 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         )
         self.apply_transform(matrix)
         return self
+
+    def match_size(
+        self,
+        other: Transformable,
+        match_x: bool = True,
+        match_y: bool = True,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
+        matrix = match_size(
+            start=start,
+            end=end,
+            match_x=match_x,
+            match_y=match_y,
+            target_width=other.width,
+            target_height=other.height,
+            original_width=self.width,
+            original_height=self.height,
+            cx=cx,
+            cy=cy,
+            frame=self.scene.frame,
+            ease=easing,
+        )
+        self.apply_transform(matrix)
+        return self
+
+    def next_to(
+        self,
+        to: Transformable,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        offset: HasValue[float] = 10.0,
+        direction: Direction = LEFT,
+    ) -> Self:
+        """Align the object to another object.
+
+        Args:
+            to: The object to align to.
+            start: Start of animation (begin aligning to the object).
+            end: End of animation (finish aligning to the object at this frame, and then stay there).
+            easing: The easing function to use.
+            offset: Distance between objects (in pixels).
+            direction: The critical point of to and from_to use for the alignment.
+
+        Returns:
+            self
+        """
+        self_x, self_y = get_critical_point(self.geom, -1 * direction)  # type: ignore[argument]
+        target_x, target_y = get_critical_point(to.geom, direction)
+        matrix = next_to(
+            start=start,
+            end=end,
+            target_x=target_x,
+            target_y=target_y,
+            self_x=self_x,
+            self_y=self_y,
+            direction=direction,
+            offset=offset,
+            ease=easing,
+            frame=self.frame,
+        )
+        return self.apply_transform(matrix)
 
     @property
     def dependencies(self) -> list[Variable]:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Literal, Self
+from typing import Any, Callable, Literal, Self, cast
 
 import cairo
 import shapely
@@ -11,7 +11,7 @@ import shapely.affinity
 from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
 
 from .animation import Animation, AnimationType
-from .constants import ALWAYS, ORIGIN, Direction
+from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
 from .helpers import Freezeable
 from .types import GeometryT
@@ -381,6 +381,74 @@ class Transformable:
             )
         )
 
+    def match_size(
+        self,
+        other: Transformable,
+        match_x: bool = True,
+        match_y: bool = True,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        center: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+    ) -> Self:
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
+        matrix = match_size(
+            start=start,
+            end=end,
+            match_x=match_x,
+            match_y=match_y,
+            target_width=other.width,
+            target_height=other.height,
+            original_width=self.width,
+            original_height=self.height,
+            cx=cx,
+            cy=cy,
+            frame=self.frame,
+            ease=easing,
+        )
+        self.apply_transform(matrix)
+        return self
+
+    def next_to(
+        self,
+        to: Transformable,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        offset: HasValue[float] = 10.0,
+        direction: Direction = LEFT,
+    ) -> Self:
+        """Align the object to another object.
+
+        Args:
+            to: The object to align to.
+            start: Start of animation (begin aligning to the object).
+            end: End of animation (finish aligning to the object at this frame, and then stay there).
+            easing: The easing function to use.
+            offset: Distance between objects (in pixels).
+            direction: The critical point of to and from_to use for the alignment.
+
+        Returns:
+            self
+        """
+        self_x, self_y = get_critical_point(self.geom, -1 * direction)
+        target_x, target_y = get_critical_point(to.geom, direction)
+        matrix = next_to(
+            start=start,
+            end=end,
+            target_x=target_x,
+            target_y=target_y,
+            self_x=self_x,
+            self_y=self_y,
+            direction=direction,
+            offset=offset,
+            ease=easing,
+            frame=self.frame,
+        )
+        return self.apply_transform(matrix)
+
     @property
     def down(self) -> Computed[float]:
         return self._get_cached_computed("down", lambda: self.geom.bounds[3])
@@ -668,9 +736,9 @@ def move_to(
     """
 
     @computed
-    def compute_matrix(x: float, y: float, cx: float, cy: float) -> cairo.Matrix:
+    def compute_matrix(x: float | None, y: float | None, cx: float, cy: float) -> cairo.Matrix:
         matrix = cairo.Matrix()
-        matrix.translate(x - cx, y - cy)
+        matrix.translate(x - cx if x is not None else 0, y - cy if y is not None else 0)
         return matrix
 
     if start == end:
@@ -742,15 +810,7 @@ def scale(
     """
     magnitude = Animation(start, end, 1, amount, ease, animation_type=AnimationType.MULTIPLICATIVE)(1, frame)
 
-    @computed
-    def f(magnitude: float, cx: float, cy: float) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        matrix.translate(cx, cy)
-        matrix.scale(magnitude, magnitude)
-        matrix.translate(-cx, -cy)
-        return matrix
-
-    return f(magnitude, cx, cy)
+    return _scale(magnitude, magnitude, cx, cy)
 
 
 def stretch(
@@ -781,31 +841,12 @@ def stretch(
 
     Returns:
         A computed transformation matrix
-
-    Example:
-        ```python
-        # Stretch an object to twice its height while keeping width the same
-        obj.apply_transform(stretch(
-            start=0, end=30,
-            scale_x=1.0, scale_y=2.0,
-            cx=obj.center_x, cy=obj.center_y,
-            frame=scene.frame
-        ))
-        ```
     """
     # Animate both scale factors independently
     sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLICATIVE)(1, frame)
     sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLICATIVE)(1, frame)
 
-    @computed
-    def f(sx: float, sy: float, cx: float, cy: float) -> cairo.Matrix:
-        matrix = cairo.Matrix()
-        matrix.translate(cx, cy)
-        matrix.scale(sx, sy)
-        matrix.translate(-cx, -cy)
-        return matrix
-
-    return f(sx, sy, cx, cy)
+    return _scale(sx, sy, cx, cy)
 
 
 def shear(
@@ -835,18 +876,6 @@ def shear(
 
     Returns:
         A computed transformation matrix
-
-    Example:
-        ```python
-        # Shear an object horizontally
-        obj.apply_transform(shear(
-            start=0, end=30,
-            amount=0.5,
-            direction="x",
-            cx=obj.center_x, cy=obj.center_y,
-            frame=scene.frame
-        ))
-        ```
     """
     tan = computed(lambda angle: math.tan(math.radians(angle)))
     x_magnitude = Animation(start, end, 0, tan(angle_x), ease)(0, frame)
@@ -856,11 +885,105 @@ def shear(
     def f(x_mag: float, y_mag: float, cx: float, cy: float) -> cairo.Matrix:
         matrix = cairo.Matrix()
         matrix.translate(cx, cy)
-        matrix = cairo.Matrix(1, y_mag, x_mag, 1, 0, 0) * matrix  # type: ignore
+        matrix = cast(cairo.Matrix, cairo.Matrix(1, y_mag, x_mag, 1, 0, 0) * matrix)  # type: ignore
         matrix.translate(-cx, -cy)
         return matrix
 
     return f(x_magnitude, y_magnitude, cx, cy)
+
+
+def match_size(
+    start: int,
+    end: int,
+    target_width: HasValue[float],
+    target_height: HasValue[float],
+    original_width: HasValue[float],
+    original_height: HasValue[float],
+    cx: HasValue[float],
+    cy: HasValue[float],
+    frame: ReactiveValue[int],
+    match_x: bool = True,
+    match_y: bool = True,
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Create a transformation matrix that resizes an object to match target dimensions.
+
+    Args:
+        start: Starting frame for the animation
+        end: Ending frame for the animation
+        target_width: Target width to match
+        target_height: Target height to match
+        original_width: Current width of the object
+        original_height: Current height of the object
+        cx: X coordinate of the center point
+        cy: Y coordinate of the center point
+        frame: Current frame
+        match_x: Whether to match the width
+        match_y: Whether to match the height
+        preserve_aspect_ratio: If True, maintain the aspect ratio of the original object
+        ease: Easing function to apply
+
+    Returns:
+        A computed transformation matrix
+    """
+    # Calculate scale factors for each dimension
+    scale_x = target_width / original_width if match_x else 1.0
+    scale_y = target_height / original_height if match_y else 1.0
+
+    # Animate both scale factors independently
+    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+
+    return _scale(sx, sy, cx, cy)
+
+
+def next_to(
+    start: int,
+    end: int,
+    target_x: HasValue[float],
+    target_y: HasValue[float],
+    self_x: HasValue[float],
+    self_y: HasValue[float],
+    direction: Direction,
+    offset: HasValue[float],
+    frame: ReactiveValue[int],
+    ease: EasingFunctionT = cubic_in_out,
+) -> Computed[cairo.Matrix]:
+    """Create a transformation matrix that positions an object next to a target point.
+
+    Args:
+        start: Starting frame for the animation
+        end: Ending frame for the animation
+        target_x: X coordinate of the reference point on the target
+        target_y: Y coordinate of the reference point on the target
+        self_x: X coordinate of the reference point on self
+        self_y: Y coordinate of the reference point on self
+        direction: Direction vector indicating the positioning direction
+        offset: Distance between the objects along the direction vector
+        frame: Current frame
+        ease: Easing function to apply
+
+    Returns:
+        A computed transformation matrix
+    """
+    new_x = target_x + direction.x * offset
+    new_y = target_y - direction.y * offset  # negative, because Top Left = (0, 0) coordinate system
+
+    # Calculate the translation amount to the new position
+    dx = new_x - self_x
+    dy = new_y - self_y
+
+    # Animate the translation
+    animated_dx = Animation(start, end, 0, dx, ease)(0, frame)
+    animated_dy = Animation(start, end, 0, dy, ease)(0, frame)
+
+    @computed
+    def f(dx: float, dy: float) -> cairo.Matrix:
+        matrix = cairo.Matrix()
+        matrix.translate(dx, dy)
+        return matrix
+
+    return f(animated_dx, animated_dy)
 
 
 def get_position_along_dim_now(
@@ -924,3 +1047,12 @@ def get_critical_point(
     x = computed(get_position_along_dim_now)(geom, direction, dim=0)
     y = computed(get_position_along_dim_now)(geom, direction, dim=1)
     return x, y
+
+
+@computed
+def _scale(sx: float, sy: float, cx: float, cy: float) -> cairo.Matrix:
+    matrix = cairo.Matrix()
+    matrix.translate(cx, cy)
+    matrix.scale(sx, sy)
+    matrix.translate(-cx, -cy)
+    return matrix
