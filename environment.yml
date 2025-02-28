@@ -1,6 +1,12 @@
 name: keyed
 dependencies:
   - python<=3.12
+  - ffmpeg
+  - cairo
+  - pycairo
+  # - pango
+  # - librsvg
   - pip
   - pip:
     - -e ".[all]"
+    # - -e "../keyed-extras"

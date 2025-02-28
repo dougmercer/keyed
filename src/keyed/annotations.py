@@ -2,7 +2,7 @@ from .base import Base
 from .constants import EXTRAS_INSTALLED
 from .line import Line
 
-__all__ = ["underline", "squiggly_underline"]
+__all__ = ["underline"]
 
 
 def underline(obj: Base, offset: float = 20, **kwargs) -> Line:
@@ -39,3 +39,5 @@ if EXTRAS_INSTALLED:
         x1 = obj.right.value
         y = obj.down.value + offset
         return SquigglyLine(obj.scene, xs=x0, ys=y, xe=x1, ye=y, **kwargs)
+
+    __all__.append("squiggly_underline")
