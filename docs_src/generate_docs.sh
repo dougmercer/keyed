@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 # Call this script from the root of the repository
 

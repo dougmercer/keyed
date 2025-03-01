@@ -1,7 +1,7 @@
 from .constants import EXTRAS_INSTALLED
 
 if EXTRAS_INSTALLED:
-    from keyed_extras import *  # noqa: F401,F403  # pyright: ignore[reportWildcardImportFromLibrary,reportAssignmentType]
+    from keyed_extras import *  # noqa: F403  # type: ignore
 else:
 
     def post_process_tokens(code, tokens, filename):

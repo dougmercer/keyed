@@ -17,10 +17,9 @@ from tqdm import tqdm
 
 from .base import Selection, is_visible
 from .compositor import BlendMode, composite_layers
-from .constants import EXTRAS_INSTALLED
+from .constants import EXTRAS_INSTALLED, Quality
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
-from .previewer import Quality, create_animation_window
 from .renderer import RenderEngine, Renderer, VideoFormat
 from .transformation import Transformable, TransformControls
 
@@ -416,6 +415,7 @@ class Scene(Transformable, Freezeable):
             quality: The quality level of the preview. Default is Quality.high.
             frame_rate: The frame rate at which to preview the animation. Default is 24 fps.
         """
+        from .previewer import create_animation_window
         create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
     def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:

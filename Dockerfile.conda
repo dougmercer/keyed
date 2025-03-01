@@ -16,3 +16,5 @@ COPY pyproject.toml ./
 
 # Install the package
 RUN pip install --no-cache-dir "."
+
+ENTRYPOINT ["keyed", "iostream"]

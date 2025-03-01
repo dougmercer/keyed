@@ -28,3 +28,5 @@ COPY pyproject.toml ./
 
 # Install the package
 RUN pip install --no-cache-dir ".[previewer]"
+
+ENTRYPOINT ["keyed", "iostream"]
