@@ -11,13 +11,6 @@ RUN apt-get update && apt-get install -y \
     gcc \
     ## ffmpeg
     ffmpeg \
-    ## qt5
-    qtbase5-dev \
-    libxrandr2 \
-    libxinerama1 \
-    libxcursor1 \
-    libxi6 \
-    libxxf86vm1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /keyed
