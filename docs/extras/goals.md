@@ -18,20 +18,23 @@ Keyed Extras follows a progressive Sponsorware model. Features start in Extras a
 - :material-check:{ .checked } Interactive Editor Window
     - Controllable scrollbar
     - Resizable window dimensions
+- :material-check:{ .checked } RichText Object
+    - Multi-line + Text Wrapping
+    - Style Text using Pango Markup.
 - :material-check:{ .checked } Advanced Syntax Highlighting
-    - Powered by `jedi`
     - Improved token classification
 - :material-check:{ .checked } Raster-Based Post-Processing Effects
-    - Blur and bloom
-    - Color adjustments
-    - Color quantization
-    - Glow
+    - Blur, bloom, and glow
+    - Color adjustments/quantization
+    - Displace
     - More...
 
 </div>
 
 <div class="feature-column" markdown>
-
+- :material-check:{ .checked } Render content from SVGs
+    - Parse the SVG into native `keyed` objects...
+    - ... or render the SVG as a whole
 - :material-check:{ .checked } Freehand Drawing
     - Sketch-like lines
 - :material-check:{ .checked } Additional Drawing Objects
@@ -39,10 +42,7 @@ Keyed Extras follows a progressive Sponsorware model. Features start in Extras a
     - Image support
 - :material-check:{ .checked } Fill Patterns
     - Gradients
-    - Cross hatching
-    - Checkboard patterns
-    - Polka dots
-    - Stippling
+    - Pattern fills like cross hatch, stippling, etc.
 
 </div>
 

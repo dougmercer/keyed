@@ -29,6 +29,7 @@ Features include:
 ## What's in it for me?
 
 As a sponsor, you'll get:
+
 - Immediate access to all current Extras features
 - Updates and new features as they're released
 - Early access to experimental features before they potentially move to the core library
@@ -41,7 +42,8 @@ As a sponsor, you'll get:
 2. You'll receive an invitation to the private repository
 3. Install keyed-extras using pip:
    ```bash
-   pip install git+https://github.com/dougmercer/keyed-extras.git
+   pip install git+https://github.com/dougmercer-yt/keyed-extras.git
+   ```
 
 ## Looking Forward
 
