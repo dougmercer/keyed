@@ -1,6 +1,7 @@
 """Command line interface for Keyed animations."""
 
 import sys
+import tempfile
 from enum import Enum
 from pathlib import Path
 
@@ -8,7 +9,7 @@ import typer
 
 from keyed.constants import Quality, QualitySetting
 from keyed.parser import SceneEvaluator
-from keyed.renderer import VideoFormat
+from keyed.renderer import RenderEngine, VideoFormat
 
 app = typer.Typer()
 
@@ -33,7 +34,7 @@ class OutputFormat(str, Enum):
 
 def cli():
     """Entry point for the CLI that handles direct file paths."""
-    if len(sys.argv) > 1 and sys.argv[1] not in ["preview", "render", "--help"]:
+    if len(sys.argv) > 1 and sys.argv[1] not in ["preview", "render", "iostream", "--help"]:
         sys.argv[1:1] = ["preview"]  # Insert 'preview' command before the file path
     return app()
 
@@ -49,7 +50,7 @@ def callback(ctx: typer.Context):
 @app.command()
 def preview(
     file: Path = typer.Argument(..., help="Python file containing a Scene definition"),
-    frame_rate: int = typer.Option(24, "--frame-rate", "-f", help="Frame rate for playback"),
+    frame_rate: int = typer.Option(24, "--frame-rate", "-r", help="Frame rate for playback"),
     quality: QualityChoices = typer.Option(
         "high", "--quality", "-q", help="Render quality: very_low, low, medium, high, very_high"
     ),
@@ -128,5 +129,70 @@ def render(
         scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=output)
 
 
-if __name__ == "__main__":
-    app()
+@app.command()
+def iostream(
+    format: OutputFormat = typer.Option(OutputFormat.MOV, "--format", "-f", help="Output format"),
+    frame_rate: int = typer.Option(24, "--frame-rate", "-r", help="Frame rate for output"),
+    quality: int = typer.Option(40, "--quality", "-q", help="Quality setting (for WebM)"),
+) -> None:
+    """
+    Render a scene from stdin to stdout or file.
+
+    This command reads Python code from stdin, renders the animation,
+    and outputs the video data to stdout (by default) or to a file.
+
+    Example:
+        cat myscene.py | keyed iostream > output.mp4
+    """
+    # Read Python code from stdin
+    code = sys.stdin.read()
+
+    if not code:
+        typer.echo("No input received from stdin", err=True)
+        raise typer.Exit(1)
+
+    # Save the code to a temporary file
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as tmp_file:
+        tmp_file.write(code)
+        tmp_file.flush()
+        tmp_path = Path(tmp_file.name)
+
+        # Initialize scene evaluator
+        evaluator = SceneEvaluator()
+
+        # Get scene
+        scene = evaluator.evaluate_file(tmp_path)
+        if not scene:
+            typer.echo("No Scene object found in input", err=True)
+            raise typer.Exit(1)
+
+        # Create a temporary output file
+        with tempfile.NamedTemporaryFile(suffix=f".{format.value}", delete=False) as tmp_output:
+            tmp_output_path = Path(tmp_output.name)
+
+        # Render based on format
+        if format == OutputFormat.WEBM:
+            scene.render(
+                format=VideoFormat.WEBM,
+                engine=RenderEngine.PYAV,
+                frame_rate=frame_rate,
+                output_path=tmp_output_path,
+                quality=quality,
+            )
+        elif format == OutputFormat.MOV:
+            scene.render(
+                format=VideoFormat.MOV_PRORES,
+                engine=RenderEngine.PYAV,
+                frame_rate=frame_rate,
+                output_path=tmp_output_path,
+            )
+        elif format == OutputFormat.GIF:
+            scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=tmp_output_path)
+
+        # Read the output file and write to stdout as binary
+        with open(tmp_output_path, "rb") as f:
+            # Write directly to stdout as binary
+            sys.stdout.buffer.write(f.read())
+
+        # Clean up the temporary output file if it was sent to stdout
+        tmp_output_path.unlink()
