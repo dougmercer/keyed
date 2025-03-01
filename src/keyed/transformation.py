@@ -920,7 +920,6 @@ def match_size(
         frame: Current frame
         match_x: Whether to match the width
         match_y: Whether to match the height
-        preserve_aspect_ratio: If True, maintain the aspect ratio of the original object
         ease: Easing function to apply
 
     Returns:

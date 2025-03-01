@@ -264,7 +264,7 @@ class Curve(Shape):
         # Add start point
         if start_idx < len(points) - 1:
             p0, p1, p2, p3 = points[start_idx], cp1[start_idx], cp2[start_idx], points[start_idx + 1]
-            p0_new, _, _, _ = de_casteljau(start_t, p0, p1, p2, p3, reverse=True)
+            p0_new, _, _, _ = de_casteljau(start_t, p0, p1, p2, p3, reverse=True)  # type: ignore
             result_points.append(p0_new)
 
         # Add intermediate points
@@ -273,7 +273,7 @@ class Curve(Shape):
         # Add end point
         if end_idx < len(points) - 1:
             p0, p1, p2, p3 = points[end_idx], cp1[end_idx], cp2[end_idx], points[end_idx + 1]
-            _, _, _, p3_new = de_casteljau(end_t, p0, p1, p2, p3)
+            _, _, _, p3_new = de_casteljau(end_t, p0, p1, p2, p3)  # type: ignore
             result_points.append(p3_new)
 
         return np.array(result_points)
