@@ -51,6 +51,7 @@ theme:
 markdown_extensions:
   # Python Markdown
   abbr:
+  admonition:
   attr_list:
   footnotes:
   md_in_html:
@@ -98,29 +99,8 @@ markdown_extensions:
   pymdownx.blocks.details:
   pymdownx.blocks.tab:
     alternate_style: True
-
-extra:
-  mkdocstrings:
-    default_handler: python
-    handlers:
-      python:
-        docstring_style: google
-        options:
-          show_root_heading: true
-          show_if_no_docstring: true
-          inherited_members: true
-          members_order: source
-          separate_signature: true
-          filters:
-          - '!^_'
-          merge_init_into_class: true
-          signature_crossrefs: true
-          show_symbol_type_heading: true
-          show_symbol_type_toc: true
-          rendering:
-            show_source: false
-          selection:
-            docstring_style: google
+  pymdownx.details:
+  pymdownx.superfences:
 
 nav:
   - Home: index.md
@@ -152,11 +132,29 @@ nav:
 plugins:
   - search
   - mkdocstrings:
+      default_handler: python
       handlers:
         python:
           paths: [src]
           import:
           - https://dougmercer.github.io/signified/objects.inv
+          docstring_style: google
+          options:
+            show_root_heading: true
+            show_if_no_docstring: true
+            inherited_members: true
+            members_order: source
+            separate_signature: true
+            filters:
+            - '!^_'
+            merge_init_into_class: true
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            rendering:
+              show_source: false
+            selection:
+              docstring_style: google
   - autorefs
 
 extra_css:
