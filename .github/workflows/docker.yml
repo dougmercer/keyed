@@ -48,15 +48,16 @@ jobs:
             # Label PR and SHA images as temporary
             org.opencontainers.image.vendor=${{ github.ref == 'refs/heads/main' && 'production' || 'temporary' }}
 
-      - name: Build and push Docker image
+      # First build and load the image for testing
+      - name: Build and load Docker image for testing
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile.minimal
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          push: false
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -64,3 +65,16 @@ jobs:
         run: |
           FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           docker run --rm $FIRST_TAG --help
+
+      # Then push the image if on main
+      - name: Push Docker image
+        uses: docker/build-push-action@v5
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          context: .
+          file: Dockerfile.minimal
+          push: true
+          load: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
