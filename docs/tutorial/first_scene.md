@@ -30,7 +30,7 @@ Let's break down how it works.
 ```python
 scene = Scene(width=1920, height=1080, num_frames=120)
 ```
-We start by creating a [Scene][keyed.scene.Scene] object, which serves as our canvas. Here we:
+We start by creating a [`Scene`][keyed.scene.Scene] object, which serves as our canvas. Here we:
 
 - Set the dimensions to 1920x1080 (Full HD resolution)
 - Specify 120 frames for the animation (at 24 frames per second, this gives us a 5-second animation)
@@ -38,8 +38,7 @@ We start by creating a [Scene][keyed.scene.Scene] object, which serves as our ca
 ### Creating the Ball
 ```python
 ball = (
-    Circle(scene, x=200, y=200, radius=50)
-    .center()
+    Circle(scene, radius=50)
     .translate(0, 300, start=0, end=24, easing=easing.bounce_out)
     .scale(2, start=24, end=48, direction=DOWN)
     .stretch(2, 0.5, start=50, end=60, direction=DOWN)
@@ -47,14 +46,13 @@ ball = (
     .translate(0, -300, start=60, end=110, easing=easing.elastic_out)
 )
 ```
-Here we create and animate the most interesting thing in the animation - a [Circle][keyed.shapes.Circle]. We apply a few key framed transformations to the object.
+Here we create and animate the most interesting thing in the animation - a [`Circle`][keyed.shapes.Circle]. We apply a few key framed transformations to the object.
 
-- `.center()` - Centers the circle in the scene
-- First `.translate()` - Moves the ball down by 300 pixels with a bouncy easing
-- `.scale()` - Doubles the size of the ball, scaling from the bottom [DOWN][keyed.constants.DOWN]
-- First `.stretch()` - Double the size of the ball in the x direction while shrinking the ball to half size the Y direction. Again using the [DOWN][keyed.constants.DOWN] direction so that the bottom center of the ball remains stationary.
-- Second `.stretch()` - Undoing the first stretch.
-- Second `.translate()` - Moves the ball up with a snappy elastic easing
+- First [`.translate()`][keyed.transformation.Transformable.translate] - Moves the ball down by 300 pixels with a bouncy easing
+- [`.scale()`][keyed.transformation.Transformable.scale] - Doubles the size of the ball, scaling from the bottom [`DOWN`][keyed.constants.DOWN]
+- First [`.stretch()`][keyed.transformation.Transformable.stretch] - Double the size of the ball in the x direction while shrinking the ball to half size the Y direction. Again using the [`DOWN`][keyed.constants.DOWN] direction so that the bottom center of the ball remains stationary.
+- Second [`.stretch()`][keyed.transformation.Transformable.stretch] - Undoing the first stretch.
+- Second [`.translate()`][keyed.transformation.Transformable.translate] - Moves the ball up with a snappy elastic easing
 
 Notice how we specify start and end frames for each animation. The ball will:
 
@@ -70,9 +68,9 @@ Notice how we specify start and end frames for each animation. The ball will:
 floor = Line(scene, x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), line_width=5)
 ```
 
-The floor is a simple [Line][keyed.line.Line] that:
+The floor is a simple [`Line`][keyed.line.Line] that:
 
-- Spans the width of the scene. Here, we used the helper `[Scene.nx(...)][keyed.scene.Scene.nx]` to convert from a normalized value of 1 (100%) along the x direction to the true pixel value of 1920 (100% of the width of our scene).
+- Spans the width of the scene. Here, we used the helper [`Scene.nx(...)`][keyed.scene.Scene.nx] to convert from a normalized value of 1 (100%) along the x direction to the true pixel value of 1920 (100% of the width of our scene).
 - Is positioned far enough from the bottom of the scene that it kind of looks like the ball is bouncing on a floor.
 
 Note that our Scene's cooridinate system is such that the top left corner of the scene is at coordinates `(0, 0)`, so when we specify `scene.ny(0.75)`, we're saying we should draw the line 75% of the height of the scene measured downwards from the top edge of the scene.
@@ -82,7 +80,7 @@ Note that our Scene's cooridinate system is such that the top left corner of the
 title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
 ```
 
-We create a [Text][keyed.text.Text] object that:
+We create a [`Text`][keyed.text.Text] object that:
 
 - Contains our message
 - Has font size 100
