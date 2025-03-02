@@ -1,0 +1,10 @@
+name: 'Install System Dependencies'
+description: 'Install required system dependencies for the project'
+runs:
+  using: "composite"
+  steps:        
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libcairo2-dev pkg-config python3-dev ffmpeg

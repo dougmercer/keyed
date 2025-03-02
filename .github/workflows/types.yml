@@ -15,10 +15,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev pkg-config python3-dev
+          cache: 'pip'
+          cache-dependency-path: '**/pyproject.toml'
+      - uses: ./.github/actions/install-system-deps
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

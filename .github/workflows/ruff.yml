@@ -9,6 +9,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'
+      # Create a cache ID based on the week number
+      - name: Set cache ID
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      # Cache the ruff cache directory
+      - uses: actions/cache@v4
+        with:
+          key: ruff-cache-${{ runner.os }}-${{ env.cache_id }}
+          path: .ruff_cache
+          restore-keys: |
+            ruff-cache-${{ runner.os }}-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

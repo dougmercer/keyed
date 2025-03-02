@@ -25,22 +25,33 @@ jobs:
         python-version: ["3.12"]  # ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev pkg-config python3-dev ffmpeg
-          
+          cache: 'pip'
+          cache-dependency-path: '**/pyproject.toml'
+
+      # Create a cache ID based on the week number for periodic cache refresh
+      - name: Set cache ID
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+
+      # Cache pytest cache
+      - uses: actions/cache@v4
+        with:
+          key: pytest-cache-${{ runner.os }}-py${{ matrix.python-version }}-${{ env.cache_id }}
+          path: .pytest_cache
+          restore-keys: |
+            pytest-cache-${{ runner.os }}-py${{ matrix.python-version }}-
+
+      - uses: ./.github/actions/install-system-deps
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install ".[test]"
-          
+
       - name: Cache snapshots
         id: cache-snapshots
         uses: actions/cache@v3
@@ -50,25 +61,25 @@ jobs:
           key: ${{ runner.os }}-py${{ matrix.python-version }}-snapshots-${{ hashFiles('tests/**/*.py') }}
           restore-keys: |
             ${{ runner.os }}-py${{ matrix.python-version }}-snapshots-
-      
+
       # Regular test run (no snapshot updates)
       - name: Run all tests 
         if: ${{ !inputs.update_snapshots && inputs.specific_test == '' }}
         run: |
           pytest tests/ --doctest-modules --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml
-      
+
       # Update all snapshots if requested  
       - name: Update all snapshots
         if: ${{ inputs.update_snapshots && inputs.specific_test == '' }}
         run: |
           pytest tests/ --snapshot-update --doctest-modules --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml
-      
+
       # Update specific test snapshot if requested
       - name: Update specific test snapshot
         if: ${{ inputs.specific_test != '' }}
         run: |
           pytest "tests/${{ inputs.specific_test }}" --snapshot-update --doctest-modules --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml
-      
+
       # Upload updated snapshots as artifacts
       - name: Upload updated snapshots
         if: ${{ inputs.update_snapshots || inputs.specific_test != '' }}
