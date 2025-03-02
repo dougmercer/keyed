@@ -131,6 +131,7 @@ nav:
 
 plugins:
   - search
+  - autorefs
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -138,25 +139,23 @@ plugins:
           paths: [src]
           inventories:
           - https://dougmercer.github.io/signified/objects.inv
-          docstring_style: google
           options:
-            extra:
-              show_root_heading: true
-              show_if_no_docstring: true
-              inherited_members: true
-              members_order: source
-              separate_signature: true
-              filters:
-              - '!^_'
+            docstring_style: google
+            docstring_options:
               merge_init_into_class: true
-              signature_crossrefs: true
-              show_symbol_type_heading: true
-              show_symbol_type_toc: true
+              show_if_no_docstring: true
+            inherited_members: true
+            members_order: source
+            filters:
+            - '!^_'
+            separate_signature: true
+            signature_crossrefs: true
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
+            show_root_heading: true
+            extra:
               rendering:
                 show_source: false
-              selection:
-                docstring_style: google
-  - autorefs
 
 extra_css:
   - stylesheets/extra.css
