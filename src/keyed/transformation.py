@@ -13,7 +13,6 @@ from signified import Computed, HasValue, ReactiveValue, Signal, Variable, compu
 from .animation import Animation, AnimationType
 from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
-from .helpers import Freezeable
 from .types import GeometryT
 
 
@@ -482,7 +481,7 @@ class Transformable:
         return self._get_cached_computed("center_y", lambda: (self.up + self.down) / 2)
 
 
-class TransformControls(Freezeable):
+class TransformControls:
     """Control how transforms are applied to the object.
 
     Args:
