@@ -519,8 +519,6 @@ def base_transform_matrix(
     matrix = cairo.Matrix()
     bounds = raw_geom.bounds
 
-    # TODO Consider translating by this initially to center it?
-    # or could just always draw centered... (e.g., rectangle)
     pivot_x = (bounds[2] - bounds[0]) / 2
     pivot_y = (bounds[3] - bounds[1]) / 2
 
