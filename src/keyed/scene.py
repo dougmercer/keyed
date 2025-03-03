@@ -22,7 +22,7 @@ from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
 from .selection import Selection
-from .transformation import Transformable, TransformControls
+from .transformation import Transformable
 
 if TYPE_CHECKING:
     from .base import Base
