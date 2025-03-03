@@ -16,14 +16,15 @@ from typing import (
 import cairo
 import shapely
 import shapely.affinity
-from signified import Computed, HasValue, ReactiveValue, Variable, computed, unref
+from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
 
 from .animation import Animation
-from .base import Base
+from .base import Base, Lifetime
 from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
 from .transformation import (
     Transformable,
+    TransformControls,
     align_to,
     get_critical_point,
     lock_on,
@@ -55,12 +56,38 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     """
 
     def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
-        from .scene import Scene
-
-        self._dependencies: list
-        Base.__init__(self, Scene())
-
+        # list
         list.__init__(self, iterable)
+
+        # Base
+        self.lifetime = Lifetime()
+        self._dependencies: list[Variable] = []
+
+        # From Transformable
+        self.controls = TransformControls(self)
+        self._cache: dict[str, Computed[Any]] = {}
+
+    @property
+    def scene(self) -> Scene:  # type: ignore[override]
+        """Returns the scene associated with the first object in the selection.
+
+        Raises:
+            ValueError: If the selection is empty and the scene cannot be retrieved.
+        """
+        if not self:
+            raise ValueError("Cannot retrieve 'scene': Selection is empty.")
+        return self[0].scene
+
+    @property
+    def frame(self) -> Signal[int]:  # type: ignore[override]
+        """Returns the frame associated with the first object in the selection.
+
+        Raises:
+            ValueError: If the selection is empty and the frame cannot be retrieved.
+        """
+        if not self:
+            raise ValueError("Cannot retrieve 'frame': Selection is empty.")
+        return self.scene.frame
 
     def animate(self, property: str, animation: Animation) -> Self:
         """Animate a property across all objects in the selection using the provided animation.
@@ -170,25 +197,11 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     # def __copy__(self) -> Self:
     #     return type(self)(list(self))
 
-    @property
-    def scene(self) -> Scene:  # type: ignore[override]
-        """Returns the scene associated with the first object in the selection.
-
-        Raises:
-            ValueError: If the selection is empty and the scene cannot be retrieved.
-        """
-        if not self:
-            raise ValueError("Cannot retrieve 'scene': Selection is empty.")
-        return self[0].scene
-
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         # TODO should we allow transform by HasValue[cairo.Matrix]? Probably...
         for obj in self:
             obj.apply_transform(matrix)
         return self
-
-    ## Note:
-    # For the below methods, for some reason self.frame does not reactively update, but self.scene.frame does.
 
     def translate(
         self,
@@ -198,7 +211,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
     ) -> Self:
-        matrix = translate(start, end, x, y, self.scene.frame, easing)
+        matrix = translate(start, end, x, y, self.frame, easing)
         self.apply_transform(matrix)
         return self
 
@@ -234,9 +247,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         """
         center = center if center is not None else self.geom  # type: ignore[assignment]
         cx, cy = get_critical_point(center, direction)  # type: ignore[argument]
-        self.apply_transform(
-            move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.scene.frame, easing=easing)
-        )
+        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
         return self
 
     def rotate(
@@ -250,7 +261,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = rotate(start, end, amount, cx, cy, self.scene.frame, easing)
+        matrix = rotate(start, end, amount, cx, cy, self.frame, easing)
         self.apply_transform(matrix)
         return self
 
@@ -265,7 +276,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = scale(start, end, amount, cx, cy, self.scene.frame, easing)
+        matrix = scale(start, end, amount, cx, cy, self.frame, easing)
         self.apply_transform(matrix)
         return self
 
@@ -281,7 +292,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = stretch(start, end, scale_x, scale_y, cx, cy, self.scene.frame, easing)
+        matrix = stretch(start, end, scale_x, scale_y, cx, cy, self.frame, easing)
         self.apply_transform(matrix)
         return self
 
@@ -296,7 +307,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, ORIGIN)  # type: ignore[argument]
-        matrix = shear(start, end, angle_x, angle_y, cx, cy, self.scene.frame, easing)
+        matrix = shear(start, end, angle_x, angle_y, cx, cy, self.frame, easing)
         self.apply_transform(matrix)
         return self
 
@@ -315,7 +326,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         matrix = align_to(
             to.geom,
             from_ if from_ is not None else self.geom,  # type: ignore[argument]
-            frame=self.scene.frame,
+            frame=self.frame,
             start=start,
             lock=lock,
             end=end,
@@ -339,7 +350,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         matrix = lock_on(
             target=target.geom,
             reference=reference if reference is not None else self.geom,  # type: ignore[argument]
-            frame=self.scene.frame,
+            frame=self.frame,
             start=start,
             end=end,
             direction=direction,
@@ -373,7 +384,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
             original_height=self.height,
             cx=cx,
             cy=cy,
-            frame=self.scene.frame,
+            frame=self.frame,
             ease=easing,
         )
         self.apply_transform(matrix)
