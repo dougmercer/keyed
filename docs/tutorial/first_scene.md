@@ -19,7 +19,7 @@ keyed first_scene.py
 ```
 
 <video autoplay loop muted playsinline>
-<source src="../../media/bouncing_ball.webm" type="video/webm">
+<source src="/keyed/media/tutorial/bouncing_ball.webm" type="video/webm">
 </video>
 
 Let's break down how it works.
