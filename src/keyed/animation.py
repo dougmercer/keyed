@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from enum import Enum, auto
 from functools import partial
 from typing import Any, Generic, TypeVar
@@ -15,7 +14,6 @@ from .easing import EasingFunctionT, easing_function, linear_in_out
 __all__ = [
     "AnimationType",
     "Animation",
-    "SinusoidalAnimation",
     "lag_animation",
     "Loop",
     "PingPong",
@@ -108,78 +106,6 @@ class Animation(Generic[T]):
     def __len__(self) -> int:
         """Return number of frames in the animation."""
         return self.end_frame - self.start_frame + 1
-
-
-class SinusoidalAnimation(Animation):
-    """Animate a parameter using a Sine function.
-
-    Args:
-        start_frame: Frame at which the animation will become active.
-        period: The duration (period) of one cycle.
-        magnitude: The maximum value above/below the center value the sine wave will vary.
-        phase: Controls where in the sine curve the animation begins.
-
-    Todo:
-        Can this be simplified now that we have Signals/Computed?
-    """
-
-    def __init__(
-        self,
-        start_frame: int,
-        period: int,
-        magnitude: float,
-        center: float = 0,
-        phase: float = 0,
-    ) -> None:
-        assert period > 0
-        assert phase >= 0
-        self.period = period
-        self.phase = phase
-        self.magnitude = magnitude
-        self.center = center
-        super().__init__(start_frame, start_frame + period, 0, 0)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, SinusoidalAnimation):
-            return NotImplemented
-        return (self.period, self.phase, self.magnitude, self.center) == (
-            other.period,
-            other.phase,
-            self.magnitude,
-            self.center,
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.start_frame, self.period, self.phase, self.magnitude, self.center))
-
-    def __call__(self, value: Any, frame: ReactiveValue[int]) -> Computed[float]:  # pyright: ignore[reportIncompatibleMethodOverride] # fmt: skip # noqa: E501
-        """Apply the animation to the current value at the current frame.
-
-        Args:
-            frame: The frame at which the animation is applied.
-            value: (Unused) This value does not affect the output.
-
-        Returns:
-            The value after the animation.
-        """
-        is_before_now = frame < self.start_frame
-        is_before_end = frame < self.end_frame
-        frame = is_before_now.where(self.start_frame, is_before_end.where(frame, self.end_frame))
-
-        @computed
-        def f(frame: int) -> float:
-            return self.center + self.magnitude * math.sin(
-                2 * math.pi * (frame - self.start_frame + self.phase) / self.period
-            )
-
-        return f(frame)
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(start_frame={self.start_frame}, "
-            f"period={self.period}, phase={self.phase}, magnitude={self.magnitude}, "
-            f"center={self.center})"
-        )
 
 
 class Loop(Animation):
