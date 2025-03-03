@@ -13,9 +13,10 @@ from pygments.token import Token as PygmentsToken
 from pygments.token import _TokenType as Pygments_TokenType
 from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
-from .base import Base, Selection
+from .base import Base
 from .color import as_color
 from .highlight import StyledToken
+from .selection import Selection
 
 if TYPE_CHECKING:
     from .curve import Curve

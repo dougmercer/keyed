@@ -15,12 +15,13 @@ import shapely
 from signified import HasValue, Signal, unref
 from tqdm import tqdm
 
-from .base import Selection, is_visible
+from .base import is_visible
 from .compositor import BlendMode, composite_layers
 from .constants import EXTRAS_INSTALLED, Quality
 from .effects import Effect
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
+from .selection import Selection
 from .transformation import Transformable, TransformControls
 
 if TYPE_CHECKING:
@@ -416,6 +417,7 @@ class Scene(Transformable, Freezeable):
             frame_rate: The frame rate at which to preview the animation. Default is 24 fps.
         """
         from .previewer import create_animation_window
+
         create_animation_window(self, quality=quality, frame_rate=frame_rate)
 
     def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
