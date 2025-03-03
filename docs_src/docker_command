@@ -1,5 +1,0 @@
-docker run --rm \
--v "$(pwd)/docs/media:/keyed/docs/media" \
--v "$(pwd)/docs/scripts:/keyed/docs/scripts" \
--v "$(pwd)/examples:/keyed/examples" \
-keyed bash -c "bash /keyed/docs_src/generate_docs.sh"
