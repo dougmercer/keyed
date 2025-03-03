@@ -146,7 +146,6 @@ class Scene(Transformable, Freezeable):
         self.ctx = cairo.Context(self.surface)
         self.antialias = antialias
         self.freehand = freehand
-        self.controls = TransformControls(self)
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
         self.layers: list[Layer] = []

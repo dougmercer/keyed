@@ -166,10 +166,8 @@ class Base(Transformable):
             value: The new value for the property.
             frame: The frame at which the property value should be set. Default is 0.
 
-        TODO:
-
-            * Consider removing.
-            * Consider returning self.
+        Returns:
+            Self
         """
         prop = getattr(self, property)
         new = step(value, frame)(prop, self.frame)
