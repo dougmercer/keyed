@@ -28,7 +28,8 @@ class Transformable:
         super().__init__()
         self.frame = frame
         self.controls = TransformControls(self)
-        self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
+        self._dependencies = []
+        # self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
         self._cache: dict[str, Computed[Any]] = {}
 
     def _get_cached_computed(self, name: str, factory: Callable[[], Computed[Any]]) -> Computed[Any]:
