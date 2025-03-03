@@ -22,3 +22,14 @@
     grid-gap: 1rem;
     margin: 1rem 0;
   }
+
+.centered-video {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.centered-video video {
+    max-width: 100%;
+    height: auto;
+}
