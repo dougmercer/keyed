@@ -79,7 +79,7 @@ class Base(Transformable):
         """Draw the object on the scene at the current frame."""
         pass
 
-    def animate(self, property: str, animation: Animation) -> Self:
+    def _animate(self, property: str, animation: Animation) -> Self:
         """Apply an animation to a property of the shape.
 
         Note:

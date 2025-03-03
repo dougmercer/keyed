@@ -267,7 +267,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
             if skip_whitespace and item.is_whitespace():
                 continue
             animation = lagged_animation(start=frame, end=frame + duration)
-            item.animate(property, animation)
+            item._animate(property, animation)
             frame += delay
         return self
 

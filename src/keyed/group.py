@@ -92,7 +92,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
             raise ValueError("Cannot retrieve 'frame': Selection is empty.")
         return self.scene.frame
 
-    def animate(self, property: str, animation: Animation) -> Self:
+    def _animate(self, property: str, animation: Animation) -> Self:
         """Animate a property across all objects in the group.
 
         Args:
@@ -103,7 +103,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
             None
         """
         for item in self:
-            item.animate(property, animation)
+            item._animate(property, animation)
         return self
 
     def draw(self) -> None:
@@ -155,7 +155,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
         frame = start
         for item in self:
             animation = lagged_animation(start=frame, end=frame + duration)
-            item.animate(property, animation)
+            item._animate(property, animation)
             frame += delay
         return self
 
