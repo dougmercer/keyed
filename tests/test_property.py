@@ -1,7 +1,9 @@
 import pytest
 
-from keyed import Animation, AnimationType, Signal
+from keyed import Animation, AnimationType
 from keyed.animation import step
+
+from signified import Signal
 
 
 @pytest.mark.parametrize("frame, expected_value", [(0, 0), (5, 50), (10, 100), (15, 100)])

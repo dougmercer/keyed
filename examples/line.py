@@ -1,4 +1,5 @@
-from keyed import Animation, AnimationType, BezierCurve, Circle, Line, Scene, get_critical_point
+from keyed import Animation, AnimationType, BezierCurve, Circle, Line, Scene
+from keyed.transforms import get_critical_point
 
 s = Scene()
 

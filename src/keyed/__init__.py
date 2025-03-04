@@ -15,9 +15,8 @@ from .line import *  # noqa
 from .geometry import *  # noqa
 from .plot import *  # noqa
 from .scene import *  # noqa
-from .selection import *  # noqa
+from .group import *  # noqa
 from .shapes import *  # noqa
-from .transformation import *  # noqa
 
 # This must go last
 from .extras import *  # noqa

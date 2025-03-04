@@ -1,4 +1,5 @@
-from keyed import Animation, Code, PingPong, Scene, Signal, easing, tokenize
+from keyed import Animation, Code, PingPong, Scene, easing, tokenize
+from signified import Signal
 
 styled_tokens = tokenize(r"import this")
 

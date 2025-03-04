@@ -2,7 +2,7 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from keyed import Computed, Signal
+from signified import Computed, Signal
 
 
 def to_value(value: float | Signal) -> float:

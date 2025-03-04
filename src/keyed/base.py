@@ -15,7 +15,7 @@ from signified import HasValue, Variable, unref
 from .animation import Animation, step
 from .constants import ALWAYS, ORIGIN
 from .easing import EasingFunctionT, linear_in_out
-from .transformation import Transformable
+from .transforms import Transformable
 from .types import HasAlpha
 
 if TYPE_CHECKING:

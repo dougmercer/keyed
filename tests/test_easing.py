@@ -1,7 +1,9 @@
 import pytest
 
-from keyed import Signal, easing
+from keyed import easing
 from keyed.easing import discretize, easing_function
+
+from signified import Signal
 
 known_values = [
     (easing.linear_in_out, [0, 0.5, 1]),

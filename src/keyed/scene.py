@@ -19,10 +19,10 @@ from .base import is_visible
 from .compositor import BlendMode, composite_layers
 from .constants import EXTRAS_INSTALLED, Quality
 from .effects import Effect
+from .group import Selection
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
-from .selection import Selection
-from .transformation import Transformable
+from .transforms import Transformable
 
 if TYPE_CHECKING:
     from .base import Base

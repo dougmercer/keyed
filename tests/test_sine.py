@@ -4,7 +4,8 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from keyed import Signal, SinusoidalAnimation
+from keyed import SinusoidalAnimation
+from signified import Signal
 
 
 @given(

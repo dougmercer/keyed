@@ -1,4 +1,4 @@
-"""Base classes for drawable stuff."""
+"""A class for manipulating groups of things."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from .animation import Animation
 from .base import Base, Lifetime
 from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
-from .transformation import (
+from .transforms import (
     Transformable,
     TransformControls,
     align_to,
@@ -42,20 +42,23 @@ from .types import GeometryT
 if TYPE_CHECKING:
     from .scene import Scene
 
-__all__ = ["Selection"]
+__all__ = ["Group", "Selection"]
 
 
 T = TypeVar("T", bound=Base)
 
 
-class Selection(Base, list[T]):  # type: ignore[misc]
+class Group(Base, list[T]):  # type: ignore[misc]
     """A sequence of drawable objects, allowing collective transformations and animations.
 
     Args:
-        iterable: An iterable of drawable objects to include in the selection.
+        iterable: An iterable of drawable objects.
     """
 
     def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
+        ## Note: This intentionally reimplements portions of the Base and
+        # Transformable __init__ methods.
+
         # list
         list.__init__(self, iterable)
 
@@ -69,10 +72,10 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     @property
     def scene(self) -> Scene:  # type: ignore[override]
-        """Returns the scene associated with the first object in the selection.
+        """Returns the scene associated with the first object in the group.
 
         Raises:
-            ValueError: If the selection is empty and the scene cannot be retrieved.
+            ValueError: If the group is empty and the scene cannot be retrieved.
         """
         if not self:
             raise ValueError("Cannot retrieve 'scene': Selection is empty.")
@@ -80,17 +83,17 @@ class Selection(Base, list[T]):  # type: ignore[misc]
 
     @property
     def frame(self) -> Signal[int]:  # type: ignore[override]
-        """Returns the frame associated with the first object in the selection.
+        """Returns the frame associated with the first object in the group.
 
         Raises:
-            ValueError: If the selection is empty and the frame cannot be retrieved.
+            ValueError: If the group is empty and the frame cannot be retrieved.
         """
         if not self:
             raise ValueError("Cannot retrieve 'frame': Selection is empty.")
         return self.scene.frame
 
     def animate(self, property: str, animation: Animation) -> Self:
-        """Animate a property across all objects in the selection using the provided animation.
+        """Animate a property across all objects in the group.
 
         Args:
             property: str
@@ -104,12 +107,12 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         return self
 
     def draw(self) -> None:
-        """Draws all objects in the selection on the scene at the specified frame."""
+        """Draws all objects in the group."""
         for item in self:
             item.draw()
 
     def set(self, property: str, value: Any, frame: int = 0) -> Self:
-        """Set a property to a new value for all objects in the selection at the specified frame.
+        """Set a property to a new value for all objects in the group at the specified frame.
 
         Args:
             property: The name of the property to set.
@@ -121,7 +124,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         return self
 
     def set_literal(self, property: str, value: Any) -> Self:
-        """Set a property to a new value for all objects in the selection at the specified frame.
+        """Set a property to a new value for all objects in the group at the specified frame.
 
         Args:
             property: The name of the property to set.
@@ -139,7 +142,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         delay: int,
         duration: int,
     ) -> Self:
-        """Sequentially animates a property across all objects in the selection.
+        """Sequentially animates a property across all objects in the group.
 
         Args:
             property: The property to animate.
@@ -165,7 +168,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         pass
 
     def __getitem__(self, key: SupportsIndex | slice) -> T | Self:
-        """Retrieve an item or slice of items from the selection based on the given key."""
+        """Retrieve an item or slice of items from the group based on the given key."""
         if isinstance(key, slice):
             return type(self)(super().__getitem__(key))
         else:
@@ -443,3 +446,7 @@ class Selection(Base, list[T]):  # type: ignore[misc]
         for obj in self:
             obj.fade(value, start, end, ease)
         return self
+
+
+Selection = Group
+"""Alias of Group."""

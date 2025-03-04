@@ -15,8 +15,8 @@ from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
 from .base import Base
 from .color import as_color
+from .group import Selection
 from .highlight import StyledToken
-from .selection import Selection
 
 if TYPE_CHECKING:
     from .curve import Curve

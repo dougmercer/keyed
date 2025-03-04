@@ -19,7 +19,7 @@ from .base import Base
 from .color import Color, as_color
 from .context import ContextT
 from .scene import Scene
-from .transformation import TransformControls
+from .transforms import TransformControls
 
 __all__ = ["Circle", "Rectangle"]
 
