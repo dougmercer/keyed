@@ -115,6 +115,7 @@ nav:
     - Easing: api/easing.md
     - Transformations: api/transforms.md
     - Scene: api/scene.md
+    - Core: api/core.md
     - Shapes, Lines, and Curves: api/shapes.md
     - Text: api/text.md
     - Colors: api/colors.md
