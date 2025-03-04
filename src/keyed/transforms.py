@@ -15,6 +15,26 @@ from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
 from .types import GeometryT
 
+__all__ = [
+    "Transformable",
+    "TransformControls",
+    "affine_transform",
+    "translate",
+    "rotate",
+    "scale",
+    "move_to",
+    "align_to",
+    "lock_on",
+    "shear",
+    "stretch",
+    "match_size",
+    "next_to",
+    "get_critical_point",
+    "get_critical_point_now",
+    "get_position_along_dim",
+    "get_position_along_dim_now",
+]
+
 
 class Transformable:
     """A base class for things that have a geometry."""
