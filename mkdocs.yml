@@ -120,6 +120,7 @@ nav:
     - Text: api/text.md
     - Colors: api/colors.md
     - Effects: api/effects.md
+    - Annotations: api/annotations.md
     - Utilities: api/utils.md
     - Implementation Details: api/impl.md
   - Gallery:
