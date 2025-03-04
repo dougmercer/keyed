@@ -12,7 +12,7 @@ from keyed.types import Cleanable
 
 from .animation import Animation
 from .base import Base
-from .color import as_color
+from .color import Color, as_color
 from .easing import EasingFunctionT, cubic_in_out
 from .scene import Scene
 
@@ -73,7 +73,7 @@ class Line(Base):
         y0: HasValue[float],
         x1: HasValue[float],
         y1: HasValue[float],
-        color: tuple[float, float, float] = (1, 1, 1),
+        color: HasValue[Color] | tuple[float, float, float] = (1, 1, 1),
         alpha: HasValue[float] = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
@@ -198,7 +198,7 @@ class BezierCurve(Base):
         y2: HasValue[float],
         x3: HasValue[float],
         y3: HasValue[float],
-        color: tuple[float, float, float] = (1, 1, 1),
+        color: HasValue[Color] | tuple[float, float, float] = (1, 1, 1),
         alpha: HasValue[float] = 1,
         dash: tuple[Sequence[float], float] | None = None,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
