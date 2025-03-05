@@ -1,7 +1,6 @@
 import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
-
 from signified import Computed, Signal
 
 
