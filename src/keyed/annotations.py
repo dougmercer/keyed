@@ -23,7 +23,11 @@ def underline(
 
     Args:
         offset: Distance below baseline. Default is 20.
-        **kwargs: Additional arguments passed to Line constructor.
+        color: Color of the line. Default is white.
+        alpha: Transparency. Default is 1.
+        dash: Dash specification. Default is None.
+        operator: Cairo composition operator. Default is cairo.OPERATOR_OVER.
+        line_width: Strike width of underline. Default is 1.
 
     Returns:
         Line object representing the underline.
