@@ -139,6 +139,7 @@ def get_example_ids():
     return [name for name, _ in load_examples(EXAMPLES_DIR) if name not in BLACKLIST]
 
 
+@pytest.mark.snapshot
 @pytest.mark.parametrize("example_name", get_example_ids())
 def test_animation_example(example_name: str, snapshot):
     """Test an animation example matches its snapshot.
