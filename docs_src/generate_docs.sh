@@ -10,7 +10,6 @@ python docs_src/easing/generate_easing_animations.py
 mkdir -p docs/media/tutorial
 keyed render examples/first_scene.py docs/media/tutorial/bouncing_ball.webm -f webm
 keyed render docs_src/tutorial/easing/moving_circle.py docs/media/tutorial/moving_circle.webm -f webm
-keyed render docs_src/tutorial/easing/moving_circle_bounce.py docs/media/tutorial/moving_circle_bounce.webm -f webm
 
 # Gallery
 keyed render examples/code_replace_complex.py docs/media/gallery/code_replace_complex.webm -f webm
