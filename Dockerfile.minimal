@@ -61,7 +61,7 @@ RUN chown keyeduser:keyeduser /app
 COPY --from=builder /wheels/*.whl /app/
 
 # Install the wheel and clean up
-RUN pip install --no-cache-dir /app/*.whl && rm /app/*.whl
+RUN pip install keyed --no-index --find-links=/app && rm /app/*.whl
 
 # Switch to non-root user
 USER keyeduser
