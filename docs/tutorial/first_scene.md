@@ -48,11 +48,11 @@ ball = (
 ```
 Here we create and animate the most interesting thing in the animation - a [`Circle`][keyed.shapes.Circle]. We apply a few key framed transformations to the object.
 
-- First [`.translate()`][keyed.transformation.Transformable.translate] - Moves the ball down by 300 pixels with a bouncy easing
-- [`.scale()`][keyed.transformation.Transformable.scale] - Doubles the size of the ball, scaling from the bottom [`DOWN`][keyed.constants.DOWN]
-- First [`.stretch()`][keyed.transformation.Transformable.stretch] - Double the size of the ball in the x direction while shrinking the ball to half size the Y direction. Again using the [`DOWN`][keyed.constants.DOWN] direction so that the bottom center of the ball remains stationary.
-- Second [`.stretch()`][keyed.transformation.Transformable.stretch] - Undoing the first stretch.
-- Second [`.translate()`][keyed.transformation.Transformable.translate] - Moves the ball up with a snappy elastic easing
+- First [`.translate()`][keyed.transforms.Transformable.translate] - Moves the ball down by 300 pixels with a bouncy easing
+- [`.scale()`][keyed.transforms.Transformable.scale] - Doubles the size of the ball, scaling from the bottom [`DOWN`][keyed.constants.DOWN]
+- First [`.stretch()`][keyed.transforms.Transformable.stretch] - Double the size of the ball in the x direction while shrinking the ball to half size the Y direction. Again using the [`DOWN`][keyed.constants.DOWN] direction so that the bottom center of the ball remains stationary.
+- Second [`.stretch()`][keyed.transforms.Transformable.stretch] - Undoing the first stretch.
+- Second [`.translate()`][keyed.transforms.Transformable.translate] - Moves the ball up with a snappy elastic easing
 
 Notice how we specify start and end frames for each animation. The ball will:
 

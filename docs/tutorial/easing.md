@@ -31,10 +31,10 @@ For example, `cubic_in`, `cubic_out`, and `cubic_in_out` are all cubic easing fu
 
 Many of the built-in transformation methods in `keyed` support easing via an `ease` or `easing` input argument. Common methods that accept easing functions include:
 
-- [`translate()`][keyed.Transformable.translate] - Move an object
-- [`rotate()`][keyed.Transformable.rotate] - Rotate an object
-- [`scale()`][keyed.Transformable.scale] - Resize an object
-- [`move_to()`][keyed.Transformable.move_to] - Position an object at specific coordinates
+- [`translate()`][keyed.transforms.Transformable.translate] - Move an object
+- [`rotate()`][keyed.transforms.Transformable.rotate] - Rotate an object
+- [`scale()`][keyed.transforms.Transformable.scale] - Resize an object
+- [`move_to()`][keyed.transforms.Transformable.move_to] - Position an object at specific coordinates
 
 Here's an example of how we can control the acceleration of a circle travelling across the screen by using an easing function.
 
