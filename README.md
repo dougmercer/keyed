@@ -2,7 +2,7 @@
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dw/keyed)](https://pypi.org/project/keyed/)
 [![PyPI - Version](https://img.shields.io/pypi/v/keyed)](https://pypi.org/project/keyed/)
-[![Tests Status](https://github.com/dougmercer/keyed/actions/workflows/test.yml/badge.svg)](https://github.com/dougmercer/keyed/actions/workflows/test.yml?query=branch%3Amain)
+[![Tests Status](https://github.com/dougmercer/keyed/actions/workflows/tests.yml/badge.svg)](https://github.com/dougmercer/keyed/actions/workflows/tests.yml?query=branch%3Amain)
 
 ---
 
@@ -18,10 +18,8 @@ Keyed is a Python library for creating programmatically defined animations. Name
 - **Reactive Programming Model**: Built using the reactive programming library [signified](https://github.com/dougmercer/signified) to make declaratively defining highly dynamic animations a breeze
 - **Vector Graphics**: [Cairo](https://www.cairographics.org)-based rendering for crisp, scalable graphics
 - **Flexible Shape System**: Define basic lines, shapes, curves, and complex geometries
-- **Code Animation Focus**: Specialized tools for animating syntax highled code snippets
-- **Layer-Based Compositing**: Support for multiple layers with blend modes
+- **Code Animation Focus**: Animate syntax highled code snippets
 - **High Performance**: GPU-accelerated rasterization/compositing using [Taichi](https://github.com/taichi-dev/taichi)
-- **Export Options**: Save as video files or image sequences
 
 ## Installation
 
@@ -30,7 +28,7 @@ Keyed requires a few system level dependencies (e.g., [Cairo](https://www.cairog
 For detailed installation instructions visit our [Installation Guide](https://dougmercer.github.io/keyed/install)
 .
 
-But, once you have a working install of `cairo`, installing `keyed` is as simple as,
+But, once you have the necessary system dependencies installed, installing `keyed` is as simple as,
 
 ```console
 pip install keyed
@@ -38,11 +36,7 @@ pip install keyed
 
 ## Project Status
 
-This project is in very early beta.
-
-There are rough edges and obvious bugs. There are too many ways to accomplish some things, and other things are unintuitively impossible (neither of which is adaquately documented).
-
-The API may change at any time.
+This project is in very early beta. APIs may change.
 
 ## Alternatives
 While I find Keyed very fun and useful (particularly for animating syntax highlighted code in my [YouTube videos](https://youtube.com/@dougmercer)), there are several other excellent and far more mature animation libraries that you should probably use instead.

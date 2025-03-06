@@ -33,11 +33,6 @@ After, run
 
 ```console
 conda env create -f environment.yml
-```
-
-Finally,
-
-```console
 conda activate keyed
 ```
 
