@@ -1,7 +1,11 @@
+import io
+from contextlib import redirect_stdout
+
 from .constants import EXTRAS_INSTALLED
 
 if EXTRAS_INSTALLED:
-    from keyed_extras import *  # noqa: F403  # type: ignore
+    with redirect_stdout(io.StringIO()):
+        from keyed_extras import *  # noqa: F403  # type: ignore
 else:
 
     def post_process_tokens(code, tokens, filename):
@@ -16,3 +20,5 @@ else:
 
 
 del EXTRAS_INSTALLED
+del redirect_stdout
+del io

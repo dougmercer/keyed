@@ -1,5 +1,6 @@
 """Command line interface for Keyed animations."""
 
+import os
 import sys
 import tempfile
 from enum import Enum
@@ -139,7 +140,7 @@ def iostream(
     Render a scene from stdin to stdout or file.
 
     This command reads Python code from stdin, renders the animation,
-    and outputs the video data to stdout (by default) or to a file.
+    and outputs the video data to stdout.
 
     Example:
         cat myscene.py | keyed iostream > output.mp4
@@ -151,43 +152,56 @@ def iostream(
         typer.echo("No input received from stdin", err=True)
         raise typer.Exit(1)
 
+    # Create a context manager to suppress all stdout during scene evaluation
+    class SuppressStdout:
+        def __enter__(self):
+            self.original_stdout = sys.stdout
+            sys.stdout = open(os.devnull, "w")
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            sys.stdout.close()
+            sys.stdout = self.original_stdout
+
     # Save the code to a temporary file
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as tmp_file:
         tmp_file.write(code)
         tmp_file.flush()
         tmp_path = Path(tmp_file.name)
 
-        # Initialize scene evaluator
-        evaluator = SceneEvaluator()
+        # Suppress all stdout during evaluation and rendering
+        with SuppressStdout():
+            # Initialize scene evaluator
+            evaluator = SceneEvaluator()
 
-        # Get scene
-        scene = evaluator.evaluate_file(tmp_path)
-        if not scene:
-            typer.echo("No Scene object found in input", err=True)
-            raise typer.Exit(1)
+            # Get scene
+            scene = evaluator.evaluate_file(tmp_path)
+            if not scene:
+                typer.echo("No Scene object found in input", err=True)
+                raise typer.Exit(1)
 
-        # Create a temporary output file
-        with tempfile.NamedTemporaryFile(suffix=f".{format.value}", delete=False) as tmp_output:
-            tmp_output_path = Path(tmp_output.name)
+            # Create a temporary output file
+            with tempfile.NamedTemporaryFile(suffix=f".{format.value}", delete=False) as tmp_output:
+                tmp_output_path = Path(tmp_output.name)
 
-        # Render based on format
-        if format == OutputFormat.WEBM:
-            scene.render(
-                format=VideoFormat.WEBM,
-                engine=RenderEngine.PYAV,
-                frame_rate=frame_rate,
-                output_path=tmp_output_path,
-                quality=quality,
-            )
-        elif format == OutputFormat.MOV:
-            scene.render(
-                format=VideoFormat.MOV_PRORES,
-                engine=RenderEngine.PYAV,
-                frame_rate=frame_rate,
-                output_path=tmp_output_path,
-            )
-        elif format == OutputFormat.GIF:
-            scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=tmp_output_path)
+            # Render based on format
+            if format == OutputFormat.WEBM:
+                scene.render(
+                    format=VideoFormat.WEBM,
+                    engine=RenderEngine.PYAV,
+                    frame_rate=frame_rate,
+                    output_path=tmp_output_path,
+                    quality=quality,
+                )
+            elif format == OutputFormat.MOV:
+                scene.render(
+                    format=VideoFormat.MOV_PRORES,
+                    engine=RenderEngine.PYAV,
+                    frame_rate=frame_rate,
+                    output_path=tmp_output_path,
+                )
+            elif format == OutputFormat.GIF:
+                scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=tmp_output_path)
 
         # Read the output file and write to stdout as binary
         with open(tmp_output_path, "rb") as f:

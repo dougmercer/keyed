@@ -1,5 +1,6 @@
 """Draw lines and curves."""
 
+import warnings
 from functools import partial
 from typing import Any, Self, Sequence
 
@@ -7,7 +8,6 @@ import cairo
 import numpy as np
 import numpy.typing as npt
 import shapely
-from scipy.integrate import quad
 from signified import HasValue, ReactiveValue, Signal, computed
 
 from keyed.animation import Animation
@@ -17,6 +17,11 @@ from .base import Base
 from .color import Color, as_color
 from .scene import Scene
 from .shapes import Circle, Shape
+
+# Squelch UserWarnings from a scipy import.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", UserWarning)
+    from scipy.integrate import quad
 
 __all__ = ["Curve"]
 

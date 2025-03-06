@@ -1,5 +1,14 @@
 """A key-frame focused animation engine."""
 
+# Taichi makes it an absolute nightmare to squelch startup noise.
+import os
+
+os.environ["ENABLE_TAICHI_HEADER_PRINT"] = "False"
+from taichi._logging import ERROR, set_logging_level  # noqa: E402
+
+set_logging_level(ERROR)
+del set_logging_level, os
+
 from . import easing  # noqa
 from . import highlight  # noqa
 from . import transforms  # noqa
