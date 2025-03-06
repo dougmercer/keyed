@@ -131,6 +131,9 @@ nav:
     - Fair Use Policy: extras/fairuse.md
     - Keyed Extras: https://google.com
 
+hooks:
+  - docs/hooks.py
+
 plugins:
   - search
   - autorefs

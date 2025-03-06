@@ -37,6 +37,7 @@ test = [
     "syrupy",
 ]
 docs = [
+    "beautifulsoup4",
     "mkdocs",
     "mkdocs-material",
     "mkdocstrings[python]",

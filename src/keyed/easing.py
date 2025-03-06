@@ -26,6 +26,13 @@ __all__ = __all__ + [f"{rate}{type_}" for rate in rates for type_ in types]  # p
 del rates, types
 
 EasingFunctionT = Callable[[float], float]
+"""Type alias for easing functions.
+
+Functions should take a normalized time parameter, t, and return a value
+determining animation progress.
+
+Typically, f(0) = 0 and f(1) = 1.
+"""
 
 
 def easing_function(start: int, end: int, ease: EasingFunctionT, frame: ReactiveValue[int]) -> Computed[float]:
@@ -35,7 +42,7 @@ def easing_function(start: int, end: int, ease: EasingFunctionT, frame: Reactive
         start: Starting frame
         end: Ending Frame
         ease: Easing function
-        frame: Variable[int]
+        frame: The frame counter, as a reactive value.
 
     Returns:
         Easing function as a reactive value.
@@ -59,9 +66,7 @@ def easing_function(start: int, end: int, ease: EasingFunctionT, frame: Reactive
 def linear_in_out(t: float) -> float:
     """Ease linearly throughout the entire duration.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/linear_in_out.webm" type="video/webm">
-    </video>
+    @video:linear_in_out
     """
     return t
 
@@ -69,9 +74,7 @@ def linear_in_out(t: float) -> float:
 def quad_in_out(t: float) -> float:
     """Ease in and out at a quadratic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quad_in_out.webm" type="video/webm">
-    </video>
+    @video:quad_in_out
     """
     if t < 0.5:
         return 2 * t * t
@@ -81,9 +84,7 @@ def quad_in_out(t: float) -> float:
 def quad_in(t: float) -> float:
     """Ease in at a quadratic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quad_in.webm" type="video/webm">
-    </video>
+    @video:quad_in
     """
     return t * t
 
@@ -91,9 +92,7 @@ def quad_in(t: float) -> float:
 def quad_out(t: float) -> float:
     """Ease out at a quadratic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quad_out.webm" type="video/webm">
-    </video>
+    @video:quad_out
     """
     return -(t * (t - 2))
 
@@ -101,9 +100,7 @@ def quad_out(t: float) -> float:
 def cubic_in(t: float) -> float:
     """Ease in at a cubic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/cubic_in.webm" type="video/webm">
-    </video>
+    @video:cubic_in
     """
     return t * t * t
 
@@ -111,9 +108,7 @@ def cubic_in(t: float) -> float:
 def cubic_out(t: float) -> float:
     """Ease out at a cubic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/cubic_out.webm" type="video/webm">
-    </video>
+    @video:cubic_out
     """
     return (t - 1) * (t - 1) * (t - 1) + 1
 
@@ -121,9 +116,7 @@ def cubic_out(t: float) -> float:
 def cubic_in_out(t: float) -> float:
     """Ease in and out at a cubic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/cubic_in_out.webm" type="video/webm">
-    </video>
+    @video:cubic_in_out
     """
     if t < 0.5:
         return 4 * t * t * t
@@ -134,9 +127,7 @@ def cubic_in_out(t: float) -> float:
 def quartic_in(t: float) -> float:
     """Ease in at a quartic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quartic_in.webm" type="video/webm">
-    </video>
+    @video:quartic_in
     """
     return t * t * t * t
 
@@ -144,9 +135,7 @@ def quartic_in(t: float) -> float:
 def quartic_out(t: float) -> float:
     """Ease out at a quartic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quartic_out.webm" type="video/webm">
-    </video>
+    @video:quartic_out
     """
     return (t - 1) * (t - 1) * (t - 1) * (1 - t) + 1
 
@@ -154,9 +143,7 @@ def quartic_out(t: float) -> float:
 def quartic_in_out(t: float) -> float:
     """Ease in and out at a quartic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quartic_in_out.webm" type="video/webm">
-    </video>
+    @video:quartic_in_out
     """
     if t < 0.5:
         return 8 * t * t * t * t
@@ -167,9 +154,7 @@ def quartic_in_out(t: float) -> float:
 def quintic_in(t: float) -> float:
     """Ease in at a quintic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quintic_in.webm" type="video/webm">
-    </video>
+    @video:quintic_in
     """
     return t * t * t * t * t
 
@@ -177,9 +162,7 @@ def quintic_in(t: float) -> float:
 def quintic_out(t: float) -> float:
     """Ease out at a quintic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quintic_out.webm" type="video/webm">
-    </video>
+    @video:quintic_out
     """
     return (t - 1) * (t - 1) * (t - 1) * (t - 1) * (t - 1) + 1
 
@@ -187,9 +170,7 @@ def quintic_out(t: float) -> float:
 def quintic_in_out(t: float) -> float:
     """Ease in and out at a quintic rate.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/quintic_in_out.webm" type="video/webm">
-    </video>
+    @video:quintic_in_out
     """
     if t < 0.5:
         return 16 * t * t * t * t * t
@@ -200,9 +181,7 @@ def quintic_in_out(t: float) -> float:
 def sine_in(t: float) -> float:
     """Ease in according to a sin function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/sine_in.webm" type="video/webm">
-    </video>
+    @video:sine_in
     """
     return math.sin((t - 1) * math.pi / 2) + 1
 
@@ -210,9 +189,7 @@ def sine_in(t: float) -> float:
 def sine_out(t: float) -> float:
     """Ease out according to a sin function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/sine_out.webm" type="video/webm">
-    </video>
+    @video:sine_out
     """
     return math.sin(t * math.pi / 2)
 
@@ -220,9 +197,7 @@ def sine_out(t: float) -> float:
 def sine_in_out(t: float) -> float:
     """Ease in and out according to a sin function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/sine_in_out.webm" type="video/webm">
-    </video>
+    @video:sine_in_out
     """
     return 0.5 * (1 - math.cos(t * math.pi))
 
@@ -230,9 +205,7 @@ def sine_in_out(t: float) -> float:
 def circular_in(t: float) -> float:
     """Ease in according to a circular function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/circular_in.webm" type="video/webm">
-    </video>
+    @video:circular_in
     """
     return 1 - math.sqrt(1 - (t * t))
 
@@ -240,9 +213,7 @@ def circular_in(t: float) -> float:
 def circular_out(t: float) -> float:
     """Ease out according to a circular function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/circular_out.webm" type="video/webm">
-    </video>
+    @video:circular_out
     """
     return math.sqrt((2 - t) * t)
 
@@ -250,9 +221,7 @@ def circular_out(t: float) -> float:
 def circular_in_out(t: float) -> float:
     """Ease in and out according to a circular function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/circular_in_out.webm" type="video/webm">
-    </video>
+    @video:circular_in_out
     """
     if t < 0.5:
         return 0.5 * (1 - math.sqrt(1 - 4 * (t * t)))
@@ -262,9 +231,7 @@ def circular_in_out(t: float) -> float:
 def expo_in(t: float) -> float:
     """Ease in according to an exponential function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/expo_in.webm" type="video/webm">
-    </video>
+    @video:expo_in
     """
     if t == 0:
         return 0
@@ -274,9 +241,7 @@ def expo_in(t: float) -> float:
 def expo_out(t: float) -> float:
     """Ease out according to an exponential function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/expo_out.webm" type="video/webm">
-    </video>
+    @video:expo_out
     """
     if t == 1:
         return 1
@@ -286,9 +251,7 @@ def expo_out(t: float) -> float:
 def expo_in_out(t: float) -> float:
     """Ease in and out according to an exponential function.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/expo_in_out.webm" type="video/webm">
-    </video>
+    @video:expo_in_out
     """
     if t == 0 or t == 1:
         return t
@@ -300,9 +263,7 @@ def expo_in_out(t: float) -> float:
 def elastic_in(t: float) -> float:
     """Ease in like an elastic band.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/elastic_in.webm" type="video/webm">
-    </video>
+    @video:elastic_in
     """
     return math.sin(13 * math.pi / 2 * t) * pow(2, 10 * (t - 1))
 
@@ -310,9 +271,7 @@ def elastic_in(t: float) -> float:
 def elastic_out(t: float) -> float:
     """Ease out like an elastic band.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/elastic_out.webm" type="video/webm">
-    </video>
+    @video:elastic_out
     """
     return math.sin(-13 * math.pi / 2 * (t + 1)) * pow(2, -10 * t) + 1
 
@@ -320,9 +279,7 @@ def elastic_out(t: float) -> float:
 def elastic_in_out(t: float) -> float:
     """Ease in and out like an elastic band.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/elastic_in_out.webm" type="video/webm">
-    </video>
+    @video:elastic_in_out
     """
     if t < 0.5:
         return 0.5 * math.sin(13 * math.pi / 2 * (2 * t)) * pow(2, 10 * ((2 * t) - 1))
@@ -332,9 +289,7 @@ def elastic_in_out(t: float) -> float:
 def back_in(t: float) -> float:
     """Ease in by overshooting slightly.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/back_in.webm" type="video/webm">
-    </video>
+    @video:back_in
     """
     c1 = 1.70158
     c3 = c1 + 1
@@ -344,9 +299,7 @@ def back_in(t: float) -> float:
 def back_out(t: float) -> float:
     """Ease out by overshooting slightly.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/back_out.webm" type="video/webm">
-    </video>
+    @video:back_out
     """
     c1 = 1.70158
     c3 = c1 + 1
@@ -356,9 +309,7 @@ def back_out(t: float) -> float:
 def back_in_out(t: float) -> float:
     """Ease in and out by overshooting slightly.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/back_in_out.webm" type="video/webm">
-    </video>
+    @video:back_in_out
     """
     c1 = 1.70158
     c2 = c1 * 1.525
@@ -372,9 +323,7 @@ def back_in_out(t: float) -> float:
 def bounce_in(t: float) -> float:
     """Ease in by bouncing.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/bounce_in.webm" type="video/webm">
-    </video>
+    @video:bounce_in
     """
     return 1 - bounce_out(1 - t)
 
@@ -382,9 +331,7 @@ def bounce_in(t: float) -> float:
 def bounce_out(t: float) -> float:
     """Ease out by bouncing.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/bounce_out.webm" type="video/webm">
-    </video>
+    @video:bounce_out
     """
     n1 = 7.5625
     d1 = 2.75
@@ -405,9 +352,7 @@ def bounce_out(t: float) -> float:
 def bounce_in_out(t: float) -> float:
     """Ease in and out by bouncing.
 
-    <video autoplay loop muted playsinline>
-    <source src="../../media/easing/bounce_in_out.webm" type="video/webm">
-    </video>
+    @video:bounce_in_out
     """
     if t < 0.5:
         return (1 - bounce_out(1 - 2 * t)) / 2
