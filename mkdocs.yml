@@ -125,6 +125,9 @@ nav:
     - Implementation Details: api/impl.md
   - Gallery:
     - index: gallery/index.md
+  - Contributing:
+    - index: contributing/index.md
+    - Dev Environment: contributing/environment.md
   - Extras (Sponsors only):
     - index: extras/index.md
     - Extras-Only Features: extras/goals.md
