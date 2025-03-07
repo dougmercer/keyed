@@ -108,7 +108,7 @@ if PREVIEW_AVAILABLE:
             self.init_ui()
 
         def init_ui(self) -> None:
-            self.setWindowTitle("Preview")
+            self.setWindowTitle("Keyed Previewer")
             self.setGeometry(100, 100, self.quality.width, self.quality.height)
             self.central_widget = QWidget()
             self.setCentralWidget(self.central_widget)

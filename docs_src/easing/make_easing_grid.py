@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from jinja2 import Template
 
 # Set the paths
@@ -41,7 +42,7 @@ def verify_files_exist():
             missing_files.append(func)
     
     if missing_files:
-        print(f"Warning: The following easing function animations are missing:", file=sys.stderr)
+        print("Warning: The following easing function animations are missing:", file=sys.stderr)
         for func in missing_files:
             print(f"  - {func}.webm", file=sys.stderr)
         return False

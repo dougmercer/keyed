@@ -1,5 +1,6 @@
-import yaml
 from pathlib import Path
+
+import yaml
 from jinja2 import Template
 
 HERE = Path(__file__).parent

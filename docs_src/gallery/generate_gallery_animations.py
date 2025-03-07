@@ -1,7 +1,8 @@
 import os
-import yaml
 import subprocess
 from pathlib import Path
+
+import yaml
 
 
 def generate_animations():
