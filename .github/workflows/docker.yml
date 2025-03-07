@@ -2,25 +2,37 @@ name: Docker
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, '*' ]
 
 jobs:
   build-docker:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
-      packages: write
+        contents: read
+        packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Extract version from pyproject.toml
+        id: extract_version
+        run: |
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Only login when we need to push (main branch)
       - name: Login to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -33,17 +45,15 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # Only tag as latest on main branch
+            # Only include latest tag on main
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            # For PRs, use pr-{number} as tag
-            type=ref,event=pr
+            # Only include version tag on main
+            type=raw,value=${{ steps.extract_version.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
             # Always include sha for traceability
             type=sha,format=short
-            # Include buildcache tag only on main
-            type=raw,value=buildcache,enable=${{ github.ref == 'refs/heads/main' }}
 
-      # First build and load the image for testing
-      - name: Build and load Docker image for testing
+      # Build and test the image
+      - name: Build and test Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -51,7 +61,6 @@ jobs:
           push: false
           load: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -60,15 +69,13 @@ jobs:
           FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           docker run --rm $FIRST_TAG --help
 
-      # Then push the image if on main
+      # Push the image (only on main)
       - name: Push Docker image
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           context: .
           file: Dockerfile.minimal
           push: true
-          load: false
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
