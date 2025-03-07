@@ -1,9 +1,9 @@
 from pathlib import Path
 import multiprocessing as mp
 
-from keyed import Scene, easing, Circle, Line, Text, UP, DOWN
-from keyed.renderer import VideoFormat
+from keyed import DOWN, UP, Circle, Line, Scene, Text, easing
 from keyed.plot import EasingVisualizer
+from keyed.renderer import VideoFormat
 
 
 def create_easing_visualization(easing_data):
@@ -100,10 +100,14 @@ def generate_all_animations():
     output_dir = Path("docs/media/easing")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create and start the process pool
-    with mp.Pool(processes=num_processes) as pool:
-        # Map our function to the list of tasks and process them in parallel
-        results = pool.map(create_easing_visualization, tasks)
+    use_pool = False
+    if use_pool:
+        # Create and start the process pool
+        with mp.Pool(processes=num_processes) as pool:
+            # Map our function to the list of tasks and process them in parallel
+            results = pool.map(create_easing_visualization, tasks)
+    else:
+        results = [create_easing_visualization(task) for task in tasks]
 
     # Print results
     for result in results:
