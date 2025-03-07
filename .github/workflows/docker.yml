@@ -31,7 +31,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}/keyed
+          images: ghcr.io/${{ github.repository }}
           tags: |
             # Only tag as latest on main branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -41,12 +41,6 @@ jobs:
             type=sha,format=short
             # Include buildcache tag only on main
             type=raw,value=buildcache,enable=${{ github.ref == 'refs/heads/main' }}
-          # Add labels for expiration policy
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Docker image for ${{ github.repository }}
-            # Label PR and SHA images as temporary
-            org.opencontainers.image.vendor=${{ github.ref == 'refs/heads/main' && 'production' || 'temporary' }}
 
       # First build and load the image for testing
       - name: Build and load Docker image for testing
