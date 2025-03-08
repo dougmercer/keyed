@@ -72,13 +72,13 @@ class Shape(Base):
         if self.fill_pattern:
             ctx.set_source(self.fill_pattern)
         else:
-            ctx.set_source_rgba(*unref(self.fill_color).rgb, self.alpha.value)
+            ctx.set_source_rgba(*unref(self.fill_color).rgb, 1)
 
     def _apply_stroke(self, ctx: cairo.Context) -> None:
         if self.stroke_pattern:
             ctx.set_source(self.stroke_pattern)
         else:
-            ctx.set_source_rgba(*unref(self.color).rgb, self.alpha.value)
+            ctx.set_source_rgba(*unref(self.color).rgb, 1)
 
     def _draw_shape(self) -> None:
         """Draw the specific shape on the canvas.
@@ -140,7 +140,7 @@ class Shape(Base):
             # Paint the group with the operator to the canvas
             self.ctx.pop_group_to_source()
             self.ctx.set_operator(self.operator)
-            self.ctx.paint()
+            self.ctx.paint_with_alpha(unref(self.alpha))
 
             self.ctx.restore()
 
