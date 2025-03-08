@@ -110,20 +110,38 @@ class Shape(Base):
             self.ctx.restore()
 
     def draw(self) -> None:
+        """Draw the shape within its styled context, applying transformations."""
         with self.style():
             self.ctx.save()
             self.ctx.transform(self.controls.matrix.value)
+
+            # Create a group for storing both the fill and stroke drawing operations
+            self.ctx.push_group()
+
+            # Use OVER for drawing within the group. We'll apply self.operator later when
+            # writing to the canvas.
+            self.ctx.set_operator(cairo.OPERATOR_OVER)
+
+            # Create the geometry of the shape
             self._draw_shape()
 
+            # Fill and/or stroke to the group
             if self.draw_fill:
                 self._apply_fill(self.ctx)
                 if self.draw_stroke:
                     self.ctx.fill_preserve()
                 else:
                     self.ctx.fill()
+
             if self.draw_stroke:
                 self._apply_stroke(self.ctx)
                 self.ctx.stroke()
+
+            # Paint the group with the operator to the canvas
+            self.ctx.pop_group_to_source()
+            self.ctx.set_operator(self.operator)
+            self.ctx.paint()
+
             self.ctx.restore()
 
     @contextmanager
