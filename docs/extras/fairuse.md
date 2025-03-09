@@ -11,10 +11,10 @@ Keyed Extras is provided under a Sponsorware model. This policy outlines simple 
 
 4. **Created Content**: You own all content created using Keyed Extras. Feel free to share, sell, or distribute your animations and projects.
 
-5. **Access**: Your access to updates requires an active sponsorship, but you can continue using your installed version indefinitely.
+5. **Access**: Your access to updates requires an active sponsorship, but you can continue using your installed version (or private copies of `keyed-extras`) indefinitely.
 
 ## In Practice
 
 This policy aims to be straightforward and lightweight. We trust our sponsors to use the package responsibly while supporting its continued development.
 
-If you have questions about specific uses, please reach out through GitHub discussions.
+If you have questions about specific uses, please reach out via email to [keyed@dougmercer.dev](mailto:keyed@dougmercer.dev).

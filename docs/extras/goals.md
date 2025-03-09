@@ -1,52 +1,95 @@
-# Community Goals
-
-Keyed Extras follows a progressive Sponsorware model. Features start in Extras and, as we meet community goals, graduate to the core open-source library. :heart:{ .heart .pulsing }
-
-## How it Works
-
-1. New features are initially developed in Keyed Extras
-2. We set community sponsorship goals for each feature
-3. When a goal is met, that feature moves to the core `keyed` library
-4. Everyone benefits from improved open-source animations
+# Sponsorware Community Goals
 
 ## Exclusive Features
 
-<div class="grid" markdown>
+Sponsors currently enjoy access to the following exclusive features:
 
-<div class="feature-column" markdown>
+<div class="mdx-columns" markdown>
+- [x] [Object: Editor Window]
+- [x] [Object: Rich Text] <!-- md:flag experimental -->
+- [x] [Object: Image]
+- [x] [Object: SVGElements] <!-- md:flag experimental -->
+- [x] [Object: SVG] <!-- md:flag experimental -->
+- [x] [Object: SquigglyLine]
+- [x] [Effect: Blur]
+- [x] [Effect: Displace]
+- [x] [Effect: ChromaticAberration]
+- [x] [Effect: ColorQuantization]
+- [x] [Effect: Invert]
+- [x] [Pattern: Crosshatch]
+- [x] [Pattern: Stipple]
+- [x] [Pattern: Spiral]
+- [x] [Pattern: Linear Gradient]
+- [x] [Pattern: Radial Gradient]
+- [x] [Enhanced Syntax Highlighting] <!-- md:flag experimental -->
+- [x] [Hand Drawn Mode] <!-- md:flag experimental -->
+<!-- - [x] ... and more experimental features already available! -->
 
-- :material-check:{ .checked } Interactive Editor Window
-    - Controllable scrollbar
-    - Resizable window dimensions
-- :material-check:{ .checked } RichText Object
-    - Multi-line + Text Wrapping
-    - Style Text using Pango Markup.
-- :material-check:{ .checked } Advanced Syntax Highlighting
-    - Improved token classification
-- :material-check:{ .checked } Raster-Based Post-Processing Effects
-    - Blur, bloom, and glow
-    - Color adjustments/quantization
-    - Displace
-    - More...
+  [Object: Editor Window]: https://www.google.com
+  [Object: Rich Text]: ../setup/setting-up-navigation.md#navigation-path
+  [Object: Image]: ../setup/setting-up-a-blog.md#advanced-settings
+  [Object: SVGElements]: ../setup/setting-up-a-blog.md#adding-author-profiles
+  [Object: SVG]: ../setup/setting-up-a-blog.md#pinning-a-post
+  [Object: SquigglyLine]: ../setup/setting-up-navigation.md#instant-prefetching
+  [Effect: Blur]: https://www.google.com
+  [Effect: Displace]: https://www.google.com
+  [Effect: ChromaticAberration]: https://www.google.com
+  [Effect: ColorQuantization]: https://www.google.com
+  [Effect: Invert]: https://www.google.com
+  [Pattern: Crosshatch]: https://www.google.com
+  [Pattern: Polka Dot]: https://www.google.com
+  [Pattern: Stipple]: https://www.google.com
+  [Pattern: Spiral]: https://www.google.com
+  [Pattern: Linear Gradient]: https://www.google.com
+  [Pattern: Radial Gradient]: https://www.google.com
+  [Enhanced Syntax Highlighting]: https://www.google.com
+  [Hand Drawn Mode]: https://www.google.com
+  [a]: https://www.google.com
+</div>
+
+<!-- Wish I could figure out how mkdocs-material makes their mdx- two columns... -->
+
+
+## Funding <span class="mdx-sponsorship-total" data-mdx-component="sponsorship-total"></span>
+
+## Community Sponsor Goals
+
+<div class="grid cards" markdown>
+
+-   :material-clock-fast:{ .lg .middle } __$100 monthly__
+
+    ---
+
+    * :octicons-unlock-24: [Object: SquigglyLine]
+    * :octicons-unlock-24: [Effect: Blur]
+    * :octicons-unlock-24: [Pattern: Linear Gradient]
+
+-   :fontawesome-brands-markdown:{ .lg .middle } __$200 monthly__
+
+    ---
+
+    * :octicons-unlock-24: [Object: Image]
+    * :octicons-unlock-24: [Effect: ChromaticAberration]
+    * :octicons-unlock-24: [Pattern: Stipple]
+
+-   :material-format-font:{ .lg .middle } __$300 monthly__
+
+    ---
+
+    * :octicons-unlock-24: [Object: SquigglyLine]
+    * :octicons-unlock-24: [Effect: Blur]
+    * :octicons-unlock-24: [Effect: Invert]
+
+-   :material-scale-balance:{ .lg .middle } __Open Source, MIT__
+
+    ---
+
+    * :octicons-unlock-24: [Object: SquigglyLine]
+    * :octicons-unlock-24: [Effect: Blur]
+    * :octicons-unlock-24: [Effect: Invert]
 
 </div>
 
-<div class="feature-column" markdown>
-- :material-check:{ .checked } Render content from SVGs
-    - Parse the SVG into native `keyed` objects...
-    - ... or render the SVG as a whole
-- :material-check:{ .checked } Freehand Drawing
-    - Sketch-like lines
-- :material-check:{ .checked } Additional Drawing Objects
-    - Squiggly lines
-    - Image support
-- :material-check:{ .checked } Fill Patterns
-    - Gradients
-    - Pattern fills like cross hatch, stippling, etc.
-
-</div>
-
-</div>
 
 ## Open Source Goals
 

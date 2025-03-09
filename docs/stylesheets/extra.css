@@ -1,35 +1,106 @@
-/* For the pulsing heart */
+/* Animation keyframes */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* For the pulsing heart (standalone usage) */
 .heart {
-    /* color: #e91e63; */
-    animation: pulse 1.5s ease infinite;
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-  }
-  
-  /* For the checkmarks */
-  .checked {
-    color: #00e676;
-  }
-  
-  /* For the two-column grid */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    grid-gap: 1rem;
-    margin: 1rem 0;
-  }
+  color: #e91e63;
+  animation: pulse 1.5s ease infinite;
+}
+
+/* Status indicators */
+.checked {
+  color: #00e676;
+}
+
+.experimental {
+  color: #2222ff;
+}
+
+/* Layout components */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-gap: 1rem;
+  margin: 1rem 0;
+}
 
 .centered-video {
-    display: flex;
-    justify-content: center;
-    margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
 }
 
 .centered-video video {
-    max-width: 100%;
-    height: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Two-column layout */
+.mdx-columns {
+  column-count: 2;
+  column-gap: 2rem;
+  column-fill: balance;
+}
+
+@media screen and (max-width: 600px) {
+  .mdx-columns {
+    column-count: 1;
+  }
+}
+
+.mdx-columns ul {
+  margin-top: 0;
+}
+
+.mdx-columns li {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 0.5rem;
+}
+
+/* Badge styling */
+.mdx-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-right: 0.5rem;
+  margin-top: -0.1rem;
+  vertical-align: middle;
+}
+
+.mdx-badge__icon {
+  margin-right: 0.15rem;
+}
+
+.mdx-badge__icon img {
+  height: 1rem;
+  width: 1rem;
+  vertical-align: middle;
+}
+
+.mdx-badge__text {
+  border-radius: 0.1rem;
+  padding: 0.2rem 0.3rem;
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  font-weight: 700;
+}
+
+/* Badge variants */
+/* .mdx-badge--heart .mdx-badge__icon img {
+  color: #e91e63;
+} */
+.mdx-badge--heart .mdx-badge__icon img,
+.mdx-badge--heart svg {
+  /* color: #e91e63 !important;
+  fill: #e91e63 !important; */
+  animation: none;
+}
+
+.mdx-badge--right {
+  float: right;
 }

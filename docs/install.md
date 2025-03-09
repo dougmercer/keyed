@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 # Install
 
 `keyed` is built atop several non-Python dependencies. Unfortunately, this makes it a bit tedious to install.
