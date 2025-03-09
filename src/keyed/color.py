@@ -66,26 +66,81 @@ def as_color(color: tuple[float, float, float] | HasValue[Color]) -> HasValue[Co
 
 
 class Color:
+    """A color representation that stores colors in HSL space but can be created and accessed in RGB.
+
+    This class provides a flexible way to create, manipulate, and convert colors between
+    RGB and HSL color spaces. Colors are stored internally as HSL values but can be
+    accessed as RGB values. The class supports basic arithmetic operations between colors
+    and numeric values.
+
+    Args:
+        r: Red component value in the range [0, 1].
+        g: Green component value in the range [0, 1].
+        b: Blue component value in the range [0, 1].
+
+    Attributes:
+        hsl: A numpy array containing the HSL representation of the color as
+            [hue, saturation, luminance], each in the range [0, 1].
+    """
+
     def __init__(self, r: float, g: float, b: float) -> None:
         hue, luminance, saturation = colorsys.rgb_to_hls(r, g, b)
-        self.hsl = np.array([hue, saturation, luminance])
+        self.hsl: np.ndarray = np.array([hue, saturation, luminance])
 
     @classmethod
     def from_rgb(cls, r: float, g: float, b: float) -> Self:
+        """Creates a Color instance from RGB values.
+
+        Note:
+            This is just an alias of the class `__init__` method.
+        """
         return cls(r, g, b)
 
     @classmethod
     def from_hsl(cls, hue: float, saturation: float, luminance: float) -> Self:
+        """Creates a Color instance from HSL values.
+
+        This is an alternative constructor that creates a Color object
+        directly from HSL values.
+
+        Args:
+            hue: Hue component value in the range [0, 1].
+            saturation: Saturation component value in the range [0, 1].
+            luminance: Luminance component value in the range [0, 1].
+
+        Returns:
+            A new Color instance with the specified HSL values.
+        """
         r, g, b = colorsys.hls_to_rgb(hue, luminance, saturation)
         return cls(r, g, b)
 
     @property
     def rgb(self) -> tuple[float, float, float]:
+        """Converts the color from HSL to RGB representation.
+
+        Returns:
+            A tuple of (r, g, b) values, each in the range [0, 1].
+        """
         hue, saturation, luminance = self.hsl
         r, g, b = colorsys.hls_to_rgb(hue, luminance, saturation)
         return r, g, b
 
     def __add__(self, other: float | Color | np.ndarray) -> Self:
+        """Adds this color to another color or value.
+
+        Addition is performed in HSL space.
+
+        Args:
+            other: Another Color object, a scalar value, or numpy array to add.
+                If Color, adds the HSL components. If scalar or array, adds
+                that value to all HSL components.
+
+        Returns:
+            A new Color instance with the result of the addition, clipped to valid ranges.
+
+        Raises:
+            ValueError: If the provided value is not a Color, float, int, or numpy array.
+        """
         if isinstance(other, Color):
             new_hsl = self.hsl + other.hsl
         elif isinstance(other, (float, int, np.ndarray)):
@@ -96,9 +151,32 @@ class Color:
         return type(self).from_hsl(*np.clip(new_hsl, 0, 1))
 
     def __radd__(self, other: float | np.ndarray) -> Self:
+        """Implements reverse addition (other + self).
+
+        Args:
+            other: A scalar value or numpy array to add to this color.
+
+        Returns:
+            A new Color instance with the result of the addition.
+        """
         return self.__add__(other)
 
     def __sub__(self, other: float | Color | np.ndarray) -> Self:
+        """Subtracts another color or value from this color.
+
+        Subtraction is performed in HSL space.
+
+        Args:
+            other: Another Color object, a scalar value, or numpy array to subtract.
+                If Color, subtracts the HSL components. If scalar or array, subtracts
+                that value from all HSL components.
+
+        Returns:
+            A new Color instance with the result of the subtraction, clipped to valid ranges.
+
+        Raises:
+            ValueError: If the provided value is not a Color, float, int, or numpy array.
+        """
         if isinstance(other, Color):
             new_hsl = self.hsl - other.hsl
         elif isinstance(other, (float, int, np.ndarray)):
@@ -108,6 +186,17 @@ class Color:
         return type(self).from_hsl(*np.clip(new_hsl, 0, 1))
 
     def __rsub__(self, other: float | np.ndarray) -> Self:
+        """Implements reverse subtraction (other - self).
+
+        Args:
+            other: A scalar value or numpy array from which to subtract this color.
+
+        Returns:
+            A new Color instance with the result of the subtraction, clipped to valid ranges.
+
+        Raises:
+            ValueError: If the provided value is not a float, int, or numpy array.
+        """
         if isinstance(other, (float, int, np.ndarray)):
             new_hsl = other - self.hsl
         else:
@@ -115,6 +204,19 @@ class Color:
         return type(self).from_hsl(*np.clip(new_hsl, 0, 1))
 
     def __mul__(self, scalar: float | int | np.ndarray) -> Self:
+        """Multiplies this color by a scalar value.
+
+        Multiplication is performed in HSL space.
+
+        Args:
+            scalar: A scalar value or numpy array to multiply with the color's HSL components.
+
+        Returns:
+            A new Color instance with the result of the multiplication, clipped to valid ranges.
+
+        Raises:
+            ValueError: If the provided value is not a float, int, or numpy array.
+        """
         if isinstance(scalar, (float, int, np.ndarray)):
             new_hsl = self.hsl * scalar
         else:
@@ -122,6 +224,14 @@ class Color:
         return type(self).from_hsl(*np.clip(new_hsl, 0, 1))
 
     def __rmul__(self, other: float | int | np.ndarray) -> Self:
+        """Implements reverse multiplication (other * self).
+
+        Args:
+            other: A scalar value or numpy array to multiply with this color.
+
+        Returns:
+            A new Color instance with the result of the multiplication.
+        """
         return self.__mul__(other)
 
     def __repr__(self) -> str:

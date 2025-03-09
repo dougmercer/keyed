@@ -22,3 +22,4 @@ class ContextWrapper(base):
 
 
 ContextT: TypeAlias = Context | ContextWrapper
+"""A TypeAlias for an object that behaves like a `cairo.Context`."""

@@ -27,7 +27,12 @@ __all__ = [
 
 @dataclass
 class Direction:
-    """A 2D vector."""
+    """A 2D vector.
+
+    Args:
+        x: X position, typically in the unit square.
+        y: Y position, typically in the unit square.
+    """
 
     x: float
     y: float
@@ -110,11 +115,17 @@ ALWAYS = -9_999_999
 This is a weird hack, and I'm not thrilled about it."""
 
 EXTRAS_INSTALLED = importlib.util.find_spec("keyed_extras") is not None
+"""Whether or not `keyed-extras` is installed."""
 
 
 @dataclass(frozen=True)
 class QualitySetting:
-    """Animation quality setting."""
+    """Animation quality setting.
+
+    Args:
+        width: Width of the preview window.
+        height: Height of the preview window.
+    """
 
     width: int
     height: int
@@ -132,7 +143,15 @@ class QualitySetting:
 
 
 class Quality(Enum):
-    """Enum of animation quality settings."""
+    """Enum of animation previewer squality settings.
+
+    Attributes:
+        very_low: 1024x576 resolution (SD)
+        low: 1152x648 resolution
+        medium: 1280x720 resolution (720p HD)
+        high: 1600x900 resolution
+        very_high: 1920x1080 resolution (1080p Full HD)
+    """
 
     very_low = QualitySetting(width=1024, height=576)
     low = QualitySetting(width=1152, height=648)

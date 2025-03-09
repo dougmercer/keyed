@@ -12,12 +12,17 @@ __all__ = ["Cleanable", "HasAlpha", "GeometryT"]
 
 @runtime_checkable
 class Cleanable(Protocol):
+    """A Protocol for objects that have a cleanup method."""
+
     def cleanup(self) -> None: ...
 
 
 @runtime_checkable
 class HasAlpha(Protocol):
+    """A Protocol for objects that have a (potentially reactive) alpha attribute."""
+
     alpha: HasValue[float]
 
 
 GeometryT = shapely.geometry.base.BaseGeometry
+"""The base default geometry type."""

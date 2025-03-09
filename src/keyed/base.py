@@ -76,7 +76,7 @@ class Base(Transformable):
         return self._dependencies
 
     def draw(self) -> None:
-        """Draw the object on the scene at the current frame."""
+        """Draw the object on the scene."""
         pass
 
     def _animate(self, property: str, animation: Animation) -> Self:

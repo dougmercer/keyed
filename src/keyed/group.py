@@ -230,23 +230,15 @@ class Group(Base, list[T]):  # type: ignore[misc]
     ) -> Self:
         """Move object to absolute coordinates.
 
-        Parameters
-        ----------
-        x : HasValue[float]
-            Target x coordinate
-        y : HasValue[float]
-            Target y coordinate
-        start : int, optional
-            Starting frame, by default ALWAYS
-        end : int, optional
-            Ending frame, by default ALWAYS
-        easing : EasingFunctionT, optional
-            Easing function, by default cubic_in_out
+        Args:
+            x: Destination x coordinate
+            y: Destination y coordinate
+            start: Starting frame, by default ALWAYS
+            end: Ending frame, by default ALWAYS
+            easing: Easing function, by default cubic_in_out
 
-        Returns
-        -------
-        Self
-            The transformed object
+        Returns:
+            Self
         """
         center = center if center is not None else self.geom  # type: ignore[assignment]
         cx, cy = get_critical_point(center, direction)  # type: ignore[argument]
