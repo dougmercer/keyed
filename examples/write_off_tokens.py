@@ -1,4 +1,4 @@
-from keyed import Code, Scene, lag_animation, tokenize
+from keyed import Code, Scene, stagger, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()
@@ -11,7 +11,7 @@ scene.add(code)
 
 code.tokens[:].write_on(
     "alpha",
-    lagged_animation=lag_animation(start_value=1, end_value=0),
+    lagged_animation=stagger(start_value=1, end_value=0),
     delay=1,
     duration=1,
     start=0,

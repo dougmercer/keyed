@@ -14,7 +14,7 @@ from .easing import EasingFunctionT, easing_function, linear_in_out
 __all__ = [
     "AnimationType",
     "Animation",
-    "lag_animation",
+    "stagger",
     "Loop",
     "PingPong",
     "step",
@@ -226,7 +226,7 @@ class PingPong(Animation):
         return f"PingPong(animation={self.animation}, n={self.n})"
 
 
-def lag_animation(
+def stagger(
     start_value: float = 0,
     end_value: float = 1,
     easing: EasingFunctionT = linear_in_out,

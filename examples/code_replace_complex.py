@@ -1,4 +1,4 @@
-from keyed import LEFT, AnimationType, Circle, Code, Scene, lag_animation, tokenize
+from keyed import LEFT, AnimationType, Circle, Code, Scene, stagger, tokenize
 
 scene = Scene(scene_name="code_replace_complex", num_frames=90)
 
@@ -16,7 +16,7 @@ code1.chars[-3:].align_to(code2.chars[-3], start=12, end=36, direction=LEFT)
 
 code2.chars[8:18].write_on(
     "alpha",
-    lagged_animation=lag_animation(start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE),
+    lagged_animation=stagger(start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE),
     delay=4,
     duration=1,
     start=36,

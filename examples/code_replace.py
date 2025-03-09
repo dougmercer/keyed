@@ -1,4 +1,4 @@
-from keyed import AnimationType, Code, Scene, lag_animation, tokenize
+from keyed import AnimationType, Code, Scene, stagger, tokenize
 
 scene = Scene(scene_name="code_replace", num_frames=60, width=800, height=600)
 
@@ -12,7 +12,7 @@ scene.add(code1, code2)
 
 code1.chars[-1:-5:-1].write_on(
     "alpha",
-    lagged_animation=lag_animation(start_value=1, end_value=0, animation_type=AnimationType.ABSOLUTE),
+    lagged_animation=stagger(start_value=1, end_value=0, animation_type=AnimationType.ABSOLUTE),
     delay=4,
     duration=1,
     start=0,
@@ -20,7 +20,7 @@ code1.chars[-1:-5:-1].write_on(
 
 code2.chars[-5:].write_on(
     "alpha",
-    lagged_animation=lag_animation(start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE),
+    lagged_animation=stagger(start_value=0, end_value=1, animation_type=AnimationType.ABSOLUTE),
     delay=4,
     duration=1,
     start=24,

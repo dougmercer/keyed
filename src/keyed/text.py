@@ -256,7 +256,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         Args:
             property: The property to animate.
             lagged_animation: The animation function to apply, which should create an Animation.
-                See :func:`keyed.animations.lag_animation`.
+                See :func:`keyed.animations.stagger`.
             start: The frame at which the first animation should start.
             delay: The delay in frames before starting the next object's animation.
             duration: The duration of each object's animation in frames.
