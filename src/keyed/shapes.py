@@ -144,68 +144,6 @@ class Shape(Base):
 
             self.ctx.restore()
 
-    @contextmanager
-    def clip(self, ctx: ContextT | None = None) -> Generator[None, None, None]:
-        """Context manager to define a clipping path based on the shape.
-
-        This can be used to restrict drawing to within the boundaries of the shape.
-
-        Args:
-            ctx: The Cairo context on which to apply the clipping path. If None, uses the shape's own
-                context.
-
-        Yields:
-            None: Yields control back to the caller with the clipping path set.
-        """
-        if ctx is not None:
-            raise NotImplementedError("Need to update _draw_shape another methods to support arbitrary context.")
-
-        ctx = ctx or self.ctx
-        try:
-            ctx.save()
-            ctx.transform(self.controls.matrix.value)
-            self._draw_shape()
-            ctx.clip()
-            yield
-        finally:
-            ctx.restore()
-
-    # @contextmanager
-    # def clip(self, ctx: cairo.Context | None = None) -> Generator[None, None, None]:
-    #     """Context manager to define a clipping path based on the shape.
-
-    #     This can be used to restrict drawing to within the boundaries of the shape.
-
-    #     Parameters
-    #     ----------
-    #     frame : int, optional
-    #         The frame number for which to set the clipping path. Default is 0.
-    #     ctx : cairo.Context | None, optional
-    #         The Cairo context on which to apply the clipping path. If None, uses the shape's own
-    #         context.
-
-    #     Yields
-    #     ------
-    #     None
-    #         Yields control back to the caller with the clipping path set.
-    #     """
-    #     if ctx is not None:
-    #         raise NotImplementedError(
-    #             "Need to update _draw_shape another methods to support arbitrary context."
-    #         )
-
-    #     ctx = ctx or self.ctx
-    #     try:
-    #         original_matrix = ctx.get_matrix()
-    #         ctx.transform(self.controls.matrix.value)
-    #         self._draw_shape()
-    #         ctx.clip()
-    #         ctx.set_matrix(original_matrix)
-    #         yield
-    #     finally:
-    #         # ctx.restore()
-    #         pass
-
     def cleanup(self) -> None:
         if isinstance(self.ctx, Cleanable):
             self.ctx.cleanup()

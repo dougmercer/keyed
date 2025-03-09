@@ -265,29 +265,6 @@ class BezierCurve(Base):
         finally:
             self.ctx.restore()
 
-    # def draw(self) -> None:
-    #     """Draw the shape within its styled context, applying transformations.
-
-    #     Parameters
-    #     ----------
-    #     frame : int, optional
-    #         The frame number to draw. Default is 0.
-    #     """
-    #     with self.style():
-    #         self.ctx.set_matrix(self.controls.matrix.value)
-    #         self.ctx.move_to(self.x0.value, self.y0.value)
-    #         self.ctx.curve_to(
-    #             self.x1.value,
-    #             self.y1.value,
-    #             self.x2.value,
-    #             self.y2.value,
-    #             self.x3.value,
-    #             self.y3.value,
-    #         )
-    #         self.ctx.set_source_rgba(*self.color, self.alpha.value)
-    #         self.ctx.stroke()
-    #         self.ctx.set_matrix(cairo.Matrix())
-
     def cleanup(self) -> None:
         if isinstance(self.ctx, Cleanable):
             self.ctx.cleanup()
