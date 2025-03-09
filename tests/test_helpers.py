@@ -5,7 +5,7 @@ from keyed.helpers import Freezeable, guard_frozen
 
 def test_guard_frozen() -> None:
     class Blah:
-        is_frozen = False
+        _is_frozen = False
 
         @guard_frozen
         def blah(self) -> None:
@@ -17,7 +17,7 @@ def test_guard_frozen() -> None:
     b.blah()
 
     # but this should.
-    b.is_frozen = True
+    b._is_frozen = True
     with pytest.raises(ValueError):
         b.blah()
 
@@ -53,7 +53,7 @@ def test_freezeable() -> None:
     with pytest.raises(TypeError):
         hash(b)
 
-    b.freeze()
+    b._freeze()
 
     # Now this should fail...
     with pytest.raises(ValueError):

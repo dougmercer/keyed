@@ -201,7 +201,7 @@ class Geometry(Shape):
         self._draw_geometry(geometry)
 
     @property
-    def raw_geom_now(self) -> BaseGeometry:
+    def _raw_geom_now(self) -> BaseGeometry:
         """Return the geometry before any transformations.
 
         Returns:

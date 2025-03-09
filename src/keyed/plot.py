@@ -174,7 +174,7 @@ class Axes(Base):
         self.ctx.restore()
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Return a minimal geometry for the axes area."""
         if not self.plot:
             return shapely.Polygon()
@@ -370,7 +370,7 @@ class ParametricPlot(Base, AxesAnchorable):
         return self
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Return the geometric representation of the plot area."""
         buffer = max(self.line_width.value, self.point_radius.value)
         return shapely.box(-buffer, -buffer, self._width + buffer, self._height + buffer)

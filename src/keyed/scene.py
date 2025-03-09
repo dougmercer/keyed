@@ -103,12 +103,12 @@ class Layer(Freezeable):
 
         return arr
 
-    def freeze(self):
+    def _freeze(self):
         """Freeze each layer's contents to enable caching."""
-        if not self.is_frozen:
+        if not self._is_frozen:
             for content in self.content:
                 content.apply_transform(self.scene.controls.matrix)
-            super().freeze()
+            super()._freeze()
 
 
 class Scene(Transformable, Freezeable):
@@ -431,7 +431,7 @@ class Scene(Transformable, Freezeable):
         return FreeHandContext(ctx) if self.freehand else ctx
 
     @property
-    def raw_geom_now(self) -> shapely.geometry.Polygon:
+    def _raw_geom_now(self) -> shapely.geometry.Polygon:
         """Get the raw geometric representation of the scene at the specified frame.
 
         Returns:
@@ -444,13 +444,13 @@ class Scene(Transformable, Freezeable):
             self._height,
         )
 
-    def freeze(self) -> None:
+    def _freeze(self) -> None:
         """Freeze the scene to enable caching."""
-        if not self.is_frozen:
+        if not self._is_frozen:
             self.rasterize = cache(self.rasterize)  # type: ignore[method-assign]
             for layer in self.layers:
-                layer.freeze()
-            super().freeze()
+                layer._freeze()
+            super()._freeze()
 
     def render(
         self,

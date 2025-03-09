@@ -88,7 +88,7 @@ class Shape(Base):
         pass
 
     @contextmanager
-    def style(self) -> Generator[None, None, None]:
+    def _style(self) -> Generator[None, None, None]:
         """Context manager for setting up the drawing style for the shape.
 
         Temporarily sets various drawing properties such as line width, line cap, line join,
@@ -111,7 +111,7 @@ class Shape(Base):
 
     def draw(self) -> None:
         """Draw the shape within its styled context, applying transformations."""
-        with self.style():
+        with self._style():
             self.ctx.save()
             self.ctx.transform(self.controls.matrix.value)
 
@@ -351,7 +351,7 @@ class Rectangle(Shape):
         self.ctx.close_path()
 
     @property
-    def raw_geom_now(self) -> BaseGeometry:
+    def _raw_geom_now(self) -> BaseGeometry:
         """Return the geometric shape before any transformations.
 
         Returns:
@@ -472,7 +472,7 @@ class Circle(Shape):
         self.ctx.arc(0, 0, r, 0, 2 * math.pi)
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Return the geometry before any transformations.
 
         Returns:

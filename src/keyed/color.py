@@ -21,7 +21,7 @@ __all__ = ["Color", "as_color"]
 
 
 @dataclass
-class Style:
+class _Style:
     r: float
     g: float
     b: float
@@ -40,12 +40,12 @@ class Style:
         return self.r, self.g, self.b
 
 
-ColorMap = dict[_TokenType, Style]
+ColorMap = dict[_TokenType, _Style]
 
 
 def style_to_color_map(style: StyleMeta) -> ColorMap:
     """Map token types to RGB colors based on a given pygments style."""
-    return {token: Style.from_hex(token_style) for token, token_style in style if token_style["color"] is not None}
+    return {token: _Style.from_hex(token_style) for token, token_style in style if token_style["color"] is not None}
 
 
 def as_rgb(color: str) -> tuple[float, ...]:

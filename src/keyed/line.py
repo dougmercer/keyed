@@ -16,7 +16,7 @@ from .color import Color, as_color
 from .easing import EasingFunctionT, cubic_in_out
 from .scene import Scene
 
-__all__ = ["Line", "BezierCurve", "lerp", "de_casteljau"]
+__all__ = ["Line", "BezierCurve", "lerp"]
 
 
 T = TypeVar("T")
@@ -42,7 +42,7 @@ def lerp(x0: HasValue[T], x1: HasValue[T], t: HasValue[float]) -> T | Computed[T
         return cast(T | Computed[T], (1 - t) * x0 + t * x1)  # pyright: ignore[reportOperatorIssue]
 
 
-def de_casteljau(t: HasValue[float], x0: T, x1: T, x2: T, x3: T, reverse: bool = False) -> tuple[T, T, T, T]:
+def _de_casteljau(t: HasValue[float], x0: T, x1: T, x2: T, x3: T, reverse: bool = False) -> tuple[T, T, T, T]:
     if reverse:
         x0, x1, x2, x3 = x3, x2, x1, x0
         t = 1 - t
@@ -104,7 +104,7 @@ class Line(Base):
         self.controls.matrix.value = self.controls.base_matrix()
 
     @contextmanager
-    def style(self) -> Generator[None, None, None]:
+    def _style(self) -> Generator[None, None, None]:
         """Context manager for setting up the drawing style for the shape.
 
         Temporarily sets various drawing properties such as line width, line cap, line join,
@@ -135,7 +135,7 @@ class Line(Base):
         if x0 == x1 and y0 == y1:
             return
 
-        with self.style():
+        with self._style():
             self.ctx.set_matrix(self.controls.matrix.value)
             self.ctx.move_to(x0, y0)
             self.ctx.line_to(x1, y1)
@@ -148,7 +148,7 @@ class Line(Base):
             self.ctx.cleanup()
 
     @property
-    def raw_geom_now(self) -> shapely.LineString:
+    def _raw_geom_now(self) -> shapely.LineString:
         x0 = lerp(self.x0.value, self.x1.value, self.start.value)
         y0 = lerp(self.y0.value, self.y1.value, self.start.value)
         x1 = lerp(self.x0.value, self.x1.value, self.end.value)
@@ -244,7 +244,7 @@ class BezierCurve(Base):
         self.controls.matrix.value = self.controls.base_matrix()
 
     @contextmanager
-    def style(self) -> Generator[None, None, None]:
+    def _style(self) -> Generator[None, None, None]:
         """Context manager for setting up the drawing style for the shape.
 
         Temporarily sets various drawing properties such as line width, line cap, line join,
@@ -305,12 +305,12 @@ class BezierCurve(Base):
         ReactiveValue[float],
     ]:
         # Update the control points, based on self.start
-        x0, x1, x2, x3 = de_casteljau(self.start, self.x0, self.x1, self.x2, self.x3, reverse=True)
-        y0, y1, y2, y3 = de_casteljau(self.start, self.y0, self.y1, self.y2, self.y3, reverse=True)
+        x0, x1, x2, x3 = _de_casteljau(self.start, self.x0, self.x1, self.x2, self.x3, reverse=True)
+        y0, y1, y2, y3 = _de_casteljau(self.start, self.y0, self.y1, self.y2, self.y3, reverse=True)
 
         # Update the control points, based on self.end
-        x0, x1, x2, x3 = de_casteljau(self.end, x0, x1, x2, x3, reverse=False)
-        y0, y1, y2, y3 = de_casteljau(self.end, y0, y1, y2, y3, reverse=False)
+        x0, x1, x2, x3 = _de_casteljau(self.end, x0, x1, x2, x3, reverse=False)
+        y0, y1, y2, y3 = _de_casteljau(self.end, y0, y1, y2, y3, reverse=False)
         return x0, y0, x1, y1, x2, y2, x3, y3
 
     def draw(self) -> None:
@@ -319,7 +319,7 @@ class BezierCurve(Base):
         if x0 == x3 and y0 == y3:
             return
 
-        with self.style():
+        with self._style():
             self.ctx.set_matrix(self.controls.matrix.value)
 
             # Draw the curve using the calculated control points
@@ -330,7 +330,7 @@ class BezierCurve(Base):
             self.ctx.set_matrix(cairo.Matrix())
 
     @property
-    def raw_geom_now(self) -> shapely.LineString:
+    def _raw_geom_now(self) -> shapely.LineString:
         """Raw geometry of the Bezier curve using De Casteljau for the start and end."""
         x0, y0, x1, y1, x2, y2, x3, y3 = self.control_points()
 

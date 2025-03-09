@@ -80,7 +80,7 @@ class Text(Base):
         return f"{self.__class__.__name__}(text={unref(self.text)!r}, x={self.x:2}, y={self.y:2})"
 
     @contextmanager
-    def style(self) -> Generator[None, None, None]:
+    def _style(self) -> Generator[None, None, None]:
         """Set up the font context for drawing."""
         try:
             self.ctx.save()
@@ -94,21 +94,21 @@ class Text(Base):
 
     def draw(self) -> None:
         """Draw the text to the scene."""
-        with self.style():
+        with self._style():
             self.ctx.new_path()
             self.ctx.transform(self.controls.matrix.value)
             self.ctx.show_text(unref(self.text))
 
     @property
-    def extents(self) -> cairo.TextExtents:
+    def _extents(self) -> cairo.TextExtents:
         """Get the text dimensions."""
-        with self.style():
+        with self._style():
             return self.ctx.text_extents(unref(self.text))
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Get text bounds geometry before transforms."""
-        extents = self.extents
+        extents = self._extents
         x = extents.x_bearing
         y = extents.y_bearing
         w = extents.width
@@ -184,7 +184,7 @@ class _Character(Base):
         )
 
     @contextmanager
-    def style(self) -> Generator[None, None, None]:
+    def _style(self) -> Generator[None, None, None]:
         """Set up the font context for drawing."""
         try:
             self.ctx.save()
@@ -198,15 +198,15 @@ class _Character(Base):
 
     def draw(self) -> None:
         """Draw the character to the scene."""
-        with self.style():
+        with self._style():
             self.ctx.new_path()
             self.ctx.transform(self.controls.matrix.value)
             self.ctx.show_text(unref(self.text))
 
     @property
-    def extents(self) -> cairo.TextExtents:
+    def _extents(self) -> cairo.TextExtents:
         """Get the character dimensions."""
-        with self.style():
+        with self._style():
             return self.ctx.text_extents(unref(self.text))
 
     def is_whitespace(self) -> bool:
@@ -216,9 +216,9 @@ class _Character(Base):
         )
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Get character bounds geometry before transforms."""
-        extents = self.extents
+        extents = self._extents
         x = extents.x_bearing
         y = extents.y_bearing
         w = extents.width
@@ -376,7 +376,7 @@ class _Token(TextSelection[_Character]):
                     operator=operator,
                 )
             )
-            extents = objects[-1].extents
+            extents = objects[-1]._extents
             x += extents.x_advance
         super().__init__(objects)
 
@@ -386,9 +386,9 @@ class _Token(TextSelection[_Character]):
         return TextSelection(self)
 
     @property
-    def extents(self) -> cairo.TextExtents:
+    def _extents(self) -> cairo.TextExtents:
         """Get the combined text extents of all characters."""
-        _extents = [char.extents for char in self]
+        _extents = [char._extents for char in self]
         # Calculate combined extents
         min_x_bearing = _extents[0].x_bearing
         min_y_bearing = min(e.y_bearing for e in _extents)
@@ -451,7 +451,7 @@ class _Line(TextSelection[_Token]):
                     operator=operator,
                 )
             )
-            x += objects[-1].extents.x_advance
+            x += objects[-1]._extents.x_advance
         super().__init__(objects)
 
     @property
@@ -503,7 +503,7 @@ class Code(TextSelection[_Line]):
         self.font_size = font_size
 
         ctx = scene.get_context()
-        self.set_default_font(ctx)
+        self._set_default_font(ctx)
         ascent, _, height, *_ = ctx.font_extents()
         y += ascent if _ascent_correction else 0
         line_height = 1.2 * height
@@ -537,7 +537,7 @@ class Code(TextSelection[_Line]):
             y += line_height
         super().__init__(objects)
 
-    def set_default_font(self, ctx: cairo.Context) -> None:
+    def _set_default_font(self, ctx: cairo.Context) -> None:
         """Set the font/size.
 
         Args:

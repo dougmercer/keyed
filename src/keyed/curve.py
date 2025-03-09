@@ -34,8 +34,7 @@ def as_xy(pt: shapely.Point) -> tuple[float, float]:
     return pt.x, pt.y
 
 
-# Derivative of the cubic Bézier curve
-def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
+def _bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     """Calculate the derivative of a cubic Bézier curve at a given parameter value.
 
     Args:
@@ -55,7 +54,7 @@ def bezier_derivative(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) 
     return 3 * (1 - t) ** 2 * (p1 - p0) + 6 * (1 - t) * t * (p2 - p1) + 3 * t**2 * (p3 - p2)
 
 
-def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.floating[Any]:
+def _integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.floating[Any]:
     """Define function to integrate to calculate the arc length of a cubic Bézier curve.
 
     Args:
@@ -71,7 +70,7 @@ def integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.fl
     assert p1.shape == (2,)
     assert p2.shape == (2,)
     assert p3.shape == (2,)
-    return np.linalg.norm(bezier_derivative(t, p0, p1, p2, p3))
+    return np.linalg.norm(_bezier_derivative(t, p0, p1, p2, p3))
 
 
 def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
@@ -90,12 +89,12 @@ def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     assert p1.shape == (2,)
     assert p2.shape == (2,)
     assert p3.shape == (2,)
-    _integrand = partial(integrand, p0=p0, p1=p1, p2=p2, p3=p3)
-    arclength, _ = quad(_integrand, 0, 1)
+    f_integral = partial(_integrand, p0=p0, p1=p1, p2=p2, p3=p3)
+    arclength, _ = quad(f_integral, 0, 1)
     return arclength
 
 
-def de_casteljau(
+def _de_casteljau(
     t: float,
     p0: Vector,
     p1: Vector,
@@ -142,7 +141,7 @@ def de_casteljau(
     return p0, a, d, f
 
 
-def calculate_control_points(tension: float, points: list[tuple[float, float]] | Vector) -> tuple[Vector, Vector]:
+def _calculate_control_points(tension: float, points: list[tuple[float, float]] | Vector) -> tuple[Vector, Vector]:
     """Calculate the control points for a smooth curve through given points with specified tension.
 
     Args:
@@ -238,7 +237,7 @@ class Curve(Shape):
         if len(points) < 2:
             return points
 
-        cp1, cp2 = calculate_control_points(self.tension.value, points)
+        cp1, cp2 = _calculate_control_points(self.tension.value, points)
 
         # Calculate segment lengths for parameterization
         segment_lengths = np.array([bezier_length(*b) for b in zip(points[:-1], cp1, cp2, points[1:])])
@@ -269,7 +268,7 @@ class Curve(Shape):
         # Add start point
         if start_idx < len(points) - 1:
             p0, p1, p2, p3 = points[start_idx], cp1[start_idx], cp2[start_idx], points[start_idx + 1]
-            p0_new, _, _, _ = de_casteljau(start_t, p0, p1, p2, p3, reverse=True)  # type: ignore
+            p0_new, _, _, _ = _de_casteljau(start_t, p0, p1, p2, p3, reverse=True)  # type: ignore
             result_points.append(p0_new)
 
         # Add intermediate points
@@ -278,7 +277,7 @@ class Curve(Shape):
         # Add end point
         if end_idx < len(points) - 1:
             p0, p1, p2, p3 = points[end_idx], cp1[end_idx], cp2[end_idx], points[end_idx + 1]
-            _, _, _, p3_new = de_casteljau(end_t, p0, p1, p2, p3)  # type: ignore
+            _, _, _, p3_new = _de_casteljau(end_t, p0, p1, p2, p3)  # type: ignore
             result_points.append(p3_new)
 
         return np.array(result_points)
@@ -289,7 +288,7 @@ class Curve(Shape):
             return
 
         # Calculate control points
-        cp1, cp2 = calculate_control_points(self.tension.value, points)
+        cp1, cp2 = _calculate_control_points(self.tension.value, points)
 
         # Draw the curve
         self.ctx.move_to(*points[0])
@@ -316,7 +315,7 @@ class Curve(Shape):
         self.ctx.close_path()
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Return the geometry before any transformations."""
         full_points = self._calculate_points()
         points = self._get_partial_curve_points(full_points)

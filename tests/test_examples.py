@@ -159,7 +159,7 @@ def test_animation_example(example_name: str, snapshot):
     frames_to_test = sample_frames(params.get("num_frames", 60))
 
     # Freeze scene before rendering
-    scene.freeze()
+    scene._freeze()
 
     # Test each sampled frame
     for frame in frames_to_test:

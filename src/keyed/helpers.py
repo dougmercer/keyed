@@ -17,24 +17,24 @@ class Freezeable(Protocol):
         Remove the need for this class by writing proper hash/eq methods for all classes.
     """
 
-    is_frozen: bool
+    _is_frozen: bool
 
     def __init__(self) -> None:
-        self.is_frozen = False
+        self._is_frozen = False
 
     def __hash__(self) -> int:
-        if not self.is_frozen:
+        if not self._is_frozen:
             raise TypeError("Not frozen. Need to freeze to make hashable.")
         return id(self)
 
     def __setattr__(self, name: str, value: "Freezeable", /) -> None:
-        if hasattr(self, "is_frozen") and self.is_frozen:
+        if hasattr(self, "_is_frozen") and self._is_frozen:
             raise ValueError("Cannot set attribute. Object has been frozen.")
         object.__setattr__(self, name, value)
 
-    def freeze(self) -> None:
+    def _freeze(self) -> None:
         """Freeze the object to enable caching."""
-        self.is_frozen = True
+        self._is_frozen = True
 
 
 T = TypeVar("T", bound=Callable[..., Any])
@@ -52,7 +52,7 @@ def guard_frozen(method: T) -> T:
 
     @wraps(method)
     def wrapper(self: Freezeable, *args: Any, **kwargs: Any) -> Any:
-        if hasattr(self, "is_frozen") and self.is_frozen:
+        if hasattr(self, "_is_frozen") and self._is_frozen:
             raise ValueError(f"Can't call {method.__name__}. Object is frozen.")
         return method(self, *args, **kwargs)
 
@@ -71,8 +71,8 @@ def freeze(method: T) -> T:
 
     @wraps(method)
     def wrapper(self: Freezeable, *args: Any, **kwargs: Any) -> Any:
-        if not self.is_frozen:
-            self.freeze()
+        if not self._is_frozen:
+            self._freeze()
         return method(self, *args, **kwargs)
 
     return cast(T, wrapper)

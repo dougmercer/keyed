@@ -9,7 +9,7 @@ from pygments.lexer import Lexer
 from pygments.style import StyleMeta
 from pygments.token import Token, _TokenType  # noqa
 
-from .color import Style, style_to_color_map
+from .color import _Style, style_to_color_map
 
 DEFAULT_STYLE = "nord"
 
@@ -73,7 +73,7 @@ class KeyedFormatter(Formatter):
         colors = style_to_color_map(style)
         styled_tokens: list[StyledToken] = []
         for token_type, token in tokens:
-            token_style = colors.get(token_type, Style(r=1, g=1, b=1))
+            token_style = colors.get(token_type, _Style(r=1, g=1, b=1))
             styled_tokens.append(
                 StyledToken(
                     text=token,

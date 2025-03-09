@@ -68,13 +68,13 @@ class Transformable:
             self._cache[name] = factory()
         return self._cache[name]
 
-    def invalidate_cache(self) -> Self:
+    def _invalidate_cache(self) -> Self:
         """Clear all cached computed values."""
         self._cache.clear()
         return self
 
     @property
-    def raw_geom_now(self) -> GeometryT:
+    def _raw_geom_now(self) -> GeometryT:
         """Return the geometry at the current frame, before any transformations.
 
         Returns:
@@ -83,26 +83,26 @@ class Transformable:
         ...
 
     @property
-    def raw_geom(self) -> Computed[GeometryT]:
+    def _raw_geom(self) -> Computed[GeometryT]:
         """Return a reactive value of the raw geometry."""
-        return self._get_cached_computed("raw_geom", lambda: Computed(lambda: self.raw_geom_now, self._dependencies))
+        return self._get_cached_computed("_raw_geom", lambda: Computed(lambda: self._raw_geom_now, self._dependencies))
 
     @property
     def geom(self) -> Computed[GeometryT]:
         """Return a reactive value of the transformed geometry."""
         return self._get_cached_computed(
-            "geom", lambda: computed(affine_transform)(self.raw_geom, self.controls.matrix)
+            "geom", lambda: computed(affine_transform)(self._raw_geom, self.controls.matrix)
         )
 
     @property
     def geom_now(self) -> GeometryT:
         m = self.controls.matrix
-        return affine_transform(unref(self.raw_geom), m.value)
+        return affine_transform(unref(self._raw_geom), m.value)
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix
         # Invalidate cached geometry
-        self.invalidate_cache()
+        self._invalidate_cache()
         # self._cache.pop('geom', None)
         return self
 
@@ -531,14 +531,16 @@ class TransformControls:
         Returns:
             The transform matrix, before any transformations.
         """
-        return computed(base_transform_matrix)(self.obj.raw_geom, self.delta_x, self.delta_y, self.rotation, self.scale)
+        return computed(base_transform_matrix)(
+            self.obj._raw_geom, self.delta_x, self.delta_y, self.rotation, self.scale
+        )
 
 
 def base_transform_matrix(
-    raw_geom: GeometryT, delta_x: float, delta_y: float, rotation: float, scale: float
+    _raw_geom: GeometryT, delta_x: float, delta_y: float, rotation: float, scale: float
 ) -> cairo.Matrix:
     matrix = cairo.Matrix()
-    bounds = raw_geom.bounds
+    bounds = _raw_geom.bounds
 
     pivot_x = (bounds[2] - bounds[0]) / 2
     pivot_y = (bounds[3] - bounds[1]) / 2

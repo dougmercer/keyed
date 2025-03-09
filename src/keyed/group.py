@@ -175,7 +175,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
             return super().__getitem__(key)
 
     @property
-    def raw_geom_now(self) -> shapely.Polygon:
+    def _raw_geom_now(self) -> shapely.Polygon:
         """Not really used. Only here to comply with the best class."""
         raise NotImplementedError("Don't call this method on Selections.")
 
