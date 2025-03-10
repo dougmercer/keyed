@@ -3,17 +3,13 @@ import random
 from signified import Signal, computed
 
 from keyed import (
-    LEFT,
-    RIGHT,
     Animation,
     Circle,
     Color,
     Direction,
-    Line,
     Scene,
     Selection,
     Text,
-    get_critical_point,
     step,
 )
 
@@ -70,23 +66,18 @@ nx, ny, nz, na, nb = nodes
 
 reactive_nodes: list[Selection] = nodes[1:]
 
+# Place the nodes
 nx.align_to(s, direction=Direction(-0.7, 0), center_on_zero=True)
 ny.align_to(s, direction=Direction(0, 0.5), center_on_zero=True)
 nz.align_to(s, direction=Direction(0.7, 0.5), center_on_zero=True)
 na.align_to(s, direction=Direction(0, -0.5), center_on_zero=True)
 nb.align_to(s, direction=Direction(0.7, -0.5), center_on_zero=True)
 
-x_right = get_critical_point(nx.geom, direction=RIGHT)
-y_left = get_critical_point(ny.geom, direction=LEFT)
-y_right = get_critical_point(ny.geom, direction=RIGHT)
-z_left = get_critical_point(nz.geom, direction=LEFT)
-a_left = get_critical_point(na.geom, direction=LEFT)
-a_right = get_critical_point(na.geom, direction=RIGHT)
-b_left = get_critical_point(nb.geom, direction=LEFT)
-
-xy = Line(s, x_right[0], x_right[1], y_left[0], y_left[1], line_width=10, dash=((20, 20), 10))
-yz = Line(s, y_right[0], y_right[1], z_left[0], z_left[1], line_width=10, dash=((20, 20), 10))
-xa = Line(s, x_right[0], x_right[1], a_left[0], a_left[1], line_width=10, dash=((20, 20), 10))
-ab = Line(s, a_right[0], a_right[1], b_left[0], b_left[1], line_width=10, dash=((20, 20), 10))
+# Draw lines
+line_kwargs = {"line_width": 10, "dash": ((20, 20), 10)}
+xy = nx.line_to(ny, **line_kwargs)
+yz = ny.line_to(nz, **line_kwargs)
+xa = nx.line_to(na, **line_kwargs)
+ab = na.line_to(nb, **line_kwargs)
 
 s.add(*nodes, xy, yz, xa, ab)

@@ -66,6 +66,20 @@ def _de_casteljau(t: HasValue[float], x0: T, x1: T, x2: T, x3: T, reverse: bool 
 
 
 class Line(Base):
+    """Draw a line between two points.
+
+    Args:
+        x0: x coordinate of first point.
+        y0: y coordinate of first point.
+        x1: x coordinate of second point.
+        y1: y coordinate of second point.
+        color: Line color.
+        alpha: Transparency.
+        dash: Dash specification.
+        operator: Blend mode.
+        line_width: width of line.
+    """
+
     def __init__(
         self,
         scene: Scene,

@@ -13,12 +13,13 @@ import cairo
 from signified import HasValue, Variable, unref
 
 from .animation import Animation, step
-from .constants import ALWAYS, ORIGIN
+from .constants import ALWAYS, LEFT, ORIGIN, RIGHT, Direction
 from .easing import EasingFunctionT, linear_in_out
-from .transforms import Transformable
+from .transforms import Transformable, get_critical_point
 from .types import HasAlpha
 
 if TYPE_CHECKING:
+    from .line import Line
     from .scene import Scene
     from .shapes import Rectangle
 
@@ -203,6 +204,26 @@ class Base(Transformable):
         assert hasattr(self, "alpha")
         self.alpha = Animation(start, end, self.alpha, value, ease=ease)(self.alpha, self.frame)  # type: ignore[assignment]
         return self
+
+    def line_to(
+        self, other: Base, self_direction: Direction = RIGHT, other_direction: Direction = LEFT, **line_kwargs: Any
+    ) -> "Line":
+        """Create a line connecting this object to another object.
+
+        Args:
+            other: The target object to connect to
+            self_direction: Direction for the connection point on this object (default: RIGHT)
+            other_direction: Direction for the connection point on the target object (default: LEFT)
+            **line_kwargs: Additional arguments to pass to the [Line][keyed.line.Line] constructor.
+
+        Returns:
+            The created Line object
+        """
+        from .line import Line
+
+        self_point = get_critical_point(self.geom, direction=self_direction)
+        other_point = get_critical_point(other.geom, direction=other_direction)
+        return Line(self.scene, x0=self_point[0], y0=self_point[1], x1=other_point[0], y1=other_point[1], **line_kwargs)
 
 
 def is_visible(obj: Any) -> bool:
