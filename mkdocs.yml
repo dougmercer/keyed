@@ -186,6 +186,8 @@ plugins:
             show_symbol_type_heading: true
             show_root_heading: true
             show_source: true
+            extensions:
+              - docs/plugins/custom_tags_extension.py
 
 extra_css:
   - stylesheets/extra.css

@@ -1,7 +1,5 @@
 # Keyed Extras
 
-<!-- md:sponsors -->
-
 `keyed-extras` is a Python package that extends the keyed animation library. It provides early access to exclusive features that aren't available in the community edition.
 
 You can get access to `keyed-extras` by becoming a [Sponsor :heart:{ .heart .pulsing }](https://github.com/dougmercer).

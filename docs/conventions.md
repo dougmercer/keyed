@@ -11,8 +11,8 @@ conventions:
 ### <!-- md:sponsors --> – Sponsors only { data-toc-label="Sponsors only" }
 
 The pumping heart symbol denotes that a specific feature or behavior is only
-available to sponsors via [Extras][extras/index.md]. Make sure that you have access to
-[Extras][extras/index.md] if you want to use the feature.
+available to sponsors via [Extras](extras/index.md). Make sure that you have access to
+[Extras](extras/index.md) if you want to use the feature.
 
 ### <!-- md:version --> – Version { data-toc-label="Version" }
 
