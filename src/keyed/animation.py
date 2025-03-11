@@ -22,12 +22,23 @@ __all__ = [
 
 
 class AnimationType(Enum):
-    """Animation types.
+    """Defines how animation values are applied to properties.
 
-    Keyed supports three animation types:
-        * MULTIPLICATIVE: Multiplies the current value.
-        * ABSOLUTE: Sets the current value.
-        * ADDITIVE: Adds to the current value.
+    When animating properties, this enum specifies the mathematical operation
+    used to combine the animated value with the original value.
+
+    Attributes:
+        MULTIPLICATIVE: Multiplies the original value by the animation value.
+            Useful for scaling properties like size or opacity.
+            (`original_value * animation_value`)
+
+        ABSOLUTE: Directly replaces the original value with the animation value.
+            Useful when you want to set a property to a specific value.
+            (`animation_value`)
+
+        ADDITIVE: Adds the animation value to the original value.
+            Useful for properties like position where you want to move relative to current position.
+            (`original_value + animation_value`)
     """
 
     MULTIPLICATIVE = auto()
@@ -55,7 +66,7 @@ class Animation(Generic[T]):
         start_value: Value at which the animation will start.
         end_value: Value at which the animation will end.
         ease: The rate in which the value will change throughout the animation.
-        animation_type: How the animation value will affect the ::class::``Property``'s value.
+        animation_type: How the animation value will affect the original value.
 
     Raises:
         ValueError: When ``start_frame > end_frame``
@@ -232,7 +243,7 @@ def stagger(
     easing: EasingFunctionT = linear_in_out,
     animation_type: AnimationType = AnimationType.MULTIPLICATIVE,
 ) -> partial[Animation]:
-    """Partially-initialize an animation for use with :meth:`keyed.base.Selection.write_on`.
+    """Partially-initialize an animation for use with [Group.write_on][keyed.group.Group.write_on].
 
     This will set the animations values, easing, and type without setting its start/end frames.
 
@@ -240,7 +251,7 @@ def stagger(
         start_value: Value at which the animation will start.
         end_value: Value at which the animation will end.
         easing: The rate in which the value will change throughout the animation.
-        animation_type: How the animation value will affect the :class:`keyed.animation.Property`'s value.
+        animation_type: How the animation value will affect the original value.
 
     Returns:
         Partially initialized animation.

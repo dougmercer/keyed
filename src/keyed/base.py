@@ -88,7 +88,9 @@ class Base(Transformable):
             as an argument for your object rather than using this.
 
             This is a vestigial method that still exists almost entirely for
-            implementing the write_on method. It may be removed in the future.
+            implementing the [Group.write_on][keyed.group.Group.write_on] method.
+
+            It may be removed in the future.
 
         Args:
             property: The name of the property to animate.
