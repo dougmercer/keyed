@@ -439,6 +439,66 @@ class Group(Base, list[T]):  # type: ignore[misc]
             obj.fade(value, start, end, ease)
         return self
 
+    def distribute(
+        self,
+        direction: Direction = ORIGIN,
+        start: int = ALWAYS,
+        end: int = ALWAYS,
+        easing: EasingFunctionT = cubic_in_out,
+        x: bool = True,
+        y: bool = True,
+    ) -> Self:
+        """Distribute objects evenly between the first and last objects in the group.
+
+        This keeps the first and last objects in their initial positions and distributes
+        the remaining objects in between with equal spacing.
+
+        @sponsors @version: 1.2.0 @experimental
+
+        Args:
+            direction: Direction used to get anchor points on objects
+            start: Starting frame for the animation
+            end: Ending frame for the animation
+            easing: Easing function to use
+            x: Whether to distribute along the x-axis
+            y: Whether to distribute along the y-axis
+
+        Returns:
+            self
+        """
+        objects = list(self)
+        if len(objects) <= 2:
+            # No distribution needed for 0, 1, or 2 objects
+            return self
+
+        # Get the first and last objects
+        first, *middle, last = objects
+
+        # Get positions of the first and last objects using the specified direction
+        first_x, first_y = get_critical_point(first.geom, direction)
+        last_x, last_y = get_critical_point(last.geom, -1 * direction)
+
+        # Use these positions as the distribution bounds
+        start_x, end_x = first_x, last_x
+        start_y, end_y = first_y, last_y
+
+        # Position each middle object
+        for i, obj in enumerate(middle, 1):
+            # Calculate interpolation factor (fraction of position in the sequence)
+            t = i / (len(objects) - 1)
+
+            # Get current position of this object
+            obj_x, obj_y = get_critical_point(obj.geom, direction)
+
+            # Calculate target position and translation
+            dx = (start_x + t * (end_x - start_x) - obj_x) if x else 0
+            dy = (start_y + t * (end_y - start_y) - obj_y) if y else 0
+
+            # Apply transformation
+            obj.translate(x=dx, y=dy, start=start, end=end, easing=easing)
+
+        return self
+
 
 Selection = Group
 """Alias of Group."""
