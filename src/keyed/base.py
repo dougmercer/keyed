@@ -171,6 +171,9 @@ class Base(Transformable):
 
         Returns:
             Self
+
+        See Also:
+            [keyed.Base.set_literal][keyed.Base.set_literal]
         """
         prop = getattr(self, property)
         new = step(value, frame)(prop, self.frame)
@@ -184,6 +187,19 @@ class Base(Transformable):
         return self
 
     def set_literal(self, property: str, value: Any) -> Self:
+        """Overwrite a property with a literal value.
+
+        Args:
+            property: The name of the property to set.
+            value: The new value for the property.
+            frame: The frame at which the property value should be set. Default is 0.
+
+        Returns:
+            Self
+
+        See Also:
+            [keyed.Base.set][keyed.Base.set]
+        """
         setattr(self, property, value)
         return self
 
@@ -203,6 +219,17 @@ class Base(Transformable):
         return None
 
     def fade(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = linear_in_out) -> Self:
+        """Control the object's alpha parameter to fade it in or out.
+
+        Args:
+            value: Value to set alpha to.
+            start: Frame to start changing alpha.
+            end: Frame to finish changing alpha.
+            ease: Easing function
+
+        Returns:
+            Self
+        """
         assert hasattr(self, "alpha")
         self.alpha = Animation(start, end, self.alpha, value, ease=ease)(self.alpha, self.frame)  # type: ignore[assignment]
         return self

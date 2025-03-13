@@ -1,14 +1,16 @@
 /* Animation keyframes */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
+  0% {
+    transform: scale(1);
+  }
 
-/* For the pulsing heart (standalone usage) */
-.heart {
-  color: #e91e63;
-  animation: pulse 1.5s ease infinite;
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Status indicators */
@@ -67,40 +69,40 @@
   display: inline-flex;
   align-items: center;
   font-size: 0.7rem;
-  margin-right: 0.5rem;
-  margin-top: -0.1rem;
+  /* margin-right: 0.5rem; */
   vertical-align: middle;
 }
 
-.mdx-badge__icon {
+/* .mdx-badge__icon {
   margin-right: 0.15rem;
-}
-
-.mdx-badge__icon img {
-  height: 1rem;
-  width: 1rem;
-  vertical-align: middle;
-}
+} */
 
 .mdx-badge__text {
   border-radius: 0.1rem;
   padding: 0.2rem 0.3rem;
   background-color: var(--md-primary-fg-color);
-  color: var(--md-primary-bg-color);
   font-weight: 700;
 }
 
-/* Badge variants */
-/* .mdx-badge--heart .mdx-badge__icon img {
-  color: #e91e63;
-} */
-.mdx-badge--heart .mdx-badge__icon img,
-.mdx-badge--heart svg {
-  /* color: #e91e63 !important;
-  fill: #e91e63 !important; */
-  animation: none;
+.mdx-badge__text a {
+  /* color: white !important; */
+  color: #00ccb8 !important;
+  text-decoration: none;
 }
 
-.mdx-badge--right {
-  float: right;
+.mdx-badge__text a:hover {
+  color: var(--md-accent-fg-color) !important;
+  text-decoration: underline;
 }
+
+.mdx-badge--heart .mdx-badge__icon svg {
+  /* color: #e91e63 !important; */
+  animation: pulse 1.5s ease infinite;
+}
+
+/* Additional styles for heart badge
+.mdx-badge--heart .mdx-badge__icon svg {
+    color: #e91e63 !important;
+    fill: #e91e63 !important;
+    animation: pulse 1.5s ease infinite;
+} */

@@ -118,17 +118,29 @@ class Group(Base, list[T]):  # type: ignore[misc]
             property: The name of the property to set.
             value: The value to set it to.
             frame: The frame at which to set the value.
+
+        Returns:
+            Self
+
+        See Also:
+            [keyed.Group.set_literal][keyed.Group.set_literal]
         """
         for item in self:
             item.set(property, value, frame)
         return self
 
     def set_literal(self, property: str, value: Any) -> Self:
-        """Set a property to a new value for all objects in the group at the specified frame.
+        """Overwrite a property to a new value for all objects in the group.
 
         Args:
             property: The name of the property to set.
             value: Value to set to.
+
+        Returns:
+            Self
+
+        See Also:
+            [keyed.Group.set][keyed.Group.set]
         """
         for item in self:
             item.set_literal(property, value)

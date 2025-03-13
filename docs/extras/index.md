@@ -1,15 +1,15 @@
 # Keyed Extras
 
-`keyed-extras` is a Python package that extends the keyed animation library. It provides early access to exclusive features that aren't available in the community edition.
+`keyed-extras` is a Python package that provides early access to exclusive features that aren't available in the community edition of `keyed`.
 
-You can get access to `keyed-extras` by becoming a [Sponsor :heart:{ .heart .pulsing }](https://github.com/dougmercer).
+You can get access to `keyed-extras` by becoming a [Sponsor](https://github.com/dougmercer) <!-- md:sponsors -->.
 
 ## How it Works
 
 Keyed Extras follows a progressive Sponsorware model. New features start in Extras and, as we meet community goals, graduate to the core open-source library.
 
 1. New features are initially released in Keyed Extras.
-2. [Sponsors :heart:{ .heart .pulsing }](https://github.com/dougmercer) receive early access.
+2. [Sponsors](https://github.com/dougmercer) <!-- md:sponsors --> receive early access.
 3. We set community sponsorship goals for each feature
 4. When a goal is met, that features moves to the core `keyed` library
 5. Everyone benefits from improved open-source animations! :party:
@@ -32,6 +32,10 @@ As a sponsor, you'll get:
    ```console
    pip install git+https://github.com/dougmercer-yt/keyed-extras.git
    ```
+
+    !!! note
+
+        Since `keyed-extras` is a private Github repository, you will need to authenticate. Please refer to [this page](https://google.com) for more details.
 
 <!-- TODO, link to more detailed install instructions on the keyed-extras repo when it's available. -->
 

@@ -148,9 +148,9 @@ nav:
     - index: contributing/index.md
     - Dev Environment: contributing/environment.md
   - Changelog: changelog/index.md
-  - Extras (Sponsors only):
+  - Keyed Extras:
     - index: extras/index.md
-    - Sponsorware Goals: extras/goals.md
+    - Features & Goals: extras/goals.md
     - Fair Use Policy: extras/fairuse.md
     - Keyed Extras: https://google.com
 

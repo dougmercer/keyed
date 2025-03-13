@@ -277,10 +277,8 @@ def step(
 
     Returns:
         An animation that applies a step function to the Variable at a particular frame.
-
-    TODO:
-        Can this be simpler?
     """
+    # Can this be simpler? Something like...
     # def step_builder(initial_value: HasValue[A], frame_rx: ReactiveValue[int]) -> Computed[A|T]:
     #     return (frame_rx >= frame).where(value, initial_value)
 

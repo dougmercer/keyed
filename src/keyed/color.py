@@ -54,11 +54,27 @@ def as_rgb(color: str) -> tuple[float, ...]:
 
 
 def normalize(color: tuple[float, float, float]) -> tuple[float, float, float]:
+    """Normalize a color from [0, 255] -> [0, 1].
+
+    Args:
+        color: Unnormalized color.
+
+    Returns:
+        A normalized color.
+    """
     r, g, b = color
     return r / 255, g / 255, b / 255
 
 
 def as_color(color: tuple[float, float, float] | HasValue[Color]) -> HasValue[Color]:
+    """If the input isn't a [keyed.Color][keyed.color.Color], turn it into one.
+
+    Args:
+        color: Color or tuple of rgb values.
+
+    Returns:
+        color
+    """
     if isinstance(color, tuple):
         return Color(*color)
     else:

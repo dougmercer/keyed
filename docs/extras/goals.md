@@ -44,90 +44,63 @@ Sponsors currently enjoy access to the following exclusive features:
   [Pattern: Radial Gradient]: https://www.google.com
   [Enhanced Syntax Highlighting]: https://www.google.com
   [Hand Drawn Mode]: https://www.google.com
-  [a]: https://www.google.com
 </div>
-
-<!-- Wish I could figure out how mkdocs-material makes their mdx- two columns... -->
 
 
 ## Funding <span class="mdx-sponsorship-total" data-mdx-component="sponsorship-total"></span>
 
-## Community Sponsor Goals
+## Goals
 
 <div class="grid cards" markdown>
 
--   :material-clock-fast:{ .lg .middle } __$100 monthly__
+-   :material-sine-wave:{ .lg .middle } __$100 monthly__
 
     ---
 
-    * :octicons-unlock-24: [Object: SquigglyLine]
+    * :material-star: [Object: SquigglyLine]
     * :octicons-unlock-24: [Effect: Blur]
     * :octicons-unlock-24: [Pattern: Linear Gradient]
 
--   :fontawesome-brands-markdown:{ .lg .middle } __$200 monthly__
+-   :material-image:{ .lg .middle } __$250 monthly__
 
     ---
 
-    * :octicons-unlock-24: [Object: Image]
+    * :material-star: [Object: Image]
     * :octicons-unlock-24: [Effect: ChromaticAberration]
     * :octicons-unlock-24: [Pattern: Stipple]
 
--   :material-format-font:{ .lg .middle } __$300 monthly__
+-   :material-format-font:{ .lg .middle } __$500 monthly__
 
     ---
 
-    * :octicons-unlock-24: [Object: SquigglyLine]
-    * :octicons-unlock-24: [Effect: Blur]
-    * :octicons-unlock-24: [Effect: Invert]
+    * :material-star: [Object: Rich Text]
+    * :octicons-unlock-24: [Effect: ChromaticAberration]
+    * :octicons-unlock-24: [Pattern: Radial Gradient]
+    * :octicons-unlock-24:{ .highlight } [Enhanced Syntax Highlighting]
 
--   :material-scale-balance:{ .lg .middle } __Open Source, MIT__
+-   :material-pencil:{ .lg .middle } __$1000 monthly__
 
     ---
 
-    * :octicons-unlock-24: [Object: SquigglyLine]
-    * :octicons-unlock-24: [Effect: Blur]
-    * :octicons-unlock-24: [Effect: Invert]
+    * :octicons-unlock-24: Object: TBA
+    * :octicons-unlock-24: [Effect: ColorQuantization]
+    * :octicons-unlock-24: [Pattern: Crosshatch]
+    * :material-star: [Hand Drawn Mode]
 
 </div>
+<!-- [Object: Editor Window]
+[Object: SVGElements]
+[Object: SVG]
+[Effect: Displace]
+[Effect: ColorQuantization]
+[Effect: Invert]
+[Pattern: Stipple]
+[Pattern: Spiral] -->
 
-
-## Open Source Goals
-
-### $50 Milestone
-
-* :octicons-unlock-24: Squiggly Line Object
-* :octicons-unlock-24: Blur and Bloom Effects
-
-### $100 Milestone
-
-* :octicons-unlock-24: Image Object
-* :octicons-unlock-24: Color Manipulation/Quantization Effects
-
-### $150 Milestone
-
-* :octicons-unlock-24: Improved Python Syntax Highling
-* :octicons-unlock-24: TBD Effects
-
-### $200 Milestone
-
-* :octicons-unlock-24: Free Hand Context
-* :octicons-unlock-24: TBD Effects
-
-### $300 Milestone
-
-* :octicons-unlock-24: TBD Fill Patterns
-* :octicons-unlock-24: TBD Effects
-
-### $1000 Milestone
-
-* :octicons-unlock-24: Editor Window Object
+<!-- ## Goals Completed -->
+<!-- <div class="grid cards" markdown>
+</div> -->
 
 ## Feature Roadmap
 
-We're continuously developing new features for Extras. Upcoming additions include:
-- 3D rendering support
-- Physics simulations
-- Advanced particle systems
-- Timeline editor
-
-These features will follow the same path: starting in Extras and potentially moving to core based on community support.
+For the most up-to-date view of what's being worked on, check out the [Github issue tracker](https://github.com/dougmercer/keyed/issues).
