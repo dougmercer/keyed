@@ -18,6 +18,7 @@ from .base import *  # noqa
 from .text import *  # noqa
 from .constants import *  # noqa
 from .color import *  # noqa
+from .compositor import *  # noqa
 from .curve import *  # noqa
 from .effects import *  # noqa
 from .highlight import *  # noqa

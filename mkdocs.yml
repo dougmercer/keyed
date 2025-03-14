@@ -133,10 +133,11 @@ nav:
     - Animation: api/animation.md
     - Easing: api/easing.md
     - Transformations: api/transforms.md
-    - Scene: api/scene.md
-    - Core: api/core.md
     - Shapes, Lines, and Curves: api/shapes.md
+    - Core: api/core.md
     - Text: api/text.md
+    - Scene: api/scene.md
+    - Compositor: api/compositor.md
     - Colors: api/colors.md
     - Effects: api/effects.md
     - Annotations: api/annotations.md

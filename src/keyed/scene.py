@@ -314,8 +314,14 @@ class Scene(Transformable, Freezeable):
                 buf = temp_surface.get_data()
                 layer_out = np.ndarray(shape=(self._height, self._width, 4), dtype=np.uint8, buffer=buf)
 
+            assert isinstance(layer_out, np.ndarray)
+
+            # Apply layer opacity if not 1.0
+            if layer.opacity.value < 1.0:
+                layer_out[:, :, 3] = (layer_out[:, :, 3] * layer.opacity.value).astype(np.uint8)
+
             layer_arrays.append(layer_out)
-            blend_modes.append(BlendMode(layer.blend.value))
+            blend_modes.append(BlendMode(layer.blend))
 
         # Use the Taichi compositor to blend the layers
         result = composite_layers(layer_arrays, blend_modes, self._width, self._height)

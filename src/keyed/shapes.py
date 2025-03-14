@@ -72,13 +72,13 @@ class Shape(Base):
         if self.fill_pattern:
             ctx.set_source(self.fill_pattern)
         else:
-            ctx.set_source_rgba(*unref(self.fill_color).rgb, 1)
+            ctx.set_source_rgba(*unref(self.fill_color).rgb, unref(self.alpha) if self._direct_mode else 1)
 
     def _apply_stroke(self, ctx: cairo.Context) -> None:
         if self.stroke_pattern:
             ctx.set_source(self.stroke_pattern)
         else:
-            ctx.set_source_rgba(*unref(self.color).rgb, 1)
+            ctx.set_source_rgba(*unref(self.color).rgb, unref(self.alpha) if self._direct_mode else 1)
 
     def _draw_shape(self) -> None:
         """Draw the specific shape on the canvas.
@@ -109,7 +109,24 @@ class Shape(Base):
         finally:
             self.ctx.restore()
 
-    def draw(self) -> None:
+    def _draw_direct(self) -> None:
+        with self._style():
+            self.ctx.save()
+            self.ctx.transform(self.controls.matrix.value)
+            self._draw_shape()
+
+            if self.draw_fill:
+                self._apply_fill(self.ctx)
+                if self.draw_stroke:
+                    self.ctx.fill_preserve()
+                else:
+                    self.ctx.fill()
+            if self.draw_stroke:
+                self._apply_stroke(self.ctx)
+                self.ctx.stroke()
+            self.ctx.restore()
+
+    def _draw(self) -> None:
         """Draw the shape within its styled context, applying transformations."""
         with self._style():
             self.ctx.save()
@@ -143,6 +160,27 @@ class Shape(Base):
             self.ctx.paint_with_alpha(unref(self.alpha))
 
             self.ctx.restore()
+
+    @property
+    def _direct_mode(self) -> bool:
+        problematic_modes = {
+            cairo.OPERATOR_CLEAR,
+            cairo.OPERATOR_SOURCE,
+            cairo.OPERATOR_DEST,
+            # cairo.OPERATOR_IN,
+            # cairo.OPERATOR_OUT,
+            # cairo.OPERATOR_DEST_IN,
+            # cairo.OPERATOR_DEST_ATOP
+        }
+
+        return self.operator in problematic_modes
+
+    def draw(self) -> None:
+        """Draw the shape with a simplified approach for all blend modes."""
+        if self._direct_mode:
+            self._draw_direct()
+        else:
+            self._draw()
 
     def cleanup(self) -> None:
         if isinstance(self.ctx, Cleanable):
