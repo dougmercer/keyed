@@ -15,7 +15,7 @@ import shapely
 from signified import HasValue, Signal, unref
 from tqdm import tqdm
 
-from .base import is_visible
+from .base import Base, is_visible
 from .compositor import BlendMode, composite_layers
 from .constants import EXTRAS_INSTALLED, Quality
 from .effects import Effect
@@ -25,7 +25,6 @@ from .renderer import RenderEngine, Renderer, VideoFormat
 from .transforms import Transformable
 
 if TYPE_CHECKING:
-    from .base import Base
     from .extras import FreeHandContext
 
 __all__ = ["Scene", "Layer"]
@@ -109,6 +108,10 @@ class Layer(Freezeable):
             for content in self.content:
                 content.apply_transform(self.scene.controls.matrix)
             super()._freeze()
+
+    def cleanup(self) -> None:
+        for obj in self.content:
+            obj.cleanup()
 
 
 class Scene(Transformable, Freezeable):
@@ -473,3 +476,7 @@ class Scene(Transformable, Freezeable):
             frame_rate=frame_rate,
             **kwargs,
         )
+
+    def cleanup(self) -> None:
+        for layer in self.layers:
+            layer.cleanup()
