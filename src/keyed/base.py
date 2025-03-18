@@ -192,7 +192,6 @@ class Base(Transformable):
         Args:
             property: The name of the property to set.
             value: The new value for the property.
-            frame: The frame at which the property value should be set. Default is 0.
 
         Returns:
             Self
