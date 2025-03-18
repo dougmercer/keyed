@@ -66,7 +66,7 @@ def easing_function(start: int, end: int, ease: EasingFunctionT, frame: Reactive
 def linear_in_out(t: float) -> float:
     """Ease linearly throughout the entire duration.
 
-    @video:linear_in_out
+    @video:easing/linear_in_out
     """
     return t
 
@@ -74,7 +74,7 @@ def linear_in_out(t: float) -> float:
 def quad_in_out(t: float) -> float:
     """Ease in and out at a quadratic rate.
 
-    @video:quad_in_out
+    @video:easing/quad_in_out
     """
     if t < 0.5:
         return 2 * t * t
@@ -84,7 +84,7 @@ def quad_in_out(t: float) -> float:
 def quad_in(t: float) -> float:
     """Ease in at a quadratic rate.
 
-    @video:quad_in
+    @video:easing/quad_in
     """
     return t * t
 
@@ -92,7 +92,7 @@ def quad_in(t: float) -> float:
 def quad_out(t: float) -> float:
     """Ease out at a quadratic rate.
 
-    @video:quad_out
+    @video:easing/quad_out
     """
     return -(t * (t - 2))
 
@@ -100,7 +100,7 @@ def quad_out(t: float) -> float:
 def cubic_in(t: float) -> float:
     """Ease in at a cubic rate.
 
-    @video:cubic_in
+    @video:easing/cubic_in
     """
     return t * t * t
 
@@ -108,7 +108,7 @@ def cubic_in(t: float) -> float:
 def cubic_out(t: float) -> float:
     """Ease out at a cubic rate.
 
-    @video:cubic_out
+    @video:easing/cubic_out
     """
     return (t - 1) * (t - 1) * (t - 1) + 1
 
@@ -116,7 +116,7 @@ def cubic_out(t: float) -> float:
 def cubic_in_out(t: float) -> float:
     """Ease in and out at a cubic rate.
 
-    @video:cubic_in_out
+    @video:easing/cubic_in_out
     """
     if t < 0.5:
         return 4 * t * t * t
@@ -127,7 +127,7 @@ def cubic_in_out(t: float) -> float:
 def quartic_in(t: float) -> float:
     """Ease in at a quartic rate.
 
-    @video:quartic_in
+    @video:easing/quartic_in
     """
     return t * t * t * t
 
@@ -135,7 +135,7 @@ def quartic_in(t: float) -> float:
 def quartic_out(t: float) -> float:
     """Ease out at a quartic rate.
 
-    @video:quartic_out
+    @video:easing/quartic_out
     """
     return (t - 1) * (t - 1) * (t - 1) * (1 - t) + 1
 
@@ -143,7 +143,7 @@ def quartic_out(t: float) -> float:
 def quartic_in_out(t: float) -> float:
     """Ease in and out at a quartic rate.
 
-    @video:quartic_in_out
+    @video:easing/quartic_in_out
     """
     if t < 0.5:
         return 8 * t * t * t * t
@@ -154,7 +154,7 @@ def quartic_in_out(t: float) -> float:
 def quintic_in(t: float) -> float:
     """Ease in at a quintic rate.
 
-    @video:quintic_in
+    @video:easing/quintic_in
     """
     return t * t * t * t * t
 
@@ -162,7 +162,7 @@ def quintic_in(t: float) -> float:
 def quintic_out(t: float) -> float:
     """Ease out at a quintic rate.
 
-    @video:quintic_out
+    @video:easing/quintic_out
     """
     return (t - 1) * (t - 1) * (t - 1) * (t - 1) * (t - 1) + 1
 
@@ -170,7 +170,7 @@ def quintic_out(t: float) -> float:
 def quintic_in_out(t: float) -> float:
     """Ease in and out at a quintic rate.
 
-    @video:quintic_in_out
+    @video:easing/quintic_in_out
     """
     if t < 0.5:
         return 16 * t * t * t * t * t
@@ -181,7 +181,7 @@ def quintic_in_out(t: float) -> float:
 def sine_in(t: float) -> float:
     """Ease in according to a sin function.
 
-    @video:sine_in
+    @video:easing/sine_in
     """
     return math.sin((t - 1) * math.pi / 2) + 1
 
@@ -189,7 +189,7 @@ def sine_in(t: float) -> float:
 def sine_out(t: float) -> float:
     """Ease out according to a sin function.
 
-    @video:sine_out
+    @video:easing/sine_out
     """
     return math.sin(t * math.pi / 2)
 
@@ -197,7 +197,7 @@ def sine_out(t: float) -> float:
 def sine_in_out(t: float) -> float:
     """Ease in and out according to a sin function.
 
-    @video:sine_in_out
+    @video:easing/sine_in_out
     """
     return 0.5 * (1 - math.cos(t * math.pi))
 
@@ -205,7 +205,7 @@ def sine_in_out(t: float) -> float:
 def circular_in(t: float) -> float:
     """Ease in according to a circular function.
 
-    @video:circular_in
+    @video:easing/circular_in
     """
     return 1 - math.sqrt(1 - (t * t))
 
@@ -213,7 +213,7 @@ def circular_in(t: float) -> float:
 def circular_out(t: float) -> float:
     """Ease out according to a circular function.
 
-    @video:circular_out
+    @video:easing/circular_out
     """
     return math.sqrt((2 - t) * t)
 
@@ -221,7 +221,7 @@ def circular_out(t: float) -> float:
 def circular_in_out(t: float) -> float:
     """Ease in and out according to a circular function.
 
-    @video:circular_in_out
+    @video:easing/circular_in_out
     """
     if t < 0.5:
         return 0.5 * (1 - math.sqrt(1 - 4 * (t * t)))
@@ -231,7 +231,7 @@ def circular_in_out(t: float) -> float:
 def expo_in(t: float) -> float:
     """Ease in according to an exponential function.
 
-    @video:expo_in
+    @video:easing/expo_in
     """
     if t == 0:
         return 0
@@ -241,7 +241,7 @@ def expo_in(t: float) -> float:
 def expo_out(t: float) -> float:
     """Ease out according to an exponential function.
 
-    @video:expo_out
+    @video:easing/expo_out
     """
     if t == 1:
         return 1
@@ -251,7 +251,7 @@ def expo_out(t: float) -> float:
 def expo_in_out(t: float) -> float:
     """Ease in and out according to an exponential function.
 
-    @video:expo_in_out
+    @video:easing/expo_in_out
     """
     if t == 0 or t == 1:
         return t
@@ -263,7 +263,7 @@ def expo_in_out(t: float) -> float:
 def elastic_in(t: float) -> float:
     """Ease in like an elastic band.
 
-    @video:elastic_in
+    @video:easing/elastic_in
     """
     return math.sin(13 * math.pi / 2 * t) * pow(2, 10 * (t - 1))
 
@@ -271,7 +271,7 @@ def elastic_in(t: float) -> float:
 def elastic_out(t: float) -> float:
     """Ease out like an elastic band.
 
-    @video:elastic_out
+    @video:easing/elastic_out
     """
     return math.sin(-13 * math.pi / 2 * (t + 1)) * pow(2, -10 * t) + 1
 
@@ -279,7 +279,7 @@ def elastic_out(t: float) -> float:
 def elastic_in_out(t: float) -> float:
     """Ease in and out like an elastic band.
 
-    @video:elastic_in_out
+    @video:easing/elastic_in_out
     """
     if t < 0.5:
         return 0.5 * math.sin(13 * math.pi / 2 * (2 * t)) * pow(2, 10 * ((2 * t) - 1))
@@ -289,7 +289,7 @@ def elastic_in_out(t: float) -> float:
 def back_in(t: float) -> float:
     """Ease in by overshooting slightly.
 
-    @video:back_in
+    @video:easing/back_in
     """
     c1 = 1.70158
     c3 = c1 + 1
@@ -299,7 +299,7 @@ def back_in(t: float) -> float:
 def back_out(t: float) -> float:
     """Ease out by overshooting slightly.
 
-    @video:back_out
+    @video:easing/back_out
     """
     c1 = 1.70158
     c3 = c1 + 1
@@ -309,7 +309,7 @@ def back_out(t: float) -> float:
 def back_in_out(t: float) -> float:
     """Ease in and out by overshooting slightly.
 
-    @video:back_in_out
+    @video:easing/back_in_out
     """
     c1 = 1.70158
     c2 = c1 * 1.525
@@ -323,7 +323,7 @@ def back_in_out(t: float) -> float:
 def bounce_in(t: float) -> float:
     """Ease in by bouncing.
 
-    @video:bounce_in
+    @video:easing/bounce_in
     """
     return 1 - bounce_out(1 - t)
 
@@ -331,7 +331,7 @@ def bounce_in(t: float) -> float:
 def bounce_out(t: float) -> float:
     """Ease out by bouncing.
 
-    @video:bounce_out
+    @video:easing/bounce_out
     """
     n1 = 7.5625
     d1 = 2.75
@@ -352,7 +352,7 @@ def bounce_out(t: float) -> float:
 def bounce_in_out(t: float) -> float:
     """Ease in and out by bouncing.
 
-    @video:bounce_in_out
+    @video:easing/bounce_in_out
     """
     if t < 0.5:
         return (1 - bounce_out(1 - 2 * t)) / 2

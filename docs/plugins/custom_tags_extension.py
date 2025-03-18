@@ -55,15 +55,15 @@ def process_docstring(docstring: str) -> str:
             )
         docstring = re.sub(version_pattern, version_replacement, docstring)
     
-    # Process @video: tag (keeping existing functionality)
-    video_pattern = r"@video:(\w+)"
+    # Process @video: tag
+    video_pattern = r"@video:([\w/\-\.]+)"
     if re.search(video_pattern, docstring):
         def video_replacement(match):
             video_name = match.group(1)
             return (
                 '<div class="centered-video">'
                 '<video autoplay loop muted playsinline>'
-                f'<source src="../../media/easing/{video_name}.webm" type="video/webm">'
+                f'<source src="../../media/{video_name}.webm" type="video/webm">'
                 '</video>'
                 '</div>'
             )
