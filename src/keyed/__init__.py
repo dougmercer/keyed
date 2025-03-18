@@ -4,10 +4,15 @@
 import os
 
 os.environ["ENABLE_TAICHI_HEADER_PRINT"] = "False"
-from taichi._logging import ERROR, set_logging_level  # noqa: E402
+try:
+    from taichi._logging import ERROR, set_logging_level  # noqa: E402  # type: ignore
 
-set_logging_level(ERROR)
-del set_logging_level, os
+    set_logging_level(ERROR)
+    del set_logging_level
+except ImportError:
+    pass
+finally:
+    del os
 
 from . import easing  # noqa
 from . import highlight  # noqa

@@ -1,25 +1,68 @@
-ARG PLATFORM=linux/amd64
-FROM --platform=${PLATFORM} python:3.11-slim
+# Build stage
+ARG IMAGE=python:3.12.9-slim-bookworm
+FROM $IMAGE AS builder
 
-# Install system dependencies
+# Set Python environment variables for optimization
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
-    ## Cairo
-    libcairo2 \
     libcairo2-dev \
     pkg-config \
     python3-dev \
     gcc \
-    ## ffmpeg
-    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /keyed
+WORKDIR /build
 
-# Copy package files
-COPY src/  ./src/
+# Copy only the files needed for dependency installation first
 COPY pyproject.toml ./
 
-# Install the package
-RUN pip install --no-cache-dir ".[previewer]"
+# Install dependencies first
+RUN pip wheel --no-cache-dir --wheel-dir /wheels -e .
+
+# Now copy the source code which changes more frequently
+COPY src/ ./src/
+
+# Build the package with all source code
+RUN pip wheel --no-cache-dir --wheel-dir /wheels .
+
+# Runtime stage
+FROM $IMAGE
+
+# Set Python environment variables for optimization
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Add metadata labels
+LABEL org.opencontainers.image.title="Keyed" \
+      org.opencontainers.image.description="A reactive animation library for Python" \
+      org.opencontainers.image.source="https://github.com/dougmercer/keyed"
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    libcairo2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd --create-home keyeduser
+
+# Set up proper working directory with correct permissions
+WORKDIR /app
+RUN chown keyeduser:keyeduser /app
+
+# Copy the built wheel from the builder stage
+COPY --from=builder /wheels/*.whl /app/
+
+# Install the wheel and clean up
+RUN pip install keyed --no-index --find-links=/app && rm /app/*.whl
+
+# Switch to non-root user
+USER keyeduser
 
 ENTRYPOINT ["keyed", "iostream"]

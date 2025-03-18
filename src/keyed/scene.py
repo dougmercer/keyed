@@ -326,7 +326,6 @@ class Scene(Transformable, Freezeable):
             layer_arrays.append(layer_out)
             blend_modes.append(BlendMode(layer.blend))
 
-        # Use the Taichi compositor to blend the layers
         result = composite_layers(layer_arrays, blend_modes, self._width, self._height)
 
         # Create a new cairo.ImageSurface from the composited result

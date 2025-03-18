@@ -41,4 +41,4 @@ jobs:
 
       - name: Run all non-shapshot tests
         run: |
-          pytest tests/ -m "not snapshot" --doctest-modules --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml
+          pytest tests/ -m "not snapshot" --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml

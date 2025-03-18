@@ -8,7 +8,7 @@ __all__ = ["composite_layers"]
 
 
 def composite_layers(
-    layers: list[np.ndarray], blend_modes: list[BlendMode], width: int, height: int, use_gpu: bool = True
+    layers: list[np.ndarray], blend_modes: list[BlendMode], width: int, height: int, use_gpu: bool = False
 ) -> np.ndarray:
     """Composite layers using the specified backend.
 

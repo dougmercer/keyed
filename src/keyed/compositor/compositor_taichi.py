@@ -14,7 +14,7 @@ import numpy as np
 from .blend import BlendMode
 
 with redirect_stdout(io.StringIO()):
-    import taichi as ti
+    import taichi as ti  # type: ignore
 
     ti.init(arch=ti.gpu)
 

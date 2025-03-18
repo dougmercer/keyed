@@ -53,10 +53,6 @@ It is possible to render `keyed` scenes from the command line using the `dougmer
 cat your_scene.py | docker run -i --rm ghcr.io/dougmercer/keyed:latest > output.mov
 ```
 
-!!! note
-
-    This is currently only built for `linux/amd64`. If you are on Mac, try `DOCKER_DEFAULT_PLATFORM=linux/amd64 && docker pull ghcr.io/dougmercer/keyed:latest`
-
 ## Platform-specific installation approaches
 
 ### Ubuntu/Debian
