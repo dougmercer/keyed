@@ -241,7 +241,7 @@ def stagger(
     start_value: float = 0,
     end_value: float = 1,
     easing: EasingFunctionT = linear_in_out,
-    animation_type: AnimationType = AnimationType.MULTIPLICATIVE,
+    animation_type: AnimationType = AnimationType.ABSOLUTE,
 ) -> partial[Animation]:
     """Partially-initialize an animation for use with [Group.write_on][keyed.group.Group.write_on].
 

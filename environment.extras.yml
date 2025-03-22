@@ -8,7 +8,6 @@ dependencies:
   - cairo
   - pycairo
   - pango>=1.56.0
-  - pygobject
   - librsvg
   - pip
   - pip:
