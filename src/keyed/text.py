@@ -37,6 +37,7 @@ class Text(Base):
         y: Y position. Default uses scene center.
         font: Font family name. Default is "Anonymous Pro".
         color: RGB color tuple. Default is white.
+        fill_color: Optional color to use for inner portion of outlined text.
         alpha: Opacity from 0-1. Default is 1.
         slant: Font slant style. Default is normal.
         weight: Font weight. Default is normal.
@@ -52,7 +53,9 @@ class Text(Base):
         y: HasValue[float] | None = None,
         font: str = "Anonymous Pro",
         color: tuple[float, float, float] = (1, 1, 1),
+        fill_color: tuple[float, float, float] | None = None,
         alpha: float = 1.0,
+        line_width: float = 2,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
         operator: cairo.Operator = cairo.OPERATOR_OVER,
@@ -62,7 +65,9 @@ class Text(Base):
         self.text = as_signal(text)
         self.font = font
         self.color = as_color(color)
+        self.fill_color = as_color(fill_color) if fill_color is not None else None
         self.alpha = as_signal(alpha)
+        self.line_width = as_signal(line_width)
         self.slant = slant
         self.weight = weight
         self.size: ReactiveValue[float] = as_signal(size)
@@ -97,7 +102,21 @@ class Text(Base):
         with self._style():
             self.ctx.new_path()
             self.ctx.transform(self.controls.matrix.value)
-            self.ctx.show_text(unref(self.text))
+
+            if self.fill_color is None:
+                # Common case: Just show text directly with color
+                self.ctx.set_source_rgba(*unref(self.color).rgb, self.alpha.value)
+                self.ctx.show_text(unref(self.text))
+            else:
+                # Special case: Draw outlined text
+                self.ctx.text_path(unref(self.text))
+
+                self.ctx.set_source_rgba(*unref(self.fill_color).rgb, self.alpha.value)
+                self.ctx.fill_preserve()
+
+                self.ctx.set_source_rgba(*unref(self.color).rgb, self.alpha.value)
+                self.ctx.set_line_width(self.line_width.value)
+                self.ctx.stroke()
 
     @property
     def _extents(self) -> cairo.TextExtents:
