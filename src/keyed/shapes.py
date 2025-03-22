@@ -21,7 +21,7 @@ from .context import ContextT
 from .scene import Scene
 from .transforms import TransformControls
 
-__all__ = ["Circle", "Rectangle"]
+__all__ = ["Circle", "Rectangle", "Background"]
 
 
 class Shape(Base):
@@ -472,3 +472,45 @@ class Circle(Shape):
 
         new_obj._dependencies.extend([new_obj.radius, new_obj.x, new_obj.y])
         return new_obj
+
+
+class Background(Rectangle):
+    """A rectangle that fills the scene.
+
+    Args:
+        scene: The scene to which the rectangle belongs.
+        color: The color of the rectangle's border. Default is (1, 1, 1) (white).
+        fill_color: The fill color of the rectangle. Default is (1, 1, 1) (white).
+        alpha: The opacity level of the rectangle. Default is 1.
+        dash: The dash pattern for the outline of the rectangle. Default is None.
+        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
+        draw_fill: Whether to fill the rectangle. Default is True.
+        draw_stroke: Whether to draw the stroke of the rectangle. Default is True.
+        line_width: The width of the line used to stroke the rectangle. Default is 2.
+    """
+
+    def __init__(
+        self,
+        scene: Scene,
+        color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
+        fill_color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
+        alpha: HasValue[float] = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        operator: cairo.Operator = cairo.OPERATOR_OVER,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
+        line_width: HasValue[float] = 2,
+    ) -> None:
+        super().__init__(
+            scene=scene,
+            color=color,
+            width=scene.nx(1),
+            height=scene.ny(1),
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            draw_fill=draw_fill,
+            draw_stroke=draw_stroke,
+            line_width=line_width,
+        )
