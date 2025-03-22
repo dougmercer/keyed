@@ -153,7 +153,7 @@ nav:
     - index: extras/index.md
     - Features & Goals: extras/goals.md
     - Fair Use Policy: extras/fairuse.md
-    - Keyed Extras: https://google.com
+    - Keyed Extras: https://dougmercer.github.io/keyed-extras-docs/
 
 hooks:
   - docs/hooks/video_replace.py
@@ -168,6 +168,7 @@ plugins:
         python:
           paths: [src]
           inventories:
+          - https://dougmercer.github.io/keyed-extras-docs/objects.inv
           - https://dougmercer.github.io/signified/objects.inv
           - https://shapely.readthedocs.io/en/latest/objects.inv
           - https://docs.python.org/3/objects.inv
