@@ -192,24 +192,24 @@ class Rectangle(Shape):
 
     Args:
         scene: The scene to which the rectangle belongs.
-        width: The width of the rectangle. Default is 10.
-        height: The height of the rectangle. Default is 10.
-        x: The x-coordinate of the rectangle's position. Default is 10.
-        y: The y-coordinate of the rectangle's position. Default is 10.
-        radius: The radius of the corners of the rectangle. Default is 0 (sharp corners).
-        color: The color of the rectangle's border. Default is (1, 1, 1) (white).
-        fill_color: The fill color of the rectangle. Default is (1, 1, 1) (white).
-        alpha: The opacity level of the rectangle. Default is 1.
-        dash: The dash pattern for the outline of the rectangle. Default is None.
-        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-        draw_fill: Whether to fill the rectangle. Default is True.
-        draw_stroke: Whether to draw the stroke of the rectangle. Default is True.
-        line_width: The width of the line used to stroke the rectangle. Default is 2.
-        rotation: The rotation angle of the rectangle, in radians. Default is 0.
-        round_tl: Whether to round the top-left corner. Default is True.
-        round_tr: Whether to round the top-right corner. Default is True.
-        round_br: Whether to round the bottom-right corner. Default is True.
-        round_bl: Whether to round the bottom-left corner. Default is True.
+        width: The width of the rectangle.
+        height: The height of the rectangle.
+        x: The x-coordinate of the rectangle's position. Default is to center in the scene.
+        y: The y-coordinate of the rectangle's position. Default is to center in the scene.
+        radius: The radius of the corners of the rectangle.
+        color: The color of the rectangle's border.
+        fill_color: The fill color of the rectangle.
+        alpha: The opacity level of the rectangle.
+        dash: The dash pattern for the outline of the rectangle.
+        operator: The compositing operator to use for drawing.
+        draw_fill: Whether to fill the rectangle.
+        draw_stroke: Whether to draw the stroke of the rectangle.
+        line_width: The width of the line used to stroke the rectangle.
+        rotation: The rotation angle of the rectangle, in radians.
+        round_tl: Whether to round the top-left corner.
+        round_tr: Whether to round the top-right corner.
+        round_br: Whether to round the bottom-right corner.
+        round_bl: Whether to round the bottom-left corner.
     """
 
     def __init__(
@@ -388,17 +388,17 @@ class Circle(Shape):
 
     Args:
         scene: The scene to which the circle belongs.
-        x: The x-coordinate of the center of the circle. Default is 10.
-        y: The y-coordinate of the center of the circle. Default is 10.
-        radius: The radius of the circle. Default is 1.
-        color: The color of the circle's outline. Default is (1, 1, 1) (white).
-        fill_color: The fill color of the circle. Default is (1, 1, 1) (white).
-        alpha: The opacity level of the circle. Default is 1.
-        dash: The dash pattern for the outline of the circle. Default is None.
-        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-        draw_fill: Whether to fill the circle. Default is True.
-        draw_stroke: Whether to draw the stroke of the circle. Default is True.
-        line_width: The width of the line used to stroke the circle. Default is 2.
+        x: The x-coordinate of the center of the circle. Default is to center in the scene.
+        y: The y-coordinate of the center of the circle. Default is to center in the scene.
+        radius: The radius of the circle.
+        color: The color of the circle's outline.
+        fill_color: The fill color of the circle.
+        alpha: The opacity level of the circle.
+        dash: The dash pattern for the outline of the circle.
+        operator: The compositing operator to use for drawing.
+        draw_fill: Whether to fill the circle.
+        draw_stroke: Whether to draw the stroke of the circle.
+        line_width: The width of the line used to stroke the circle.
     """
 
     def __init__(
@@ -479,14 +479,14 @@ class Background(Rectangle):
 
     Args:
         scene: The scene to which the rectangle belongs.
-        color: The color of the rectangle's border. Default is (1, 1, 1) (white).
-        fill_color: The fill color of the rectangle. Default is (1, 1, 1) (white).
-        alpha: The opacity level of the rectangle. Default is 1.
-        dash: The dash pattern for the outline of the rectangle. Default is None.
-        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-        draw_fill: Whether to fill the rectangle. Default is True.
-        draw_stroke: Whether to draw the stroke of the rectangle. Default is True.
-        line_width: The width of the line used to stroke the rectangle. Default is 2.
+        color: The color of the rectangle's border.
+        fill_color: The fill color of the rectangle.
+        alpha: The opacity level of the rectangle.
+        dash: The dash pattern for the outline of the rectangle.
+        operator: The compositing operator to use for drawing.
+        draw_fill: Whether to fill the rectangle.
+        draw_stroke: Whether to draw the stroke of the rectangle.
+        line_width: The width of the line used to stroke the rectangle.
     """
 
     def __init__(

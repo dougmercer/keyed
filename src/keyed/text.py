@@ -32,16 +32,16 @@ class Text(Base):
     Args:
         scene: Scene to draw on
         text: Text content to display
-        size: Font size. Default is 24.
+        size: Font size.
         x: X position. Default uses scene center.
         y: Y position. Default uses scene center.
-        font: Font family name. Default is "Anonymous Pro".
-        color: RGB color tuple. Default is white.
+        font: Font family name.
+        color: RGB color tuple.
         fill_color: Optional color to use for inner portion of outlined text.
-        alpha: Opacity from 0-1. Default is 1.
-        slant: Font slant style. Default is normal.
-        weight: Font weight. Default is normal.
-        operator: Cairo operator for blending. Default is OVER.
+        alpha: Opacity from 0-1.
+        slant: Font slant style.
+        weight: Font weight.
+        operator: Cairo operator for blending.
     """
 
     def __init__(
@@ -148,10 +148,10 @@ class _Character(Base):
         code: Parent Code object
         x: X position
         y: Y position
-        font: Font family. Default is "Anonymous Pro".
-        size: Font size. Default is 24.
-        alpha: Opacity from 0-1. Default is 1.
-        operator: Cairo operator for blending. Default is OVER.
+        font: Font family.
+        size: Font size.
+        alpha: Opacity from 0-1.
+        operator: Cairo operator for blending.
     """
 
     def __init__(
@@ -275,11 +275,14 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         Args:
             property: The property to animate.
             lagged_animation: The animation function to apply, which should create an Animation.
-                See :func:`keyed.animations.stagger`.
             start: The frame at which the first animation should start.
             delay: The delay in frames before starting the next object's animation.
             duration: The duration of each object's animation in frames.
-            skip_whitespace: Whether to skip whitespace characters. Default is True.
+            skip_whitespace: Whether to skip whitespace characters.
+
+        See Also:
+            [keyed.animations.stagger][keyed.animations.stagger]
+
         """
         frame = start
         for item in self:
@@ -360,10 +363,10 @@ class _Token(TextSelection[_Character]):
         x: X position
         y: Y position
         code: Parent Code object
-        font: Font family. Default is "Anonymous Pro".
-        font_size: Font size. Default is 24.
-        alpha: Opacity from 0-1. Default is 1.
-        operator: Cairo operator for blending. Default is OVER.
+        font: Font family.
+        font_size: Font size.
+        alpha: Opacity from 0-1.
+        operator: Cairo operator for blending.
     """
 
     def __init__(
@@ -437,10 +440,10 @@ class _Line(TextSelection[_Token]):
         x: X position
         y: Y position
         code: Parent Code object
-        font: Font family. Default is "Anonymous Pro".
-        font_size: Font size. Default is 24.
-        alpha: Opacity from 0-1. Default is 1.
-        operator: Cairo operator for blending. Default is OVER.
+        font: Font family.
+        font_size: Font size.
+        alpha: Opacity from 0-1.
+        operator: Cairo operator for blending.
     """
 
     def __init__(
@@ -489,21 +492,23 @@ class Code(TextSelection[_Line]):
 
     Args:
         scene: The scene in which the code is displayed.
-        tokens: A list of styled tokens that make up the code. See :data:`keyed.highlight.tokenize`.
-        font: The font family used for the code text. Default is "Anonymous Pro".
-        font_size: The font size used for the code text. Default is 24.
-        x: The x-coordinate for the position of the code. Default is 10.
-        y: The y-coordinate for the position of the code. Default is 10.
-        alpha: The opacity level of the code text. Default is 1.
-        operator: The compositing operator used to render the code. Default is :data:`cairo.OPERATOR_OVER`.
-        _ascent_correction: Whether to adjust the y-position based on the font's ascent. Default is True.
+        tokens: A list of styled tokens that make up the code.
+        font: The font family used for the code text.
+        font_size: The font size used for the code text.
+        x: The x-coordinate for the position of the code.
+        y: The y-coordinate for the position of the code.
+        alpha: The opacity level of the code text.
+        operator: The compositing operator used to render the code.
+        _ascent_correction: Whether to adjust the y-position based on the font's ascent.
 
-    TODO:
-
-        * Consider making this object a proper, slicable list-like thing (i.e., replace
-          __init__ with a classmethod)
-        * Consider removing _ascent_correction.
+    See Also:
+        [keyed.highlight.tokenize][keyed.highlight.tokenize]
     """
+
+    # TODO:
+    # * Consider making this object a proper, slicable list-like thing (i.e., replace
+    #   __init__ with a classmethod)
+    # * Consider removing _ascent_correction.
 
     def __init__(
         self,

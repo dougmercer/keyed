@@ -221,11 +221,9 @@ class Transformable:
             to: The object to align to.
             start: Start of animation (begin aligning to the object).
             end: End of animation (finish aligning to the object at this frame, and then stay there).
-            from_: Use this object as self when doing the alignment. Defaults to self. This is necessary
-                for code animations. It is sometimes desirable to align, say, the top-left edge of one
+            from_: Use this object as self when doing the alignment. This is helpful for code
+                animations. It is sometimes desirable to align, say, the top-left edge of one
                 character in a TextSelection to the top-left of another character.
-
-                This is a subtle feature that is missing in manim that made code animations difficult.
             easing: The easing function to use.
             direction: The critical point of to and from_to use for the alignment.
             center_on_zero: If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
@@ -234,10 +232,8 @@ class Transformable:
 
         Returns:
             self
-
-        Todo:
-            I'd like to get rid of center_on_zero.
         """
+        # TODO: I'd like to get rid of center_on_zero.
         from_ = from_ or self.geom
         lock = lock if lock is not None else end
         return self.apply_transform(
@@ -269,9 +265,9 @@ class Transformable:
         Args:
             target: Object to lock onto
             reference: Measure from this object. This is useful for TextSelections, where you want to align
-                to a particular character in the selection. Defaults to self.
-            start: When to start locking on. Defaults to ALWAYS.
-            end: When to end locking on. Defaults to -ALWAYS.
+                to a particular character in the selection.
+            start: When to start locking on.
+            end: When to end locking on.
             x: If true, lock on in the x dimension.
             y: If true, lock on in the y dimension.
         """
@@ -302,7 +298,7 @@ class Transformable:
         Args:
             target: Object to lock onto
             reference: Measure from this object. This is useful for TextSelections, where you want to align
-                to a particular character in the selection. Defaults to self.
+                to a particular character in the selection.
             x: If true, lock on in the x dimension.
             y: if true, lock on in the y dimension.
         """
@@ -575,7 +571,7 @@ def lock_on(
         frame: The reactive value for the scene's frame counter.
         start: The first frame to begin translating.
         end: The final frame to end translating.
-        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults to the center, ORIGIN.
+        direction: The position in the 2D unit square in the geometry that you want to retrieve.
         x: If true, lock on in the x dimension.
         y: If true, lock on in the y dimension.
     """
@@ -1006,10 +1002,9 @@ def get_position_along_dim_now(
 
     Args:
         geom: A Geometry
-        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-            to ORIGIN (center of the object).
+        direction: The position in the 2D unit square in the geometry that you want to retrieve.
         dim: Dimension to query, where 0 is the horizontal direction and 1 is the vertical
-            direction. Defaults to 0.
+            direction.
 
     Returns:
         Position along dimension.
@@ -1032,8 +1027,7 @@ def get_critical_point_now(geom: GeometryT, direction: Direction = ORIGIN) -> tu
     """Get value of a position along both dimensions at the current frame.
 
     Args:
-        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-                   to ORIGIN (center of the object).
+        direction: The position in the 2D unit square in the geometry that you want to retrieve.
 
     Returns:
         The critical point as a tuple of the x and y directions.
@@ -1049,8 +1043,7 @@ def get_critical_point(
     """Get value of a position along both dimensions at the current frame.
 
     Args:
-        direction: The position in the 2D unit square in the geometry that you want to retrieve. Defaults
-                   to ORIGIN (center of the object).
+        direction: The position in the 2D unit square in the geometry that you want to retrieve.
 
     Returns:
         The critical point as a tuple of reactive values in the x and y directions.

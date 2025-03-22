@@ -63,6 +63,7 @@ def _integrand(t: float, p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> np.f
         p1: Second
         p2: Third
         p3: Fourth
+
     Returns:
         The value of the integrand at t.
     """
@@ -110,7 +111,7 @@ def _de_casteljau(
         p1: Second
         p2: Third
         p3: Fourth
-        reverse: If True, reverse the control points before processing. Default is False.
+        reverse: If True, reverse the control points before processing.
 
     Returns:
         The new control points subdividing the original curve at t.
@@ -171,13 +172,13 @@ class Curve(Shape):
     Args:
         scene: The scene to which the curve belongs.
         objects: The objects through which the curve will pass.
-        color: The color of the curve in RGB format. Default is (1, 1, 1).
-        fill_color: The color of the curve's fill in RGB format. Default is (1, 1, 1).
-        alpha: The transparency of the curve. Default is 1.
-        dash: Dash pattern for the line, specified as a sequence of lengths and gaps. Default is None.
-        operator: The compositing operator to use for drawing. Default is :data:`cairo.OPERATOR_OVER`.
-        line_width: The width of the curve line. Default is 1.
-        tension: The tension factor used in calculating control points for the curve. Default is 1.
+        color: The color of the curve in RGB format.
+        fill_color: The color of the curve's fill in RGB format.
+        alpha: The transparency of the curve.
+        dash: Dash pattern for the line, specified as a sequence of lengths and gaps.
+        operator: The compositing operator to use for drawing.
+        line_width: The width of the curve line.
+        tension: The tension factor used in calculating control points for the curve.
 
     Raises:
         ValueError: If fewer than 2 objects are provided.

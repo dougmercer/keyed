@@ -31,17 +31,17 @@ class Geometry(Shape):
     Args:
         scene: The scene to which the shape belongs.
         geometry: The shapely geometry that defines the shape.
-        color: The RGB color of the shape's outline. Default is (1, 1, 1).
-        fill_color: The RGB color of the shape's fill. Default is (1, 1, 1).
-        alpha: The opacity of the shape. Default is 1.
-        dash: The dash pattern for the shape's outline. Default is None.
-        operator: The compositing operator to use for drawing. Default is cairo.OPERATOR_OVER.
-        line_cap: The line cap style to use. Default is cairo.LINE_CAP_ROUND.
-        line_join: The line join style to use. Default is cairo.LINE_JOIN_ROUND.
-        line_width: The width of the shape's outline. Default is 1.
-        buffer: The buffer distance to apply around the shape. Default is 0.
-        draw_fill: Whether to fill the shape. Default is True.
-        draw_stroke: Whether to draw the outline. Default is True.
+        color: The RGB color of the shape's outline.
+        fill_color: The RGB color of the shape's fill.
+        alpha: The opacity of the shape.
+        dash: The dash pattern for the shape's outline.
+        operator: The compositing operator to use for drawing.
+        line_cap: The line cap style to use.
+        line_join: The line join style to use.
+        line_width: The width of the shape's outline.
+        buffer: The buffer distance to apply around the shape.
+        draw_fill: Whether to fill the shape.
+        draw_stroke: Whether to draw the outline.
     """
 
     def __init__(

@@ -425,7 +425,6 @@ def mix_easing(ease1: EasingFunctionT, ease2: EasingFunctionT, mix: float = 0.5)
         ease1: First easing function
         ease2: Second easing function
         mix: Mix factor between 0 and 1. 0 means all ease1, 1 means all ease2.
-             Default is 0.5 for equal mixing.
 
     Returns:
         A new easing function that mixes both input functions

@@ -22,12 +22,12 @@ def underline(
     """Add an underline effect.
 
     Args:
-        offset: Distance below baseline. Default is 20.
-        color: Color of the line. Default is white.
-        alpha: Transparency. Default is 1.
-        dash: Dash specification. Default is None.
-        operator: Cairo composition operator. Default is cairo.OPERATOR_OVER.
-        line_width: Strike width of underline. Default is 1.
+        offset: Distance below baseline.
+        color: Color of the line.
+        alpha: Transparency.
+        dash: Dash specification.
+        operator: Cairo composition operator.
+        line_width: Strike width of underline.
 
     Returns:
         Line object representing the underline.

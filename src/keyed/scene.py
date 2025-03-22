@@ -118,13 +118,13 @@ class Scene(Transformable, Freezeable):
     """A scene within which graphical objects are placed and manipulated.
 
     Args:
-        scene_name: The name of the scene, used for naming output directories and files. Default is None.
-        num_frames: The number of frames to render in the scene. Default is 60.
-        output_dir: The directory path where output files will be stored. Default is "media".
-        width: The width of the scene in pixels. Default is 3840.
-        height: The height of the scene in pixels. Default is 2160.
-        antialias: The antialiasing level for rendering the scene. Default is cairo.ANTIALIAS_DEFAULT.
-        freehand: Indicates whether to enable freehand drawing mode. Default is False.
+        scene_name: The name of the scene, used for naming output directories and files.
+        num_frames: The number of frames to render in the scene.
+        output_dir: The directory path where output files will be stored.
+        width: The width of the scene in pixels.
+        height: The height of the scene in pixels.
+        antialias: The antialiasing level for rendering the scene.
+        freehand: Indicates whether to enable freehand drawing mode.
     """
 
     def __init__(
@@ -266,8 +266,8 @@ class Scene(Transformable, Freezeable):
 
         Args:
             layers: Specific layer(s) to render. If None, all layers are rendered.
-            delete: Whether to delete old frames before drawing new ones. Default is True.
-            open_dir: Whether to open the output directory after drawing. Default is False.
+            delete: Whether to delete old frames before drawing new ones.
+            open_dir: Whether to open the output directory after drawing.
         """
         self._create_folder()
         if delete:
@@ -342,7 +342,7 @@ class Scene(Transformable, Freezeable):
         """Convert a frame of the scene to a NumPy array.
 
         Args:
-            frame: The frame number to convert. Default is 0.
+            frame: The frame number to convert.
             layers: Specific layer(s) to convert. If None, all layers are converted.
 
         Returns:

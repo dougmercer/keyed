@@ -117,17 +117,16 @@ class Base(Transformable):
         """Emphasize the object by drawing a rectangle around it.
 
         Args:
-            buffer: The buffer distance around the object's geometry for the emphasis. Default is 5.
-            radius: The corner radius of the emphasized area. Default is 0.
-            fill_color: The fill color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
-            color: The stroke color of the emphasis as an RGB tuple. Default is white (1, 1, 1).
-            alpha: The alpha transparency of the emphasis. Default is 1.
-            dash: The dash pattern for the emphasis outline. Default is None.
-            line_width: The line width of the emphasis outline. Default is 2.
-            draw_fill: Whether to draw the fill of the emphasis. Default is True.
-            draw_stroke: Whether to draw the stroke of the emphasis. Default is True.
-            operator: The compositing operator to use for drawing the emphasis. Default is
-                :data:`cairo.OPERATOR_SCREEN`.
+            buffer: The buffer distance around the object's geometry for the emphasis.
+            radius: The corner radius of the emphasized area.
+            fill_color: The fill color of the emphasis as an RGB tuple.
+            color: The stroke color of the emphasis as an RGB tuple.
+            alpha: The alpha transparency of the emphasis.
+            dash: The dash pattern for the emphasis outline. Default is solid line.
+            line_width: The line width of the emphasis outline.
+            draw_fill: Whether to draw the fill of the emphasis.
+            draw_stroke: Whether to draw the stroke of the emphasis.
+            operator: The compositing operator to use for drawing the emphasis.
 
         Returns:
             A Rectangle object representing the emphasized area around the original object.
@@ -137,10 +136,8 @@ class Base(Transformable):
             geometry of the object as it changes through different frames, applying the specified
             emphasis effects. Emphasis should generally be applied after all animations on the
             original object have been added.
-
-        TODO:
-            Consider renaming "buffer" to margin.
         """
+        # TODO: Consider renaming "buffer" to margin.
         from .shapes import Rectangle
 
         r = Rectangle(
@@ -167,7 +164,7 @@ class Base(Transformable):
         Args:
             property: The name of the property to set.
             value: The new value for the property.
-            frame: The frame at which the property value should be set. Default is 0.
+            frame: The frame at which the property value should be set.
 
         Returns:
             Self
@@ -206,7 +203,7 @@ class Base(Transformable):
         """Center the object within the scene.
 
         Args:
-            frame: The frame at which to center the object. Defaults to :data:`keyed.constants.ALWAYS`.
+            frame: The frame at which to center the object.
 
         Returns:
             self
@@ -240,8 +237,8 @@ class Base(Transformable):
 
         Args:
             other: The target object to connect to
-            self_direction: Direction for the connection point on this object (default: RIGHT)
-            other_direction: Direction for the connection point on the target object (default: LEFT)
+            self_direction: Direction for the connection point on this object
+            other_direction: Direction for the connection point on the target object
             **line_kwargs: Additional arguments to pass to the [Line][keyed.line.Line] constructor.
 
         Returns:
