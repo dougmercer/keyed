@@ -7,18 +7,21 @@ on:
     types: [published]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-deploy-docs:
+  # Build job
+  build:
     if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -32,4 +35,23 @@ jobs:
           pip install ".[docs,previewer]"
       - name: Generate example animations
         run: bash ./docs_src/generate_docs.sh
-      - run: mkdocs gh-deploy --force
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Build with MkDocs
+        run: mkdocs build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
