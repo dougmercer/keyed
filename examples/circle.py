@@ -26,7 +26,7 @@ b = PingPong(
     Animation(
         start_value=1,
         end_value=5,
-        animation_type=AnimationType.MULTIPLICATIVE,
+        animation_type=AnimationType.MULTIPLY,
         start=0,
         end=24,
     ),

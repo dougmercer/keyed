@@ -11,7 +11,7 @@ scene.add(code)
 
 code.lines[:].write_on(
     "alpha",
-    lagged_animation=stagger(animation_type=AnimationType.ADDITIVE),
+    lagged_animation=stagger(animation_type=AnimationType.ADD),
     delay=2,
     duration=1,
     start=2,

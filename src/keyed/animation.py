@@ -22,28 +22,14 @@ __all__ = [
 
 
 class AnimationType(Enum):
-    """Defines how animation values are applied to properties.
+    """Specifies the mathematical operation used to combine the original and animated values."""
 
-    When animating properties, this enum specifies the mathematical operation
-    used to combine the animated value with the original value.
-
-    Attributes:
-        MULTIPLICATIVE: Multiplies the original value by the animation value.
-            Useful for scaling properties like size or opacity.
-            (`original_value * animation_value`)
-
-        ABSOLUTE: Directly replaces the original value with the animation value.
-            Useful when you want to set a property to a specific value.
-            (`animation_value`)
-
-        ADDITIVE: Adds the animation value to the original value.
-            Useful for properties like position where you want to move relative to current position.
-            (`original_value + animation_value`)
-    """
-
-    MULTIPLICATIVE = auto()
+    MULTIPLY = auto()
+    """Multiplies the original value by the animated value."""
     ABSOLUTE = auto()
-    ADDITIVE = auto()
+    """Replaces the original value with the animated value."""
+    ADD = auto()
+    """Adds the animated value to the original value."""
 
 
 T = TypeVar("T")
@@ -103,9 +89,9 @@ class Animation(Generic[T]):
             match self.animation_type:
                 case AnimationType.ABSOLUTE:
                     pass
-                case AnimationType.ADDITIVE:
+                case AnimationType.ADD:
                     eased_value = value + eased_value
-                case AnimationType.MULTIPLICATIVE:
+                case AnimationType.MULTIPLY:
                     eased_value = value * eased_value
                 case _:
                     raise ValueError("Undefined AnimationType")

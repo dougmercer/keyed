@@ -28,7 +28,7 @@ editor._height = Animation(
     0.0,
     300,
     ease=easing.cubic_in_out,
-    animation_type=AnimationType.ADDITIVE,
+    animation_type=AnimationType.ADD,
 )(editor._height, scene.frame)
 editor._height = Animation(
     48,
@@ -36,7 +36,7 @@ editor._height = Animation(
     0.0,
     -300,
     ease=easing.cubic_in_out,
-    animation_type=AnimationType.ADDITIVE,
+    animation_type=AnimationType.ADD,
 )(editor._height, scene.frame)
 
 editor.scale(1.5, 36, 48)

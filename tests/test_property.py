@@ -26,8 +26,8 @@ def test_multiple_animations() -> None:
     "animation_type, expected_value",
     [
         (AnimationType.ABSOLUTE, 30),
-        (AnimationType.ADDITIVE, 30 + 10),
-        (AnimationType.MULTIPLICATIVE, 10 * 30),
+        (AnimationType.ADD, 30 + 10),
+        (AnimationType.MULTIPLY, 10 * 30),
     ],
 )
 def test_animation_types(animation_type: AnimationType, expected_value: float) -> None:
@@ -46,14 +46,14 @@ def test_sequential_different_types() -> None:
         end=3,
         start_value=10,
         end_value=20,
-        animation_type=AnimationType.ADDITIVE,
+        animation_type=AnimationType.ADD,
     )
     mul_anim = Animation(
         start=11,
         end=13,
         start_value=1,
         end_value=3,
-        animation_type=AnimationType.MULTIPLICATIVE,
+        animation_type=AnimationType.MULTIPLY,
     )
     abs_anim = Animation(
         start=21,
@@ -67,7 +67,7 @@ def test_sequential_different_types() -> None:
         end=33,
         start_value=0,
         end_value=10,
-        animation_type=AnimationType.ADDITIVE,
+        animation_type=AnimationType.ADD,
     )
 
     prop = add_anim(prop, frame)
@@ -103,14 +103,14 @@ def test_overlapping_different_types() -> None:
         end=10,
         start_value=0,
         end_value=10,
-        animation_type=AnimationType.ADDITIVE,
+        animation_type=AnimationType.ADD,
     )
     mul_anim = Animation(
         start=5,
         end=15,
         start_value=2,
         end_value=2,
-        animation_type=AnimationType.MULTIPLICATIVE,
+        animation_type=AnimationType.MULTIPLY,
     )
     abs_anim = Animation(
         start=10,
@@ -124,7 +124,7 @@ def test_overlapping_different_types() -> None:
         end=15,
         start_value=10,
         end_value=10,
-        animation_type=AnimationType.ADDITIVE,
+        animation_type=AnimationType.ADD,
     )
 
     prop = add_anim(prop, frame)
@@ -152,14 +152,14 @@ def test_interwoven_animations() -> None:
         end=10,
         start_value=1,
         end_value=2,
-        animation_type=AnimationType.ADDITIVE,
+        animation_type=AnimationType.ADD,
     )
     mul_anim = Animation(
         start=0,
         end=10,
         start_value=1,
         end_value=2,
-        animation_type=AnimationType.MULTIPLICATIVE,
+        animation_type=AnimationType.MULTIPLY,
     )
     abs_anim = Animation(
         start=0,
@@ -200,5 +200,5 @@ def test_offset() -> None:
     val = 5
     prop = Signal(10)
 
-    prop = step(val, animation_type=AnimationType.ADDITIVE)(prop, frame)
+    prop = step(val, animation_type=AnimationType.ADD)(prop, frame)
     assert prop.value == val + 10

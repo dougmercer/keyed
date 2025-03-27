@@ -780,7 +780,7 @@ def rotate(
     Returns:
         The time-varying transformation matrix.
     """
-    magnitude = Animation(start, end, 0, amount, ease, animation_type=AnimationType.ADDITIVE)(0, frame)
+    magnitude = Animation(start, end, 0, amount, ease, animation_type=AnimationType.ADD)(0, frame)
 
     @computed
     def f(magnitude: float, cx: float, cy: float) -> cairo.Matrix:
@@ -816,7 +816,7 @@ def scale(
     Returns:
         The time-varying transformation matrix.
     """
-    magnitude = Animation(start, end, 1, amount, ease, animation_type=AnimationType.MULTIPLICATIVE)(1, frame)
+    magnitude = Animation(start, end, 1, amount, ease, animation_type=AnimationType.MULTIPLY)(1, frame)
 
     return _scale(magnitude, magnitude, cx, cy)
 
@@ -851,8 +851,8 @@ def stretch(
         A computed transformation matrix
     """
     # Animate both scale factors independently
-    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLICATIVE)(1, frame)
-    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLY)(1, frame)
+    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLY)(1, frame)
 
     return _scale(sx, sy, cx, cy)
 
@@ -938,8 +938,8 @@ def match_size(
     scale_y = target_height / original_height if match_y else 1.0
 
     # Animate both scale factors independently
-    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLICATIVE)(1, frame)
-    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLICATIVE)(1, frame)
+    sx = Animation(start, end, 1, scale_x, ease, AnimationType.MULTIPLY)(1, frame)
+    sy = Animation(start, end, 1, scale_y, ease, AnimationType.MULTIPLY)(1, frame)
 
     return _scale(sx, sy, cx, cy)
 
