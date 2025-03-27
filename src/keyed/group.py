@@ -465,8 +465,6 @@ class Group(Base, list[T]):  # type: ignore[misc]
         This keeps the first and last objects in their initial positions and distributes
         the remaining objects in between with equal spacing.
 
-        @sponsors @version: 1.2.0 @experimental
-
         Args:
             direction: Direction used to get anchor points on objects
             start: Starting frame for the animation

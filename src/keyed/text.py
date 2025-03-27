@@ -281,7 +281,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
             skip_whitespace: Whether to skip whitespace characters.
 
         See Also:
-            [keyed.animations.stagger][keyed.animations.stagger]
+            [keyed.animation.stagger][keyed.animation.stagger]
 
         """
         frame = start
