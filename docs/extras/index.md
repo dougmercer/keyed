@@ -12,7 +12,7 @@ Keyed Extras follows a progressive Sponsorware model. New features start in Extr
 2. [Sponsors](https://github.com/dougmercer) <!-- md:sponsors --> receive early access.
 3. We set community sponsorship goals for each feature
 4. When a goal is met, that features moves to the core `keyed` library
-5. Everyone benefits from improved open-source animations! :party:
+5. Everyone benefits from improved open-source animations! 🎉
 
 ## What's in it for you?
 
@@ -27,17 +27,8 @@ As a sponsor, you'll get:
 ## How to get Extras
 
 1. Become a GitHub sponsor through [our sponsorship page](https://github.com/sponsors/dougmercer/)
-2. You'll receive access to the private repository
-3. Install `keyed-extras`:
-   ```console
-   pip install git+https://github.com/dougmercer-yt/keyed-extras.git
-   ```
-
-    !!! note
-
-        Since `keyed-extras` is a private Github repository, you will need to authenticate. Please refer to [this page](https://google.com) for more details.
-
-<!-- TODO, link to more detailed install instructions on the keyed-extras repo when it's available. -->
+2. You'll receive access to the private repository and package index.
+3. [Install `keyed-extras`](https://dougmercer.github.io/keyed-extras-docs/install/).
 
 ## Want to find out more?
 

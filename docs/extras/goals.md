@@ -7,13 +7,16 @@ Sponsors currently enjoy access to the following exclusive features:
 <div class="mdx-columns" markdown>
 - [x] [Object: Editor Window]
 - [x] [Object: Rich Text] <!-- md:flag experimental -->
+- [x] [Object: SubScene]
 - [x] [Object: Image]
-- [x] [Object: SVGElements] <!-- md:flag experimental -->
+- [x] [Object: SVGShapes] <!-- md:flag experimental -->
 - [x] [Object: SVG] <!-- md:flag experimental -->
 - [x] [Object: SquigglyLine]
 - [x] [Effect: Blur]
+- [x] [Effect: Bloom]
 - [x] [Effect: Displace]
 - [x] [Effect: ChromaticAberration]
+- [x] [Effect: ColorAdjust]
 - [x] [Effect: ColorQuantization]
 - [x] [Effect: Invert]
 - [x] [Pattern: Crosshatch]
@@ -23,25 +26,28 @@ Sponsors currently enjoy access to the following exclusive features:
 - [x] [Pattern: Radial Gradient]
 - [x] [Enhanced Syntax Highlighting] <!-- md:flag experimental -->
 - [x] [Hand Drawn Mode] <!-- md:flag experimental -->
-<!-- - [x] ... and more experimental features already available! -->
+- [x] ... and more!
 
-  [Object: Editor Window]: https://www.google.com
-  [Object: Rich Text]: ../setup/setting-up-navigation.md#navigation-path
-  [Object: Image]: ../setup/setting-up-a-blog.md#advanced-settings
-  [Object: SVGElements]: ../setup/setting-up-a-blog.md#adding-author-profiles
-  [Object: SVG]: ../setup/setting-up-a-blog.md#pinning-a-post
-  [Object: SquigglyLine]: ../setup/setting-up-navigation.md#instant-prefetching
-  [Effect: Blur]: https://www.google.com
-  [Effect: Displace]: https://www.google.com
-  [Effect: ChromaticAberration]: https://www.google.com
-  [Effect: ColorQuantization]: https://www.google.com
-  [Effect: Invert]: https://www.google.com
-  [Pattern: Crosshatch]: https://www.google.com
-  [Pattern: Polka Dot]: https://www.google.com
-  [Pattern: Stipple]: https://www.google.com
-  [Pattern: Spiral]: https://www.google.com
-  [Pattern: Linear Gradient]: https://www.google.com
-  [Pattern: Radial Gradient]: https://www.google.com
+  [Object: Editor Window]: https://dougmercer.github.io/keyed-extras-docs/api/editor/#keyed_extras.editor.Editor
+  [Object: SubScene]: https://dougmercer.github.io/keyed-extras-docs/api/subscene/#keyed_extras.subscene.SubScene
+  [Object: Rich Text]: https://dougmercer.github.io/keyed-extras-docs/api/rich-text/#keyed_extras.rich_text.RichText
+  [Object: Image]: https://dougmercer.github.io/keyed-extras-docs/api/image/#keyed_extras.image.Image
+  [Object: SVGShapes]: https://dougmercer.github.io/keyed-extras-docs/api/svg/#keyed_extras.svg.SVGShapes
+  [Object: SVG]: https://dougmercer.github.io/keyed-extras-docs/api/svg/#keyed_extras.svg.SVG
+  [Object: SquigglyLine]: https://dougmercer.github.io/keyed-extras-docs/api/shapes/#keyed_extras.squiggly.SquigglyLine
+  [Effect: Blur]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.blur.Blur
+  [Effect: Bloom]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.bloom.Bloom
+  [Effect: Displace]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.displace.Displace
+  [Effect: ColorAdjust]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ColorAdjust
+  [Effect: ChromaticAberration]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ChromaticAberration
+  [Effect: ColorQuantization]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ColorQuantization
+  [Effect: Invert]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.Invert
+  [Pattern: Crosshatch]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.cross_hatch_pattern
+  [Pattern: Polka Dot]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.polka_dot_pattern
+  [Pattern: Stipple]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.stipple_pattern
+  [Pattern: Spiral]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.spiral_pattern
+  [Pattern: Linear Gradient]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.linear_gradient_pattern
+  [Pattern: Radial Gradient]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.radial_gradient_pattern
   [Enhanced Syntax Highlighting]: https://www.google.com
   [Hand Drawn Mode]: https://www.google.com
 </div>
@@ -57,44 +63,43 @@ Sponsors currently enjoy access to the following exclusive features:
 
     ---
 
-    * :material-star: [Object: SquigglyLine]
-    * :octicons-unlock-24: [Effect: Blur]
-    * :octicons-unlock-24: [Pattern: Linear Gradient]
+    - [ ] :material-star: [Object: SquigglyLine]
+    - [ ] :octicons-unlock-24: [Effect: ColorAdjust]
+    - [ ] :octicons-unlock-24: [Effect: Invert]
+    - [ ] :octicons-unlock-24: [Pattern: Linear Gradient]
 
 -   :material-image:{ .lg .middle } __$250 monthly__
 
     ---
 
-    * :material-star: [Object: Image]
-    * :octicons-unlock-24: [Effect: ChromaticAberration]
-    * :octicons-unlock-24: [Pattern: Stipple]
+    - [ ] :material-star: [Object: Image]
+    - [ ] :octicons-unlock-24: [Effect: Blur]
+    - [ ] :octicons-unlock-24: [Effect: Bloom]
+    - [ ] :octicons-unlock-24: [Pattern: Stipple]
 
 -   :material-format-font:{ .lg .middle } __$500 monthly__
 
     ---
 
-    * :material-star: [Object: Rich Text]
-    * :octicons-unlock-24: [Effect: ChromaticAberration]
-    * :octicons-unlock-24: [Pattern: Radial Gradient]
-    * :octicons-unlock-24:{ .highlight } [Enhanced Syntax Highlighting]
+    - [ ] :material-star: [Object: Rich Text]
+    - [ ] :octicons-unlock-24: [Effect: Bloom]
+    - [ ] :octicons-unlock-24: [Pattern: Radial Gradient]
+    - [ ] :octicons-unlock-24:{ .highlight } [Enhanced Syntax Highlighting]
 
 -   :material-pencil:{ .lg .middle } __$1000 monthly__
 
     ---
 
-    * :octicons-unlock-24: Object: TBA
-    * :octicons-unlock-24: [Effect: ColorQuantization]
-    * :octicons-unlock-24: [Pattern: Crosshatch]
-    * :material-star: [Hand Drawn Mode]
+    - [ ] :octicons-unlock-24: [Object: SVGShapes]
+    - [ ] :octicons-unlock-24: [Effect: ColorQuantization]
+    - [ ] :octicons-unlock-24: [Pattern: Crosshatch]
+    - [ ] :material-star: [Hand Drawn Mode]
 
 </div>
 <!-- [Object: Editor Window]
-[Object: SVGElements]
+[Object: SubScene]
 [Object: SVG]
 [Effect: Displace]
-[Effect: ColorQuantization]
-[Effect: Invert]
-[Pattern: Stipple]
 [Pattern: Spiral] -->
 
 <!-- ## Goals Completed -->

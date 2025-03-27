@@ -118,12 +118,9 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
 
-# not_in_nav: |
-#   /tutorials/**/*.md
-
 nav:
   - Home: index.md
-  - Installation: install.md
+  - Install: install.md
   - Tutorial:
     - First Scene: tutorial/first_scene.md
     - Easing: tutorial/easing.md
@@ -144,13 +141,13 @@ nav:
     - Utilities: api/utils.md
     - Implementation Details: api/impl.md
   - Gallery:
-    - index: gallery/index.md
+    - Gallery: gallery/index.md
   - Contributing:
-    - index: contributing/index.md
+    - Contributing: contributing/index.md
     - Dev Environment: contributing/environment.md
   - Changelog: changelog/index.md
   - Keyed Extras:
-    - index: extras/index.md
+    - Keyed Extras: extras/index.md
     - Features & Goals: extras/goals.md
     - Fair Use Policy: extras/fairuse.md
     - Keyed Extras: https://dougmercer.github.io/keyed-extras-docs/
@@ -174,6 +171,7 @@ plugins:
           - https://docs.python.org/3/objects.inv
           - https://pycairo.readthedocs.io/en/latest/objects.inv
           - https://numpy.org/doc/stable/objects.inv
+          - https://pygments.org/objects.inv
           options:
             docstring_style: google
             docstring_options:
