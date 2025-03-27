@@ -61,15 +61,6 @@ class KeyedFormatter(Formatter):
 
     @staticmethod
     def format_code(tokens: list[tuple[_TokenType, str]], style: StyleMeta) -> str:
-        """Convert code into styled tokens.
-
-        Args:
-            tokens: List of tokens to format.
-            style: The Pygments style to use.
-
-        Returns:
-            Styled code as JSON.
-        """
         colors = style_to_color_map(style)
         styled_tokens: list[StyledToken] = []
         for token_type, token in tokens:
@@ -86,12 +77,11 @@ class KeyedFormatter(Formatter):
         return StyledTokens.dump_json(styled_tokens).decode()
 
     def format_unencoded(self, tokensource, outfile) -> None:  # type: ignore[no-untyped-def]
-        """Format the tokens are write to output."""
         formatted_output = self.format_code(list(tokensource), style=self.style)
         outfile.write(formatted_output)
 
 
-def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenType, str]]:
+def _split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenType, str]]:
     """Split a multiline token into multiple tokens."""
     token_type, text = token
     if token_type not in (
@@ -124,8 +114,8 @@ def split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenTyp
     return parts
 
 
-def split_multiline_tokens(tokens: Iterable[tuple[_TokenType, str]]) -> list[tuple[_TokenType, str]]:
-    return list(itertools.chain(*(split_multiline_token(token) for token in tokens)))
+def _split_multiline_tokens(tokens: Iterable[tuple[_TokenType, str]]) -> list[tuple[_TokenType, str]]:
+    return list(itertools.chain(*(_split_multiline_token(token) for token in tokens)))
 
 
 def tokenize(
@@ -137,7 +127,7 @@ def tokenize(
         text: The code text to tokenize.
         lexer: The Pygments lexer to use. If None, PythonLexer is used.
         formatter: The Pygments formatter to use. If None, KeyedFormatter is used.
-        filename: The filename of the code, used for more accurate Jedi analysis. Default is '<unknown>'.
+        filename: The filename of the code, used for more accurate analysis with `jedi`. Default is '<unknown>'.
 
     Returns:
         List of styled tokens.
@@ -146,7 +136,7 @@ def tokenize(
     from pygments.lexers.python import PythonLexer
 
     formatter = formatter or KeyedFormatter(style=DEFAULT_STYLE)
-    raw_tokens = split_multiline_tokens(lex(text, lexer or PythonLexer()))
+    raw_tokens = _split_multiline_tokens(lex(text, lexer or PythonLexer()))
 
     # Apply post-processor to enhance token types
     from .extras import post_process_tokens
