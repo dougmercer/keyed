@@ -10,7 +10,7 @@ import typer
 
 from keyed.constants import Quality, QualitySetting
 from keyed.parser import SceneEvaluator
-from keyed.renderer import RenderEngine, VideoFormat
+from keyed.renderer import VideoFormat
 
 app = typer.Typer()
 
@@ -188,7 +188,6 @@ def iostream(
             if format == OutputFormat.WEBM:
                 scene.render(
                     format=VideoFormat.WEBM,
-                    engine=RenderEngine.PYAV,
                     frame_rate=frame_rate,
                     output_path=tmp_output_path,
                     quality=quality,
@@ -196,7 +195,6 @@ def iostream(
             elif format == OutputFormat.MOV:
                 scene.render(
                     format=VideoFormat.MOV_PRORES,
-                    engine=RenderEngine.PYAV,
                     frame_rate=frame_rate,
                     output_path=tmp_output_path,
                 )

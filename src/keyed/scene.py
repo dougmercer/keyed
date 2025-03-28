@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 from .base import Base, is_visible
 from .compositor import BlendMode, composite_layers
+from .config import get_default_render_engine
 from .constants import EXTRAS_INSTALLED, Quality
 from .effects import Effect
 from .group import Selection
@@ -463,14 +464,14 @@ class Scene(Transformable, Freezeable):
     def render(
         self,
         format: VideoFormat = VideoFormat.MOV_PRORES,
-        engine: RenderEngine = RenderEngine.FFMPEG,
+        engine: RenderEngine | None = None,
         output_path: Path | None = None,
         frame_rate: int = 24,
         **kwargs,
     ) -> None:
         self.renderer.render(
             format=format,
-            engine=engine,
+            engine=engine or get_default_render_engine(),
             output_path=output_path,
             frame_rate=frame_rate,
             **kwargs,
