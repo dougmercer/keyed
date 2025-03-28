@@ -17,6 +17,8 @@ def on_page_markdown(markdown: str, *, page: Page, config: MkDocsConfig, files: 
             return _badge_for_version(args, page, files)
         elif type == "sponsors":
             return _badge_for_sponsors(page, files)
+        elif type == "deprecated":
+            return _badge_for_deprecated(args, page, files)
         elif type == "flag":
             if args == "experimental":
                 return _badge_for_experimental(page, files)
@@ -62,6 +64,19 @@ def _badge_for_experimental(page: Page, files: Files):
     icon = "material-flask-outline"
     href = _safe_resolve_path("conventions.md#experimental", page, files)
     return _badge(icon=f"[:{icon}:]({href} 'Experimental')")
+
+
+def _badge_for_deprecated(text: str, page: Page, files: Files):
+    spec = text
+    path = f"changelog/index.md#{spec}"
+
+    icon = "material-alert"
+    href = _safe_resolve_path("conventions.md#deprecated", page, files)
+
+    version_link = _safe_resolve_path(path, page, files)
+    text_part = f"[{text}]({version_link})" if spec else ""
+
+    return _badge(icon=f"[:{icon}:]({href} 'Deprecated')", text=text_part, type="deprecated")
 
 
 def _badge_for_version(text: str, page: Page, files: Files):

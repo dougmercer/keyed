@@ -19,11 +19,10 @@ Keyed is a Python library for creating programmatically defined animations. Name
 - **Vector Graphics**: [Cairo](https://www.cairographics.org)-based rendering for crisp, scalable graphics
 - **Flexible Shape System**: Define basic lines, shapes, curves, and complex geometries
 - **Code Animation Focus**: Animate syntax highled code snippets
-- **High Performance**: GPU-accelerated rasterization/compositing using [Taichi](https://github.com/taichi-dev/taichi)
 
 ## Installation
 
-Keyed requires a few system level dependencies (e.g., [Cairo](https://www.cairographics.org/download/) and [ffmpeg](https://www.ffmpeg.org/)).
+Keyed requires a couple system level dependencies (e.g., [Cairo](https://www.cairographics.org/download/) and [ffmpeg](https://www.ffmpeg.org/)).
 
 For detailed installation instructions visit our [Installation Guide](https://dougmercer.github.io/keyed/install)
 .
@@ -36,10 +35,10 @@ pip install keyed
 
 ## Project Status
 
-This project is in very early beta. APIs may change.
+This project is in beta, so APIs may change.
 
 ## Alternatives
-While I find Keyed very fun and useful (particularly for animating syntax highlighted code in my [YouTube videos](https://youtube.com/@dougmercer)), there are several other excellent and far more mature animation libraries that you should probably use instead.
+While I find `keyed` very fun and useful (particularly for animating syntax highlighted code in my [YouTube videos](https://youtube.com/@dougmercer)), there are several other excellent and far more mature animation libraries that you should probably use instead.
 
 Before you decide to use `keyed`, be sure to check out:
 

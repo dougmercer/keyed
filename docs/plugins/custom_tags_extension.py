@@ -39,7 +39,22 @@ def process_docstring(docstring: str) -> str:
             '</span>'
         )
         docstring = docstring.replace("@sponsors", sponsors_html)
-    
+
+    # Process @deprecated: x.y.z tag
+    deprecated_pattern = r"@deprecated: ([\d.]+)"
+    if re.search(deprecated_pattern, docstring):
+        def deprecated_replacement(match):
+            version = match.group(1)
+            return (
+                '<span class="mdx-badge">'
+                '<span class="mdx-badge__icon">'
+                '[:material-alert:](/keyed/conventions#deprecated "Deprecated")'
+                '</span>'
+                f'<span class="mdx-badge__text">[{version}](/keyed/changelog#{version})</span>'
+                '</span>'
+            )
+        docstring = re.sub(deprecated_pattern, deprecated_replacement, docstring)
+
     # Process @version: x.y.z tag
     version_pattern = r"@version: ([\d.]+)"
     if re.search(version_pattern, docstring):

@@ -17,8 +17,12 @@ available to sponsors via [Extras](extras/index.md). Make sure that you have acc
 ### <!-- md:version --> – Version { data-toc-label="Version" }
 
 The tag symbol in conjunction with a version number denotes when a specific
-feature or behavior was added. Make sure you're at least on this version
-if you want to use it.
+feature was added. Make sure you're at least on this version if you want to use it.
+
+### <!-- md:deprecated --> – Deprecated { data-toc-label="Deprecated" }
+
+The warning symbol in conjunction with a version number denotes when a specific
+feature was added. Migrate away from using this feature if you want to use this version.
 
 ### <!-- md:flag experimental --> – Experimental { data-toc-label="Experimental" }
 

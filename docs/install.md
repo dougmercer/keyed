@@ -5,7 +5,7 @@ hide:
 
 # Installing `keyed`
 
-`keyed` requires several non-Python dependencies for its rendering capabilities. This page covers the basic installation process for the core `keyed` package.
+This page covers the basic installation process for the core `keyed` package.
 
 !!! info "keyed-extras Users"
 
@@ -15,52 +15,55 @@ hide:
 
     Contributions improving the installation procedure or documentation are welcome!
 
+`keyed` requires some non-Python dependencies for its rendering capabilities. 
 
-## Platform-agnostic installation approaches
+| Dependency | Required for | Installation Priority |
+|------------|--------------|----------------------|
+| [Cairo](https://www.cairographics.org/) | Core rendering functionality | Required |
+| [FFmpeg](https://ffmpeg.org/) | Faster video rendering | Recommended |
 
-### Using conda/mamba (recommended)
 
-The most system agnostic way to currently install `keyed` is using `conda` (or `mamba`).
+## Installation Methods
 
-First, create an `environment.yml` file:
+Choose the method that works best for your system:
 
-```yml title="environment.yml"
-name: keyed
-channels:
-  - conda-forge
-  - nodefaults
-dependencies:
-  - python<3.13,>=3.11
-  - ffmpeg
-  - cairo
-  - pycairo
-  - pip
-  - pip:
-    - "keyed[previewer]"
-```
+??? tip "(Recommended) conda - Any Platform"
 
-After creating this file, run
+    Create an `environment.yml` file:
 
-```console
-conda env create -f environment.yml
-conda activate keyed
-```
+    ```yml title="environment.yml"
+    name: keyed
+    channels:
+    - conda-forge
+    - nodefaults
+    dependencies:
+    - python<3.13,>=3.11
+    - ffmpeg
+    - cairo
+    - pip
+    - pip:
+        - "keyed[previewer]"
+    ```
 
-### Docker
+    After creating your environment.yml file, run:
 
-The `ghcr.io/dougmercer/keyed:latest` Docker image makes it possible to render `keyed` scenes from the command line.
 
-Simply run,
+    ```console
+    conda env create -f environment.yml
+    conda activate keyed
+    ```
 
-```console
-cat your_scene.py | docker run -i --rm ghcr.io/dougmercer/keyed:latest > output.mov
-```
+??? info "Docker"
 
-!!! note "Limited Capabilities"
+    The `keyed:latest` Docker image makes it possible to render `keyed` scenes from the command line. Run,
 
-    Does not support the QT-based animation preview GUI.
+    ```console
+    cat your_scene.py | docker run -i --rm ghcr.io/dougmercer/keyed:latest > output.mov
+    ```
 
-## Platform-specific installation approaches
+    !!! note "Limited Capabilities"
+
+        Does not support the animation previewer window.
 
 ??? info "Ubuntu/Debian"
     ```shell

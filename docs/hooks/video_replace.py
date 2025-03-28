@@ -5,6 +5,11 @@ from bs4 import BeautifulSoup
 
 def on_post_page(html, page, config):
     """Post-process the HTML after it's been rendered."""
+    html = _handle_video(html, page)
+    return html
+
+
+def _handle_video(html, page):
     if "api/easing/" not in page.url:
         return html
 
