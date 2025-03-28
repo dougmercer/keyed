@@ -80,6 +80,9 @@ class Direction:
     def __eq__(self, other: Any) -> bool:
         return np.array_equal(self.vector, other.vector) if isinstance(other, Direction) else False
 
+    def __neg__(self) -> Self:
+        return -1 * self
+
     def __hash__(self) -> int:
         return hash(tuple(self.vector))
 
