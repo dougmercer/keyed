@@ -1,20 +1,20 @@
-from keyed import LEFT, AnimationType, Circle, Code, Scene, stagger, tokenize
+from keyed import LEFT, Code, Scene, stagger, tokenize
 
-scene = Scene(scene_name="code_replace_complex", num_frames=90)
+scene = Scene(scene_name="code_replace_complex", num_frames=90, width=800, height=800)
 
-styled_tokens1 = tokenize(r"x = 1 + 2 + 3")
-code1 = Code(scene, styled_tokens1, font_size=36, x=200, y=200)
+# Create the before/after code snippets, and align them
+# so that the final code snippet would be centered on the screen
+before = Code(scene, tokenize(r"x = 1 + 2 + 3"), font_size=60)
+after = Code(scene, tokenize(r"x = 1 + get_two() + 3"), font_size=60, alpha=0).center()
+before.align_to(after, direction=LEFT, center_on_zero=True)
 
-styled_tokens2 = tokenize(r"x = 1 + get_two() + 3")
-code2 = Code(scene, styled_tokens2, font_size=36, alpha=0, x=200, y=200)
-
-scene.add(code1, code2)
-
-code1.chars[8].fade(0, 0, 12)
-
-code1.chars[-3:].align_to(code2.chars[-3], start=12, end=36, direction=LEFT)
-
-code2.chars[8:18].write_on(
+# Animate transforming from before to after
+# First, fade out the "2"
+before.chars[8].fade(0, 0, 12)
+# Move the "+ 3" over to align to where it is in after
+before.chars[-3:].align_to(after.chars[-3], start=12, end=36, direction=LEFT)
+# Make each character in "get_two()" appear one at a time.
+after.chars[8:18].write_on(
     "alpha",
     animator=stagger(),
     delay=4,
@@ -22,4 +22,8 @@ code2.chars[8:18].write_on(
     start=36,
 )
 
-scene.scale(2, 0, 24, center=Circle(scene, 200, 100).geom)
+# Outline the code
+outline = before.emphasize(draw_fill = False, radius=10, line_width=5, buffer=40)
+
+# Add everything to the scene
+scene.add(before, after, outline)

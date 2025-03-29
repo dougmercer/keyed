@@ -6,10 +6,25 @@ scenes:
     
   - name: curve_interp
     title: "Interpolate lines and curves"
-    description: "Smoothly interpolate lines and curves."
+    description: "Smoothly interpolate curve that highlights text in a code snippet."
     src_path: "examples/curve_interp.py"
 
   - name: code_replace_complex
     title: "Replace a portion of code."
     description: "Replace a portion of code."
     src_path: "examples/code_replace_complex.py"
+
+  - name: color_interp
+    title: "Color interpolation and keyframing."
+    description: "Create a reactive, time-varying color and match another object's color to it periodically."
+    src_path: "examples/color_interp.py"
+
+  - name: plot_with_axis
+    title: "Plot a circle."
+    description: "Plot a circle with an x and y axis."
+    src_path: "examples/plot_with_axis.py"
+
+  - name: bezier_explainer
+    title: "Bezier explainer."
+    description: "Illustrate how bezier curves work."
+    src_path: "examples/bezier_explainer.py"
