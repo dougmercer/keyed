@@ -142,6 +142,12 @@ nav:
     - Implementation Details: api/impl.md
   - Gallery:
     - Gallery: gallery/index.md
+    - Bouncing Bowl: gallery/first_scene.md
+    - Code Animation: gallery/code_replace_complex.md
+    - Color Interpolation: gallery/color_interp.md
+    - Code Highlighting: gallery/curve_interp.md
+    - Plotting: gallery/plot_with_axis.md
+    - Bezier Explainer: gallery/bezier_explainer.md
   - Contributing:
     - Contributing: contributing/index.md
     - Dev Environment: contributing/environment.md
