@@ -23,14 +23,15 @@ __all__ = ["create_animation_window"]
 PREVIEW_AVAILABLE = importlib.util.find_spec("PySide6") is not None and importlib.util.find_spec("watchdog") is not None
 
 if PREVIEW_AVAILABLE:
-    from PySide6.QtCore import Qt, QThread, QTimer, Signal
-    from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap
+    from PySide6.QtCore import QRect, Qt, QThread, QTimer, Signal
+    from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap, QResizeEvent
     from PySide6.QtWidgets import (
         QApplication,
         QHBoxLayout,
         QLabel,
         QMainWindow,
         QPushButton,
+        QSizePolicy,
         QSlider,
         QToolTip,
         QVBoxLayout,
@@ -40,23 +41,24 @@ if PREVIEW_AVAILABLE:
     from watchdog.observers import Observer
 
     def get_object_info(scene: Scene, quality: QualitySetting, frame: int, point: tuple[float, float]) -> Base | None:
+        # Scale factor between quality and scene dimensions
         scale_x = quality.width / scene._width
         scale_y = quality.height / scene._height
 
-        # Adjust coordinates based on the UI scaling
+        # Incoming coordinates are already in quality space, convert to scene space
         x, y = point
-        x = x / scale_x
-        y = y / scale_y
+        scene_x = x / scale_x
+        scene_y = y / scale_y
 
         # Transform point based on scene's transformation matrix
         matrix = scene.controls.matrix.value
         if matrix is None or (invert := matrix.invert()) is None:
-            scene_x, scene_y = x, y
+            transformed_x, transformed_y = scene_x, scene_y
         else:
             # fmt: off
-            scene_x, scene_y = affine_transform(Point(x, y), invert).coords[0]  # pyright: ignore[reportArgumentType] # noqa: E501
+            transformed_x, transformed_y = affine_transform(Point(scene_x, scene_y), invert).coords[0]  # pyright: ignore[reportArgumentType] # noqa: E501
 
-        return scene.find(scene_x, scene_y, frame)
+        return scene.find(transformed_x, transformed_y, frame)
 
     class InteractiveLabel(QLabel):
         def __init__(
@@ -71,28 +73,59 @@ if PREVIEW_AVAILABLE:
             self.coordinates_label: QLabel | None = None
             self.quality = quality
             self.scene = scene
+            self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            # Add this to ensure the label keeps its aspect ratio
+            self.setMinimumSize(400, 225)  # Minimum 16:9 size
 
         def set_coordinates_label(self, label: QLabel) -> None:
             self.coordinates_label = label
 
         def mousePressEvent(self, ev: QMouseEvent) -> None:
-            x, y = ev.position().x(), ev.position().y()
-            info = self.get_object_info(x, y)
+            # Calculate scale factor based on current widget size vs original quality size
+            scale_x = self.width() / self.quality.width
+            scale_y = self.height() / self.quality.height
+
+            # Get the raw position in widget coordinates
+            raw_x, raw_y = ev.position().x(), ev.position().y()
+
+            # Convert widget coordinates to scene quality coordinates
+            scene_x = raw_x / scale_x
+            scene_y = raw_y / scale_y
+
+            # Get object info using the scaled coordinates
+            info = self.get_object_info(scene_x, scene_y)
             if info:
                 QToolTip.showText(ev.globalPosition().toPoint(), info, self)
             else:
                 QToolTip.hideText()
 
+        # Fixed InteractiveLabel.mouseMoveEvent method
         def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-            x, y = ev.position().x(), ev.position().y()
-            transformed_x = x * (self.scene._width / self.quality.width)
-            transformed_y = y * (self.scene._height / self.quality.height)
-            if self.coordinates_label:
-                self.coordinates_label.setText(f"({transformed_x:.1f}, {transformed_y:.1f})")
+            # Calculate scale factor based on current widget size vs original quality size
+            scale_x = self.width() / self.quality.width
+            scale_y = self.height() / self.quality.height
 
+            # Get the raw position and convert to scene coordinates
+            x, y = ev.position().x(), ev.position().y()
+            scene_x = x / scale_x
+            scene_y = y / scale_y
+
+            if self.coordinates_label:
+                self.coordinates_label.setText(f"({scene_x:.1f}, {scene_y:.1f})")
+
+        # Add resizeEvent to handle window resizing
+        def resizeEvent(self, event: QResizeEvent) -> None:
+            super().resizeEvent(event)
+            # When resized, tell the parent window to update the canvas
+            window = self.window()
+            if isinstance(window, MainWindow) and hasattr(window, "current_frame"):
+                window.update_canvas(window.current_frame)
+
+        # Fixed InteractiveLabel.get_object_info method
         def get_object_info(self, x: float, y: float) -> str:
             window = self.window()
             assert isinstance(window, MainWindow)
+            # Pass the scene coordinates directly - x and y are already scaled
             nearest = get_object_info(window.scene, window.quality, window.current_frame, (x, y))
             return repr(nearest)
 
@@ -134,8 +167,9 @@ if PREVIEW_AVAILABLE:
 
             # Image display
             self.label = InteractiveLabel(self.quality, self.scene)
-            self.pixmap = QPixmap(self.quality.width, self.quality.height)
-            self.label.setPixmap(self.pixmap)
+            self.pixmap = None
+            # self.pixmap = QPixmap(self.quality.width, self.quality.height)
+            # self.label.setPixmap(self.pixmap)
             layout.addWidget(self.label)
 
             # Frame slider
@@ -252,21 +286,40 @@ if PREVIEW_AVAILABLE:
             img_data = self.scene.rasterize(frame_number).get_data()
             qimage = QImage(img_data, self.scene._width, self.scene._height, QImage.Format.Format_ARGB32)
 
-            # Create a QPixmap and fill it with black
-            qpixmap = QPixmap(self.quality.width, self.quality.height)
+            # Get the current size of the label for scaling
+            label_width = self.label.width()
+            label_height = self.label.height()
+
+            # Create a QPixmap sized to fit the label while maintaining aspect ratio
+            qpixmap = QPixmap(label_width, label_height)
             qpixmap.fill(Qt.GlobalColor.black)
 
             # Use QPainter to draw the QImage onto the QPixmap
             with QPainter(qpixmap) as painter:
+                # Enable high-quality antialiasing for smoother scaling
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+
+                scene_aspect = self.scene._width / self.scene._height
+                label_aspect = label_width / label_height
+
+                if scene_aspect > label_aspect:
+                    # Width limited
+                    draw_width = label_width
+                    draw_height = int(label_width / scene_aspect)
+                    y_offset = (label_height - draw_height) // 2
+                    x_offset = 0
+                else:
+                    # Height limited
+                    draw_height = label_height
+                    draw_width = int(label_height * scene_aspect)
+                    x_offset = (label_width - draw_width) // 2
+                    y_offset = 0
+
                 painter.drawImage(
-                    0,
-                    0,
-                    qimage.scaled(
-                        self.quality.width,
-                        self.quality.height,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    ),
+                    QRect(x_offset, y_offset, draw_width, draw_height),
+                    qimage,
+                    QRect(0, 0, qimage.width(), qimage.height()),
                 )
 
             self.label.setPixmap(qpixmap)
