@@ -16,7 +16,7 @@ code1.chars[-3:].align_to(code2.chars[-3], start=12, end=36, direction=LEFT)
 
 code2.chars[8:18].write_on(
     "alpha",
-    lagged_animation=stagger(),
+    animator=stagger(),
     delay=4,
     duration=1,
     start=36,

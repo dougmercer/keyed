@@ -149,7 +149,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
     def write_on(
         self,
         property: str,
-        lagged_animation: Callable,
+        animator: Callable,
         start: int,
         delay: int,
         duration: int,
@@ -158,7 +158,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
 
         Args:
             property: The property to animate.
-            lagged_animation : The animation function to apply, which should create an Animation.
+            animator : The animation function to apply, which should create an Animation.
                 See :func:`keyed.animations.stagger`.
             start: The frame at which the first animation should start.
             delay: The delay in frames before starting the next object's animation.
@@ -166,7 +166,7 @@ class Group(Base, list[T]):  # type: ignore[misc]
         """
         frame = start
         for item in self:
-            animation = lagged_animation(start=frame, end=frame + duration)
+            animation = animator(start=frame, end=frame + duration)
             item._animate(property, animation)
             frame += delay
         return self

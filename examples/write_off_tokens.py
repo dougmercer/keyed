@@ -11,7 +11,7 @@ scene.add(code)
 
 code.tokens[:].write_on(
     "alpha",
-    lagged_animation=stagger(start_value=1, end_value=0),
+    animator=stagger(start_value=1, end_value=0),
     delay=1,
     duration=1,
     start=0,

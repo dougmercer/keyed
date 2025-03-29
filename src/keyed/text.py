@@ -264,7 +264,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
     def write_on(
         self,
         property: str,
-        lagged_animation: Callable,
+        animator: Callable,
         start: int,
         delay: int,
         duration: int,
@@ -274,7 +274,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
 
         Args:
             property: The property to animate.
-            lagged_animation: The animation function to apply, which should create an Animation.
+            animator: The animation factory function to apply to each object.
             start: The frame at which the first animation should start.
             delay: The delay in frames before starting the next object's animation.
             duration: The duration of each object's animation in frames.
@@ -288,7 +288,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         for item in self:
             if skip_whitespace and item.is_whitespace():
                 continue
-            animation = lagged_animation(start=frame, end=frame + duration)
+            animation = animator(start=frame, end=frame + duration)
             item._animate(property, animation)
             frame += delay
         return self

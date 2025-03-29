@@ -25,7 +25,7 @@ scene.add(editor)
 
 code1.chars[-1:-5:-1].write_on(
     "alpha",
-    lagged_animation=stagger(start_value=1, end_value=0),
+    animator=stagger(start_value=1, end_value=0),
     delay=4,
     duration=1,
     start=24,
@@ -33,7 +33,7 @@ code1.chars[-1:-5:-1].write_on(
 
 code2.chars[-5:].write_on(
     "alpha",
-    lagged_animation=stagger(),
+    animator=stagger(),
     delay=4,
     duration=1,
     start=36,
