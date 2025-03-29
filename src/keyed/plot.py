@@ -186,8 +186,6 @@ class Axes(Base):
 class ParametricPlot(Base, AxesAnchorable):
     """A general parametric plot that efficiently visualizes parametric functions.
 
-    This implementation draws the curve and tracking point using Cairo.
-
     Args:
         scene: The scene to which the plot belongs
         x_func: Function that computes x coordinate given parameter t
@@ -198,8 +196,8 @@ class ParametricPlot(Base, AxesAnchorable):
         t_end: Ending value for parameter t
         x_range: Optional fixed range for x axis as (min, max)
         y_range: Optional fixed range for y axis as (min, max)
-        point_color: RGB color tuple for the tracking point
-        curve_color: RGB color tuple for the curve
+        point_color: Color for the tracking point
+        curve_color: Color for the curve
         line_width: Width of the curve line
         point_radius: Radius of the tracking point
         num_segments: Number of segments to use when drawing the curve
