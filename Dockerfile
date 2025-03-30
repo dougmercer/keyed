@@ -10,11 +10,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
+    --no-install-recommends \
     libcairo2-dev \
     pkg-config \
     python3-dev \
     gcc \
-    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -47,7 +47,8 @@ LABEL org.opencontainers.image.title="Keyed" \
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
-    libcairo2 \
+    --no-install-recommends \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
