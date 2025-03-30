@@ -5,8 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "keyed"
 description = "A reactive animation library."
-version = "0.0.1"
+version = "0.1.0"
 readme = "README.md"
+license = {file="LICENSE"}
 authors = [
     {name = "Doug Mercer", email = "dougmerceryt@gmail.com"}
 ]
@@ -23,6 +24,14 @@ dependencies = [
     "tqdm",
     "typer",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["keyed", "animation", "reactive"]
+
 
 [project.optional-dependencies]
 lint = [

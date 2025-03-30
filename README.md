@@ -18,7 +18,7 @@ Keyed is a Python library for creating programmatically defined animations. Name
 - **Reactive Programming Model**: Built using the reactive programming library [signified](https://github.com/dougmercer/signified) to make declaratively defining highly dynamic animations a breeze
 - **Vector Graphics**: [Cairo](https://www.cairographics.org)-based rendering for crisp, scalable graphics
 - **Flexible Shape System**: Define basic lines, shapes, curves, and complex geometries
-- **Code Animation Focus**: Animate syntax highled code snippets
+- **Code Animation**: Animate syntax highled code snippets
 
 ## Installation
 
