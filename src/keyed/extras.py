@@ -3,9 +3,11 @@ from contextlib import redirect_stdout
 
 from .constants import EXTRAS_INSTALLED
 
+__all__ = ["Editor", "FreeHandContext", "post_process_tokens"]
+
 if EXTRAS_INSTALLED:
     with redirect_stdout(io.StringIO()):
-        from keyed_extras import *  # noqa: F403  # type: ignore
+        from keyed_extras import Editor, FreeHandContext, post_process_tokens  # type: ignore
 else:
 
     def post_process_tokens(code, tokens, filename):

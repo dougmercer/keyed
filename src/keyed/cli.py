@@ -9,6 +9,7 @@ from pathlib import Path
 import typer
 
 from keyed.constants import Quality, QualitySetting
+from keyed.debug import dependency_manager
 from keyed.parser import SceneEvaluator
 from keyed.renderer import VideoFormat
 
@@ -35,7 +36,7 @@ class OutputFormat(str, Enum):
 
 def cli():
     """Entry point for the CLI that handles direct file paths."""
-    if len(sys.argv) > 1 and sys.argv[1] not in ["preview", "render", "iostream", "--help"]:
+    if len(sys.argv) > 1 and sys.argv[1] not in ["info", "preview", "render", "iostream", "--help"]:
         sys.argv[1:1] = ["preview"]  # Insert 'preview' command before the file path
     return app()
 
@@ -208,3 +209,60 @@ def iostream(
 
         # Clean up the temporary output file if it was sent to stdout
         tmp_output_path.unlink()
+
+
+@app.command()
+def info():
+    """Check system dependencies and installation status for keyed and keyed-extras."""
+    try:
+        # Basic keyed information
+        typer.echo("keyed info: Diagnostic tool for keyed and keyed-extras")
+        typer.echo("======================================================")
+
+        from importlib.metadata import PackageNotFoundError, version
+
+        typer.echo(f"\nkeyed version: {version('keyed')}")
+
+        # Check for keyed-extras
+        try:
+            import importlib.metadata
+
+            extras_version = importlib.metadata.version("keyed-extras")
+            typer.echo(f"keyed-extras version: {extras_version}")
+        except (ImportError, PackageNotFoundError):
+            typer.echo("keyed-extras: Not installed")
+            typer.echo("\nTo install keyed-extras: pip install keyed-extras")
+            return
+
+        # Check system dependencies
+
+        # Display feature availability
+        features = dependency_manager.get_available_features()
+        if features:
+            typer.echo("\nFeature availability:")
+            for feature_id, info in features.items():
+                status = "✓ Available" if info["available"] else "✗ Not available"
+                typer.echo(f"  {feature_id}: {status}")
+                if not info["available"] and info.get("error"):
+                    typer.echo(f"    Error: {info['error']}")
+
+        # Display system information
+        sys_info = dependency_manager.get_detailed_system_info()
+        typer.echo("\nSystem information:")
+        typer.echo(f"  Platform: {sys_info.get('platform', 'Unknown')}")
+        typer.echo(f"  Python: {sys_info.get('python_version', 'Unknown')}")
+
+        # Display library versions from sys_info
+        library_versions = [k for k in sys_info.keys() if k.endswith("_version")]
+        if library_versions:
+            typer.echo("\nDetected libraries:")
+            for key in library_versions:
+                name = key.replace("_version", "")
+                typer.echo(f"  {name}: {sys_info[key]}")
+
+        # Display help information
+        typer.echo("\nFor installation help: https://dougmercer.github.io/keyed-extras-docs/install")
+        typer.echo("To report issues: https://github.com/dougmercer-yt/keyed-extras/issues")
+
+    except Exception as e:
+        typer.echo(f"Error running diagnostics: {str(e)}", err=True)
