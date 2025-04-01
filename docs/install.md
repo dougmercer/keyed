@@ -31,7 +31,7 @@ Choose the method that works best for your system:
 
     Create an `environment.yml` file:
 
-    ```yml title="environment.yml"
+    ```yaml title="environment.yml"
     name: keyed
     channels:
     - conda-forge
