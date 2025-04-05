@@ -73,45 +73,53 @@ if PREVIEW_AVAILABLE:
             self.coordinates_label: QLabel | None = None
             self.quality = quality
             self.scene = scene
-            self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            # Add this to ensure the label keeps its aspect ratio
+            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             self.setMinimumSize(400, 225)  # Minimum 16:9 size
+            self.drawing_params = {
+                "x_offset": 0,
+                "y_offset": 0,
+                "draw_width": quality.width,
+                "draw_height": quality.height,
+            }
 
         def set_coordinates_label(self, label: QLabel) -> None:
             self.coordinates_label = label
 
         def mousePressEvent(self, ev: QMouseEvent) -> None:
-            # Calculate scale factor based on current widget size vs original quality size
-            scale_x = self.width() / self.quality.width
-            scale_y = self.height() / self.quality.height
+            # Get mouse position in widget coordinates
+            mouse_x = ev.position().x()
+            mouse_y = ev.position().y()
 
-            # Get the raw position in widget coordinates
-            raw_x, raw_y = ev.position().x(), ev.position().y()
+            # Check if the click is within the actual scene area (accounting for letterboxing)
+            x_offset = self.drawing_params["x_offset"]
+            y_offset = self.drawing_params["y_offset"]
+            draw_width = self.drawing_params["draw_width"]
+            draw_height = self.drawing_params["draw_height"]
 
-            # Convert widget coordinates to scene quality coordinates
-            scene_x = raw_x / scale_x
-            scene_y = raw_y / scale_y
+            # If the click is outside the drawn scene area, ignore it
+            if (
+                mouse_x < x_offset
+                or mouse_x >= x_offset + draw_width
+                or mouse_y < y_offset
+                or mouse_y >= y_offset + draw_height
+            ):
+                return
 
-            # Get object info using the scaled coordinates
-            info = self.get_object_info(scene_x, scene_y)
+            # Convert to scene coordinates
+            # 1. Adjust for letterboxing offset
+            adjusted_x = mouse_x - x_offset
+            adjusted_y = mouse_y - y_offset
+
+            # 2. Scale from display size to scene quality size
+            scene_quality_x = adjusted_x * (self.quality.width / draw_width)
+            scene_quality_y = adjusted_y * (self.quality.height / draw_height)
+
+            # Get object info
+            info = self.get_object_info(scene_quality_x, scene_quality_y)
             if info:
                 QToolTip.showText(ev.globalPosition().toPoint(), info, self)
             else:
                 QToolTip.hideText()
-
-        # Fixed InteractiveLabel.mouseMoveEvent method
-        def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-            # Calculate scale factor based on current widget size vs original quality size
-            scale_x = self.width() / self.quality.width
-            scale_y = self.height() / self.quality.height
-
-            # Get the raw position and convert to scene coordinates
-            x, y = ev.position().x(), ev.position().y()
-            scene_x = x / scale_x
-            scene_y = y / scale_y
-
-            if self.coordinates_label:
-                self.coordinates_label.setText(f"({scene_x:.1f}, {scene_y:.1f})")
 
         # Add resizeEvent to handle window resizing
         def resizeEvent(self, event: QResizeEvent) -> None:
@@ -290,32 +298,38 @@ if PREVIEW_AVAILABLE:
             label_width = self.label.width()
             label_height = self.label.height()
 
-            # Create a QPixmap sized to fit the label while maintaining aspect ratio
+            # Calculate letterboxing offsets and drawing dimensions
+            scene_aspect = self.scene._width / self.scene._height
+            label_aspect = label_width / label_height
+
+            if scene_aspect > label_aspect:
+                # Width limited
+                draw_width = label_width
+                draw_height = int(label_width / scene_aspect)
+                y_offset = (label_height - draw_height) // 2
+                x_offset = 0
+            else:
+                # Height limited
+                draw_height = label_height
+                draw_width = int(label_height * scene_aspect)
+                x_offset = (label_width - draw_width) // 2
+                y_offset = 0
+
+            # Store the drawing parameters for coordinate conversion
+            self.label.drawing_params = {
+                "x_offset": x_offset,
+                "y_offset": y_offset,
+                "draw_width": draw_width,
+                "draw_height": draw_height,
+            }
+
+            # Create a QPixmap and draw the scene
             qpixmap = QPixmap(label_width, label_height)
             qpixmap.fill(Qt.GlobalColor.black)
 
-            # Use QPainter to draw the QImage onto the QPixmap
             with QPainter(qpixmap) as painter:
-                # Enable high-quality antialiasing for smoother scaling
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
                 painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-
-                scene_aspect = self.scene._width / self.scene._height
-                label_aspect = label_width / label_height
-
-                if scene_aspect > label_aspect:
-                    # Width limited
-                    draw_width = label_width
-                    draw_height = int(label_width / scene_aspect)
-                    y_offset = (label_height - draw_height) // 2
-                    x_offset = 0
-                else:
-                    # Height limited
-                    draw_height = label_height
-                    draw_width = int(label_height * scene_aspect)
-                    x_offset = (label_width - draw_width) // 2
-                    y_offset = 0
-
                 painter.drawImage(
                     QRect(x_offset, y_offset, draw_width, draw_height),
                     qimage,
