@@ -4,15 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QRect, Qt, QTimer
+from PySide6.QtCore import QRect, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QPushButton,
     QSizePolicy,
     QSlider,
+    QStatusBar,
+    QStyle,
     QToolTip,
     QVBoxLayout,
     QWidget,
@@ -219,17 +222,19 @@ class MainWindow(QMainWindow):
         self.display_height = max(min_height, self.display_height)
 
     def init_ui(self) -> None:
-        """Initialize the user interface."""
+        """Initialize the user interface with improved controls."""
         self.setWindowTitle(f"Keyed Previewer - {self.scene.scene_name or 'Untitled'}")
 
-        # Set initial window size based on the calculated dimensions plus margin for controls
-        window_width = self.display_width + 40  # Add margin for window borders
-        window_height = self.display_height + 120  # Add space for controls
+        # Set initial window size
+        window_width = self.display_width + 40
+        window_height = self.display_height + 100
         self.resize(window_width, window_height)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(6)
         self.central_widget.setLayout(layout)
 
         # Menu bar setup
@@ -269,48 +274,188 @@ class MainWindow(QMainWindow):
         self.fps_label = QLabel(f"Playback: {self.frame_rate} fps")
         status_bar.addPermanentWidget(self.fps_label)
 
-        # Image display
+        # Scene display
         self.label = InteractiveLabel(self.scene)
         layout.addWidget(self.label)
 
-        # Frame slider
+        # Timeline slider container
+        slider_container = QFrame()
+        slider_container.setFrameShape(QFrame.Shape.StyledPanel)
+        slider_container.setStyleSheet("QFrame { background-color: #333; border-radius: 4px; }")
+
+        slider_layout = QHBoxLayout()
+        slider_layout.setContentsMargins(8, 4, 8, 4)
+        slider_container.setLayout(slider_layout)
+
+        # Improved timeline slider
         self.slider = QSlider(Qt.Orientation.Horizontal)
         self.slider.setMaximum(self.scene.num_frames - 1)
         self.slider.valueChanged.connect(self.slider_changed)
-        layout.addWidget(self.slider)
+        self.slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                height: 8px;
+                background: #555;
+                margin: 2px 0;
+                border-radius: 4px;
+            }
+            QSlider::handle:horizontal {
+                background: #3498db;
+                border: 2px solid #2980b9;
+                width: 18px;
+                height: 18px;
+                margin: -6px 0;
+                border-radius: 9px;
+            }
+            QSlider::sub-page:horizontal {
+                background: #2980b9;
+                border-radius: 4px;
+            }
+        """)
+        self.slider.setMinimumHeight(24)
+        slider_layout.addWidget(self.slider, 1)
 
-        # Control area
+        # Frame counter - now placed to the right of slider
+        self.frame_counter_label = QLabel("0/119")
+        self.frame_counter_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Calculate max width needed for largest possible frame count
+        max_frame_text = f"{self.scene.num_frames - 1}/{self.scene.num_frames - 1}"
+        self.frame_counter_label.setMinimumWidth(self.fontMetrics().horizontalAdvance(max_frame_text) + 24)
+        self.frame_counter_label.setStyleSheet("""
+            QLabel {
+                background-color: #2c2c2c;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-family: monospace;
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+            }
+        """)
+        slider_layout.addWidget(self.frame_counter_label)
+
+        layout.addWidget(slider_container)
+
+        # Playback controls in a horizontal layout
         control_layout = QHBoxLayout()
-        layout.addLayout(control_layout)
+        control_layout.setContentsMargins(0, 0, 0, 0)
+        control_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the controls
 
-        # Play button
-        self.play_button = QPushButton("▶️")
+        # Create combined container for playback controls
+        play_controls_container = QWidget()
+        play_controls_layout = QHBoxLayout()
+        play_controls_layout.setContentsMargins(0, 0, 0, 0)
+        play_controls_layout.setSpacing(4)
+        play_controls_container.setLayout(play_controls_layout)
+
+        # Skip to start button
+        self.start_button = QPushButton()
+        self.start_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSkipBackward))
+        self.start_button.clicked.connect(self.jump_to_start)
+        self.start_button.setFixedSize(36, 36)
+        self.start_button.setIconSize(QSize(16, 16))
+        self.start_button.setStyleSheet("""
+            QPushButton {
+                background-color: #444;
+                border-radius: 18px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+        """)
+        play_controls_layout.addWidget(self.start_button)
+
+        # Play/Pause button
+        self.play_button = QPushButton()
+        self.play_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
         self.play_button.clicked.connect(self.toggle_play)
-        control_layout.addWidget(self.play_button)
+        self.play_button.setFixedSize(48, 48)
+        self.play_button.setIconSize(QSize(24, 24))
+        self.play_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                border-radius: 24px;
+                padding: 6px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+        play_controls_layout.addWidget(self.play_button)
 
-        # Loop button
-        self.loop_button = QPushButton("➡️")
+        # Skip to end button
+        self.end_button = QPushButton()
+        self.end_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSkipForward))
+        self.end_button.clicked.connect(self.jump_to_end)
+        self.end_button.setFixedSize(36, 36)
+        self.end_button.setIconSize(QSize(16, 16))
+        self.end_button.setStyleSheet("""
+            QPushButton {
+                background-color: #444;
+                border-radius: 18px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+        """)
+        play_controls_layout.addWidget(self.end_button)
+
+        control_layout.addWidget(play_controls_container)
+        control_layout.addSpacing(24)
+
+        # Loop button separate from media controls
+        self.loop_button = QPushButton()
+        self.loop_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
         self.loop_button.clicked.connect(self.toggle_loop)
+        self.loop_button.setFixedSize(36, 36)
+        self.loop_button.setIconSize(QSize(16, 16))
+        self.loop_button.setCheckable(True)
+        self.loop_button.setStyleSheet("""
+            QPushButton {
+                background-color: #444;
+                border-radius: 18px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+            QPushButton:checked {
+                background-color: #2980b9;
+            }
+        """)
         control_layout.addWidget(self.loop_button)
 
-        # Frame Counter label
-        self.frame_counter_label = QLabel("Frame: 0")
-        control_layout.addWidget(self.frame_counter_label)
+        layout.addLayout(control_layout)
 
-        # Bottom info area
-        bottom_layout = QHBoxLayout()
-        layout.addLayout(bottom_layout)
+        # Enhanced status bar with cursor position
+        status_bar = QStatusBar()
+        status_bar.setStyleSheet("""
+            QStatusBar {
+                background-color: #2c2c2c;
+                color: #aaa;
+            }
+            QStatusBar::item {
+                border: none;
+            }
+        """)
 
-        # Coordinates display
-        self.coordinates_label = QLabel("Cursor Position in Scene: (0, 0)")
-        self.coordinates_label.setMinimumWidth(100)
-        bottom_layout.addWidget(self.coordinates_label)
+        # Left side status message
+        status_bar.showMessage(f"Scene: {self.scene._width}x{self.scene._height} px, {self.scene.num_frames} frames")
+
+        # Middle section for cursor position
+        self.coordinates_label = QLabel("Cursor Outside scene")
+        self.coordinates_label.setStyleSheet("color: #aaa; padding-right: 15px;")
+        status_bar.addPermanentWidget(self.coordinates_label)
+
+        # Right side for fps display
+        self.fps_label = QLabel(f"Playback: {self.frame_rate} fps")
+        self.fps_label.setStyleSheet("color: #aaa;")
+        status_bar.addPermanentWidget(self.fps_label)
+
+        self.setStatusBar(status_bar)
         self.label.set_coordinates_label(self.coordinates_label)
-
-        # Object info display
-        self.object_info = QLabel("")
-        bottom_layout.addWidget(self.object_info)
-        bottom_layout.addStretch()
 
         # Animation timer
         self.update_timer = QTimer()
@@ -378,20 +523,54 @@ class MainWindow(QMainWindow):
             self.update_canvas(self.current_frame)
             self.slider.setValue(self.current_frame)
 
+    def jump_to_start(self):
+        """Jump to the first frame."""
+        self.current_frame = 0
+        self.update_canvas(self.current_frame)
+        self.slider.setValue(self.current_frame)
+
+    def jump_to_end(self):
+        """Jump to the last frame."""
+        self.current_frame = self.scene.num_frames - 1
+        self.update_canvas(self.current_frame)
+        self.slider.setValue(self.current_frame)
+
     def toggle_play(self) -> None:
         """Start or stop playback."""
         self.playing = not self.playing
         if self.playing:
-            self.play_button.setText("⏸️")
+            self.play_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
             self.update_timer.start(1000 // self.frame_rate)
         else:
-            self.play_button.setText("▶️")
+            self.play_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
             self.update_timer.stop()
 
     def toggle_loop(self) -> None:
         """Toggle between looping and non-looping playback."""
         self.looping = not self.looping
-        self.loop_button.setText("🔁" if self.looping else "➡️")
+        self.loop_button.setChecked(self.looping)
+        if self.looping:
+            self.loop_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2980b9;
+                    border-radius: 18px;
+                    padding: 6px;
+                }
+                QPushButton:hover {
+                    background-color: #3498db;
+                }
+            """)
+        else:
+            self.loop_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #444;
+                    border-radius: 18px;
+                    padding: 6px;
+                }
+                QPushButton:hover {
+                    background-color: #555;
+                }
+            """)
 
     def slider_changed(self, value: int) -> None:
         """Handle slider value changes."""
@@ -491,5 +670,5 @@ class MainWindow(QMainWindow):
         self.label.setPixmap(label_pixmap)
 
     def update_frame_counter(self) -> None:
-        """Update the frame counter display."""
-        self.frame_counter_label.setText(f"Frame: {self.current_frame}/{self.scene.num_frames - 1}")
+        """Update the frame counter display with improved formatting."""
+        self.frame_counter_label.setText(f"{self.current_frame}/{self.scene.num_frames - 1}")
