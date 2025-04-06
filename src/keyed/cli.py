@@ -7,10 +7,13 @@ from enum import Enum
 from pathlib import Path
 
 import typer
+from rich.console import Console
+from rich.panel import Panel
 
 from keyed.constants import Quality, QualitySetting
 from keyed.debug import dependency_manager
 from keyed.parser import SceneEvaluator
+from keyed.previewer import PREVIEW_AVAILABLE
 from keyed.renderer import VideoFormat
 
 app = typer.Typer()
@@ -32,6 +35,16 @@ class OutputFormat(str, Enum):
     WEBM = "webm"
     MOV = "mov"
     GIF = "gif"
+
+
+def print_error(message: str):
+    console = Console(stderr=True)
+    console.print(Panel(f"[bold red]{message}[/bold red]", title="Error", border_style="red"))
+
+
+def print_success(message: str):
+    console = Console(stderr=True)
+    console.print(Panel(f"[bold green]{message}[/bold green]", title="Success", border_style="green"))
 
 
 def cli():
@@ -58,13 +71,29 @@ def preview(
     ),
 ) -> None:
     """Preview a scene in a live-reloading window."""
+    if not PREVIEW_AVAILABLE:
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.text import Text
+
+        console = Console(stderr=True)
+
+        error_text = Text()
+        error_text.append("Previewer unavailable!", style="bold red")
+        error_text.append("\nInstall with: ", style="dim")
+        error_text.append("pip install 'keyed[previewer]'", style="bold green")
+
+        console.print(Panel(error_text, title="Error", border_style="red"))
+        raise typer.Exit(1)
+
     from PySide6.QtWidgets import QApplication
 
     from keyed.previewer import FileWatcher, LiveReloadWindow
 
     if not file.exists():
-        typer.echo(f"File not found: {file}", err=True)
+        print_error(f"File not found: {file}")
         raise typer.Exit(1)
+
     q: QualitySetting = getattr(Quality, quality).value
 
     # Initialize scene evaluator
@@ -73,7 +102,7 @@ def preview(
     # Get initial scene
     scene = evaluator.evaluate_file(file)
     if not scene:
-        typer.echo(f"No Scene object found in {file}", err=True)
+        print_error(f"No Scene object found in {file}")
         raise typer.Exit(1)
 
     # Create application and window
@@ -110,7 +139,7 @@ def render(
 ) -> None:
     """Render a scene to a video file."""
     if not file.exists():
-        typer.echo(f"File not found: {file}", err=True)
+        print_error(f"File not found: {file.resolve()}")
         raise typer.Exit(1)
 
     # Initialize scene evaluator
@@ -119,7 +148,7 @@ def render(
     # Get scene
     scene = evaluator.evaluate_file(file)
     if not scene:
-        typer.echo(f"No Scene object found in {file}", err=True)
+        print_error(f"No Scene object found in {file.resolve()}")
         raise typer.Exit(1)
 
     # Render based on format
@@ -129,6 +158,8 @@ def render(
         scene.render(format=VideoFormat.MOV_PRORES, frame_rate=frame_rate, output_path=output)
     elif format == OutputFormat.GIF:
         scene.render(format=VideoFormat.GIF, frame_rate=frame_rate, output_path=output)
+
+    print_success(f"Successfully rendered scene to {output.resolve()}")
 
 
 @app.command()
@@ -150,7 +181,7 @@ def iostream(
     code = sys.stdin.read()
 
     if not code:
-        typer.echo("No input received from stdin", err=True)
+        print_error("No input received from stdin")
         raise typer.Exit(1)
 
     # Create a context manager to suppress all stdout during scene evaluation
@@ -178,7 +209,7 @@ def iostream(
             # Get scene
             scene = evaluator.evaluate_file(tmp_path)
             if not scene:
-                typer.echo("No Scene object found in input", err=True)
+                print_error("No Scene object found in input")
                 raise typer.Exit(1)
 
             # Create a temporary output file
@@ -215,54 +246,95 @@ def iostream(
 def info():
     """Check system dependencies and installation status for keyed and keyed-extras."""
     try:
-        # Basic keyed information
-        typer.echo("keyed info: Diagnostic tool for keyed and keyed-extras")
-        typer.echo("======================================================")
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.table import Table
+
+        console = Console()
+
+        console.print(
+            Panel.fit(
+                "[bold blue]keyed info[/bold blue]: Diagnostic tool for keyed and keyed-extras", border_style="blue"
+            )
+        )
 
         from importlib.metadata import PackageNotFoundError, version
 
-        typer.echo(f"\nkeyed version: {version('keyed')}")
+        # Create a table for package versions
+        version_table = Table(show_header=False, box=None)
+        version_table.add_column("Package", style="dim")
+        version_table.add_column("Version", style="green")
+
+        version_table.add_row("keyed version", version("keyed"))
 
         # Check for keyed-extras
         try:
             import importlib.metadata
 
             extras_version = importlib.metadata.version("keyed-extras")
-            typer.echo(f"keyed-extras version: {extras_version}")
+            version_table.add_row("keyed-extras version", extras_version)
         except (ImportError, PackageNotFoundError):
-            typer.echo("keyed-extras: Not installed")
-            typer.echo("\nTo install keyed-extras: pip install keyed-extras")
+            version_table.add_row("keyed-extras", "[red]Not installed[/red]")
+            console.print(version_table)
+            console.print("\nTo install keyed-extras: [bold green]pip install keyed-extras[/bold green]")
             return
 
-        # Check system dependencies
+        console.print(version_table)
 
+        # Check system dependencies
         # Display feature availability
         features = dependency_manager.get_available_features()
         if features:
-            typer.echo("\nFeature availability:")
+            console.print("\n[bold]Feature availability:[/bold]")
+            feature_table = Table(show_header=False, box=None, padding=(0, 1, 0, 1))
+            feature_table.add_column("Feature")
+            feature_table.add_column("Status")
+
             for feature_id, info in features.items():
-                status = "✓ Available" if info["available"] else "✗ Not available"
-                typer.echo(f"  {feature_id}: {status}")
+                status = "[green]✓ Available[/green]" if info["available"] else "[red]✗ Not available[/red]"
+                feature_table.add_row(feature_id, status)
                 if not info["available"] and info.get("error"):
-                    typer.echo(f"    Error: {info['error']}")
+                    feature_table.add_row("", f"[dim italic]Error: {info['error']}[/dim italic]")
+
+            console.print(feature_table)
 
         # Display system information
         sys_info = dependency_manager.get_detailed_system_info()
-        typer.echo("\nSystem information:")
-        typer.echo(f"  Platform: {sys_info.get('platform', 'Unknown')}")
-        typer.echo(f"  Python: {sys_info.get('python_version', 'Unknown')}")
+        console.print("\n[bold]System information:[/bold]")
+        sys_table = Table(show_header=False, box=None, padding=(0, 1, 0, 1))
+        sys_table.add_column("Property", style="dim")
+        sys_table.add_column("Value")
+
+        sys_table.add_row("Platform", sys_info.get("platform", "Unknown"))
+        sys_table.add_row("Python", sys_info.get("python_version", "Unknown"))
+
+        console.print(sys_table)
 
         # Display library versions from sys_info
         library_versions = [k for k in sys_info.keys() if k.endswith("_version")]
         if library_versions:
-            typer.echo("\nDetected libraries:")
+            console.print("\n[bold]Detected libraries:[/bold]")
+            lib_table = Table(show_header=False, box=None, padding=(0, 1, 0, 1))
+            lib_table.add_column("Library", style="dim")
+            lib_table.add_column("Version")
+
             for key in library_versions:
                 name = key.replace("_version", "")
-                typer.echo(f"  {name}: {sys_info[key]}")
+                lib_table.add_row(name, sys_info[key])
+
+            console.print(lib_table)
 
         # Display help information
-        typer.echo("\nFor installation help: https://dougmercer.github.io/keyed-extras-docs/install")
-        typer.echo("To report issues: https://github.com/dougmercer-yt/keyed-extras/issues")
+        help_panel = Panel(
+            "[dim]For installation help:[/dim] [blue]https://dougmercer.github.io/keyed-extras-docs/install[/blue]\n"
+            "[dim]To report issues:[/dim] [blue]https://github.com/dougmercer-yt/keyed-extras/issues[/blue]",
+            title="Help Resources",
+            border_style="green",
+        )
+        console.print(help_panel)
 
     except Exception as e:
-        typer.echo(f"Error running diagnostics: {str(e)}", err=True)
+        from rich.console import Console
+
+        console = Console(stderr=True)
+        console.print(f"[bold red]Error running diagnostics:[/bold red] {str(e)}")
