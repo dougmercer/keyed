@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 from shapely.affinity import affine_transform
 from shapely.geometry import Point
 
-from ..constants import Quality
+from ..config import get_previewer_config
 from ..renderer import VideoFormat
 
 if TYPE_CHECKING:
@@ -139,7 +139,7 @@ class InteractiveLabel(QLabel):
             or mouse_y < y_offset
             or mouse_y >= y_offset + draw_height
         ):
-            self.coordinates_label.setText("Outside scene")
+            self.coordinates_label.setText("Cursor Outside scene")
             return
 
         # Convert to scene coordinates
@@ -151,7 +151,7 @@ class InteractiveLabel(QLabel):
         scene_x = adjusted_x / scale_x
         scene_y = adjusted_y / scale_y
 
-        self.coordinates_label.setText(f"({scene_x:.1f}, {scene_y:.1f})")
+        self.coordinates_label.setText(f"Cursor Position in Scene: ({scene_x:.1f}, {scene_y:.1f})")
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize events to update the canvas."""
@@ -171,25 +171,58 @@ class InteractiveLabel(QLabel):
 class MainWindow(QMainWindow):
     """Main window for the previewer application."""
 
-    def __init__(self, scene: Scene, quality: Quality = Quality.high, frame_rate: int = 24):
+    def __init__(self, scene: Scene, frame_rate: int = 24):
         super().__init__()
         self.scene = scene
-        self.quality = quality
         self.frame_rate = frame_rate
         self.current_frame = 0
         self.playing = False
         self.looping = False
 
-        # Calculate the display dimensions based on the quality scale factor
-        self.display_width, self.display_height = quality.get_scaled_dimensions(scene._width, scene._height)
+        # Get previewer configuration
+        self.config = get_previewer_config()
+
+        # Calculate initial display dimensions
+        self.calculate_display_dimensions()
 
         self.init_ui()
+
+    def calculate_display_dimensions(self) -> None:
+        """Calculate appropriate display dimensions based on scene size and config."""
+        # Get scene dimensions
+        scene_width = self.scene._width
+        scene_height = self.scene._height
+        scene_aspect = scene_width / scene_height
+
+        # Get config values
+        default_width = self.config.get("default_width", 1280)
+        default_height = self.config.get("default_height", 720)
+        min_width = self.config.get("min_width", 640)
+        min_height = self.config.get("min_height", 360)
+
+        # Target dimensions - use default size from config
+        target_width = max(min_width, default_width)
+        target_height = max(min_height, default_height)
+
+        # Adjust dimensions to maintain aspect ratio
+        if scene_aspect > target_width / target_height:
+            # Width is the constraint
+            self.display_width = target_width
+            self.display_height = int(target_width / scene_aspect)
+        else:
+            # Height is the constraint
+            self.display_height = target_height
+            self.display_width = int(target_height * scene_aspect)
+
+        # Make sure we're respecting minimum dimensions
+        self.display_width = max(min_width, self.display_width)
+        self.display_height = max(min_height, self.display_height)
 
     def init_ui(self) -> None:
         """Initialize the user interface."""
         self.setWindowTitle(f"Keyed Previewer - {self.scene.scene_name or 'Untitled'}")
 
-        # Set initial window size based on the scaled dimensions plus some margin for controls
+        # Set initial window size based on the calculated dimensions plus margin for controls
         window_width = self.display_width + 40  # Add margin for window borders
         window_height = self.display_height + 120  # Add space for controls
         self.resize(window_width, window_height)
@@ -202,7 +235,7 @@ class MainWindow(QMainWindow):
         # Menu bar setup
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
-        view_menu = menu_bar.addMenu("View")
+        playback_menu = menu_bar.addMenu("Playback")
 
         # File menu actions
         save_images_action = QAction("Save As Images", self)
@@ -217,22 +250,24 @@ class MainWindow(QMainWindow):
         save_video_action.triggered.connect(self.save_as_video)
         file_menu.addAction(save_video_action)
 
-        # View menu for quality options
-        quality_group = QActionGroup(self)
-        quality_group.setExclusive(True)
+        # View menu for frame rate options
+        framerate_menu = playback_menu.addMenu("Frame Rate")
+        framerate_group = QActionGroup(self)
+        framerate_group.setExclusive(True)
 
-        for q in Quality:
-            action = QAction(f"{q.name.replace('_', ' ').title()} ({int(q.value * 100)}%)", self)
+        for rate in [24, 30, 60]:
+            action = QAction(f"{rate} fps", self)
             action.setCheckable(True)
-            action.setChecked(q == self.quality)
-            action.triggered.connect(lambda checked, q=q: self.set_quality(q))
-            quality_group.addAction(action)
-            view_menu.addAction(action)
+            action.setChecked(rate == self.frame_rate)
+            action.triggered.connect(lambda checked, r=rate: self.set_frame_rate(r))
+            framerate_group.addAction(action)
+            framerate_menu.addAction(action)
 
         # Scene info in status bar
-        self.statusBar().showMessage(
-            f"Scene: {self.scene._width}x{self.scene._height} px, {self.scene.num_frames} frames"
-        )
+        status_bar = self.statusBar()
+        status_bar.showMessage(f"Scene: {self.scene._width}x{self.scene._height} px, {self.scene.num_frames} frames")
+        self.fps_label = QLabel(f"Playback: {self.frame_rate} fps")
+        status_bar.addPermanentWidget(self.fps_label)
 
         # Image display
         self.label = InteractiveLabel(self.scene)
@@ -261,14 +296,13 @@ class MainWindow(QMainWindow):
         # Frame Counter label
         self.frame_counter_label = QLabel("Frame: 0")
         control_layout.addWidget(self.frame_counter_label)
-        control_layout.addStretch()
 
         # Bottom info area
         bottom_layout = QHBoxLayout()
         layout.addLayout(bottom_layout)
 
         # Coordinates display
-        self.coordinates_label = QLabel("(0, 0)")
+        self.coordinates_label = QLabel("Cursor Position in Scene: (0, 0)")
         self.coordinates_label.setMinimumWidth(100)
         bottom_layout.addWidget(self.coordinates_label)
         self.label.set_coordinates_label(self.coordinates_label)
@@ -277,16 +311,6 @@ class MainWindow(QMainWindow):
         self.object_info = QLabel("")
         bottom_layout.addWidget(self.object_info)
         bottom_layout.addStretch()
-
-        # Display info label
-        self.display_info_label = QLabel(
-            f"{self.display_width}x{self.display_height} ({int(self.quality.value * 100)}%)"
-        )
-        bottom_layout.addWidget(self.display_info_label)
-
-        # FPS info
-        self.fps_label = QLabel(f"{self.frame_rate} fps")
-        bottom_layout.addWidget(self.fps_label)
 
         # Animation timer
         self.update_timer = QTimer()
@@ -297,29 +321,18 @@ class MainWindow(QMainWindow):
         self.update_frame_counter()
         self.toggle_loop()  # Enable looping by default
 
-    def set_quality(self, quality: Quality) -> None:
-        """Change the display quality/scale.
+    def set_frame_rate(self, rate: int) -> None:
+        """Change the playback frame rate.
 
         Args:
-            quality: The new quality setting to use
+            rate: The new frame rate to use (frames per second)
         """
-        self.quality = quality
+        self.frame_rate = rate
+        self.fps_label.setText(f"{self.frame_rate} fps")
 
-        # Recalculate display dimensions
-        self.display_width, self.display_height = quality.get_scaled_dimensions(self.scene._width, self.scene._height)
-
-        # Update the display info label
-        self.display_info_label.setText(
-            f"{self.display_width}x{self.display_height} ({int(self.quality.value * 100)}%)"
-        )
-
-        # Update the display with current frame
-        self.update_canvas(self.current_frame)
-
-        # Optionally resize the window to better fit the new dimensions
-        window_width = self.display_width + 40
-        window_height = self.display_height + 120
-        self.resize(window_width, window_height)
+        # Update the timer if currently playing
+        if self.playing:
+            self.update_timer.start(1000 // self.frame_rate)
 
     def save_as_images(self) -> None:
         """Save the scene as a sequence of image files."""
@@ -417,26 +430,22 @@ class MainWindow(QMainWindow):
         label_width = self.label.width()
         label_height = self.label.height()
 
-        # Calculate the target size for rendering the scene (based on our quality setting)
-        target_width = self.display_width
-        target_height = self.display_height
-
-        # Fit the target size within the label while preserving aspect ratio
-        scene_aspect = target_width / target_height
+        # Calculate scaling
+        scene_aspect = self.scene._width / self.scene._height
         label_aspect = label_width / label_height
 
         if scene_aspect > label_aspect:
             # Width constrained
             draw_width = label_width
-            scale = draw_width / target_width
-            draw_height = target_height * scale
+            scale = draw_width / self.scene._width
+            draw_height = self.scene._height * scale
             x_offset = 0
             y_offset = (label_height - draw_height) // 2
         else:
             # Height constrained
             draw_height = label_height
-            scale = draw_height / target_height
-            draw_width = target_width * scale
+            scale = draw_height / self.scene._height
+            draw_width = self.scene._width * scale
             x_offset = (label_width - draw_width) // 2
             y_offset = 0
 

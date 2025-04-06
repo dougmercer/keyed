@@ -1,3 +1,5 @@
+"""File watching capabilities for live preview."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -65,20 +67,15 @@ class LiveReloadWindow(MainWindow):
         # Preserve current state
         current_frame = self.current_frame
         was_playing = self.playing
-        current_quality = self.quality
 
         # Update scene
         self.scene = new_scene
 
-        # Recalculate display dimensions based on the current quality setting
-        self.display_width, self.display_height = current_quality.get_scaled_dimensions(
-            new_scene._width, new_scene._height
-        )
+        # Recalculate display dimensions based on the new scene
+        self.calculate_display_dimensions()
 
         # Update display info label
-        self.display_info_label.setText(
-            f"{self.display_width}x{self.display_height} ({int(current_quality.value * 100)}%)"
-        )
+        self.display_info_label.setText(f"{self.display_width}x{self.display_height}")
 
         # Update UI for new scene
         self.slider.setMaximum(new_scene.num_frames - 1)

@@ -10,7 +10,6 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from keyed.constants import Quality
 from keyed.debug import dependency_manager
 from keyed.parser import SceneEvaluator
 from keyed.previewer import PREVIEW_AVAILABLE
@@ -66,9 +65,6 @@ def callback(ctx: typer.Context):
 def preview(
     file: Path = typer.Argument(..., help="Python file containing a Scene definition"),
     frame_rate: int = typer.Option(24, "--frame-rate", "-r", help="Frame rate for playback"),
-    quality: QualityChoices = typer.Option(
-        "high", "--quality", "-q", help="Render quality: very_low, low, medium, high, very_high"
-    ),
 ) -> None:
     """Preview a scene in a live-reloading window."""
     if not PREVIEW_AVAILABLE:
@@ -94,8 +90,6 @@ def preview(
         print_error(f"File not found: {file}")
         raise typer.Exit(1)
 
-    q = getattr(Quality, quality)
-
     # Initialize scene evaluator
     evaluator = SceneEvaluator()
 
@@ -107,7 +101,7 @@ def preview(
 
     # Create application and window
     app = QApplication(sys.argv)
-    window = LiveReloadWindow(scene, quality=q, frame_rate=frame_rate)
+    window = LiveReloadWindow(scene, frame_rate=frame_rate)
     window.show()
 
     # Setup file watcher
