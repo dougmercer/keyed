@@ -56,7 +56,7 @@ class SceneFileHandler(FileSystemEventHandler):
 class LiveReloadWindow(MainWindow):
     """MainWindow that can update its scene without reloading."""
 
-    def update_scene(self, new_scene: Scene):
+    def update_scene(self, new_scene: Scene) -> None:
         """Update the window with a new scene instance.
 
         Args:
@@ -65,14 +65,28 @@ class LiveReloadWindow(MainWindow):
         # Preserve current state
         current_frame = self.current_frame
         was_playing = self.playing
+        current_quality = self.quality
 
         # Update scene
         self.scene = new_scene
+
+        # Recalculate display dimensions based on the current quality setting
+        self.display_width, self.display_height = current_quality.get_scaled_dimensions(
+            new_scene._width, new_scene._height
+        )
+
+        # Update display info label
+        self.display_info_label.setText(
+            f"{self.display_width}x{self.display_height} ({int(current_quality.value * 100)}%)"
+        )
 
         # Update UI for new scene
         self.slider.setMaximum(new_scene.num_frames - 1)
         if current_frame >= new_scene.num_frames:
             current_frame = 0
+
+        # Update status bar info
+        self.statusBar().showMessage(f"Scene: {new_scene._width}x{new_scene._height} px, {new_scene.num_frames} frames")
 
         # Update display
         self.current_frame = current_frame

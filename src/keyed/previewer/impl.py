@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QRect, Qt, QTimer
-from PySide6.QtGui import QAction, QImage, QKeyEvent, QMouseEvent, QPainter, QPen, QPixmap, QResizeEvent
+from PySide6.QtGui import QAction, QActionGroup, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -20,36 +20,31 @@ from PySide6.QtWidgets import (
 from shapely.affinity import affine_transform
 from shapely.geometry import Point
 
-from ..constants import QualitySetting
+from ..constants import Quality
 from ..renderer import VideoFormat
 
 if TYPE_CHECKING:
     from keyed import Base, Scene
 
 
-def get_object_info(scene: Scene, quality: QualitySetting, frame: int, point: tuple[float, float]) -> Base | None:
+def get_object_info(scene: Scene, x: float, y: float, frame: int) -> Base | None:
     """Find an object at the given point in the scene.
 
     Args:
         scene: The scene to search in
-        quality: Quality settings to help with coordinate conversion
+        x: X coordinate in scene space
+        y: Y coordinate in scene space
         frame: Current frame
-        point: (x, y) coordinates in the quality-specific space
 
     Returns:
         The found object or None
     """
-    # Convert coordinates from display space to scene space
-    x, y = point
-    scene_x = x
-    scene_y = y
-
     # Transform point based on scene's transformation matrix
     matrix = scene.controls.matrix.value
     if matrix is None or (invert := matrix.invert()) is None:
-        transformed_x, transformed_y = scene_x, scene_y
+        transformed_x, transformed_y = x, y
     else:
-        transformed_x, transformed_y = affine_transform(Point(scene_x, scene_y), invert).coords[0]
+        transformed_x, transformed_y = affine_transform(Point(x, y), invert).coords[0]  # type: ignore
 
     return scene.find(transformed_x, transformed_y, frame)
 
@@ -59,18 +54,16 @@ class InteractiveLabel(QLabel):
 
     def __init__(
         self,
-        quality: QualitySetting,
         scene: Scene,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
-        self.setStyleSheet("border: 2px solid #333; background-color: #222;")
+        self.setStyleSheet("background-color: transparent;")  # Transparent background
         self.coordinates_label: QLabel | None = None
-        self.quality = quality
         self.scene = scene
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setMinimumSize(400, 225)  # Minimum viable size
+        self.setMinimumSize(200, 100)  # Minimum viable size
 
         # Initialize drawing parameters
         self.drawing_params = {
@@ -108,7 +101,7 @@ class InteractiveLabel(QLabel):
             return
 
         # Convert to scene coordinates
-        # 1. Adjust for letterboxing offset
+        # 1. Adjust for centering offset
         adjusted_x = mouse_x - x_offset
         adjusted_y = mouse_y - y_offset
 
@@ -171,14 +164,14 @@ class InteractiveLabel(QLabel):
         """Get information about an object at the given coordinates."""
         window = self.window()
         assert isinstance(window, MainWindow)
-        nearest = get_object_info(window.scene, window.quality, window.current_frame, (x, y))
+        nearest = get_object_info(window.scene, x, y, window.current_frame)
         return repr(nearest) if nearest else "No object found"
 
 
 class MainWindow(QMainWindow):
     """Main window for the previewer application."""
 
-    def __init__(self, scene: Scene, quality: QualitySetting, frame_rate: int = 24):
+    def __init__(self, scene: Scene, quality: Quality = Quality.high, frame_rate: int = 24):
         super().__init__()
         self.scene = scene
         self.quality = quality
@@ -186,27 +179,32 @@ class MainWindow(QMainWindow):
         self.current_frame = 0
         self.playing = False
         self.looping = False
+
+        # Calculate the display dimensions based on the quality scale factor
+        self.display_width, self.display_height = quality.get_scaled_dimensions(scene._width, scene._height)
+
         self.init_ui()
 
     def init_ui(self) -> None:
         """Initialize the user interface."""
         self.setWindowTitle(f"Keyed Previewer - {self.scene.scene_name or 'Untitled'}")
 
-        # Set initial window size based on quality but with some reasonable limits
-        max_width = min(1600, self.quality.width)
-        max_height = min(900, self.quality.height)
-        self.resize(max_width, max_height)
+        # Set initial window size based on the scaled dimensions plus some margin for controls
+        window_width = self.display_width + 40  # Add margin for window borders
+        window_height = self.display_height + 120  # Add space for controls
+        self.resize(window_width, window_height)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout()
         self.central_widget.setLayout(layout)
 
-        # Menu bar
+        # Menu bar setup
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
+        view_menu = menu_bar.addMenu("View")
 
-        # Actions
+        # File menu actions
         save_images_action = QAction("Save As Images", self)
         save_images_action.triggered.connect(self.save_as_images)
         file_menu.addAction(save_images_action)
@@ -219,13 +217,25 @@ class MainWindow(QMainWindow):
         save_video_action.triggered.connect(self.save_as_video)
         file_menu.addAction(save_video_action)
 
+        # View menu for quality options
+        quality_group = QActionGroup(self)
+        quality_group.setExclusive(True)
+
+        for q in Quality:
+            action = QAction(f"{q.name.replace('_', ' ').title()} ({int(q.value * 100)}%)", self)
+            action.setCheckable(True)
+            action.setChecked(q == self.quality)
+            action.triggered.connect(lambda checked, q=q: self.set_quality(q))
+            quality_group.addAction(action)
+            view_menu.addAction(action)
+
         # Scene info in status bar
         self.statusBar().showMessage(
             f"Scene: {self.scene._width}x{self.scene._height} px, {self.scene.num_frames} frames"
         )
 
         # Image display
-        self.label = InteractiveLabel(self.quality, self.scene)
+        self.label = InteractiveLabel(self.scene)
         layout.addWidget(self.label)
 
         # Frame slider
@@ -268,6 +278,12 @@ class MainWindow(QMainWindow):
         bottom_layout.addWidget(self.object_info)
         bottom_layout.addStretch()
 
+        # Display info label
+        self.display_info_label = QLabel(
+            f"{self.display_width}x{self.display_height} ({int(self.quality.value * 100)}%)"
+        )
+        bottom_layout.addWidget(self.display_info_label)
+
         # FPS info
         self.fps_label = QLabel(f"{self.frame_rate} fps")
         bottom_layout.addWidget(self.fps_label)
@@ -280,6 +296,30 @@ class MainWindow(QMainWindow):
         self.update_canvas(0)
         self.update_frame_counter()
         self.toggle_loop()  # Enable looping by default
+
+    def set_quality(self, quality: Quality) -> None:
+        """Change the display quality/scale.
+
+        Args:
+            quality: The new quality setting to use
+        """
+        self.quality = quality
+
+        # Recalculate display dimensions
+        self.display_width, self.display_height = quality.get_scaled_dimensions(self.scene._width, self.scene._height)
+
+        # Update the display info label
+        self.display_info_label.setText(
+            f"{self.display_width}x{self.display_height} ({int(self.quality.value * 100)}%)"
+        )
+
+        # Update the display with current frame
+        self.update_canvas(self.current_frame)
+
+        # Optionally resize the window to better fit the new dimensions
+        window_width = self.display_width + 40
+        window_height = self.display_height + 120
+        self.resize(window_width, window_height)
 
     def save_as_images(self) -> None:
         """Save the scene as a sequence of image files."""
@@ -377,24 +417,32 @@ class MainWindow(QMainWindow):
         label_width = self.label.width()
         label_height = self.label.height()
 
-        # Calculate scaling to fit the scene while preserving aspect ratio
-        scene_aspect = self.scene._width / self.scene._height
+        # Calculate the target size for rendering the scene (based on our quality setting)
+        target_width = self.display_width
+        target_height = self.display_height
+
+        # Fit the target size within the label while preserving aspect ratio
+        scene_aspect = target_width / target_height
         label_aspect = label_width / label_height
 
         if scene_aspect > label_aspect:
             # Width constrained
             draw_width = label_width
-            scale = draw_width / self.scene._width
-            draw_height = self.scene._height * scale
+            scale = draw_width / target_width
+            draw_height = target_height * scale
             x_offset = 0
             y_offset = (label_height - draw_height) // 2
         else:
             # Height constrained
             draw_height = label_height
-            scale = draw_height / self.scene._height
-            draw_width = self.scene._width * scale
+            scale = draw_height / target_height
+            draw_width = target_width * scale
             x_offset = (label_width - draw_width) // 2
             y_offset = 0
+
+        # Calculate scale factors from scene coordinates to display coordinates
+        scale_x = draw_width / self.scene._width
+        scale_y = draw_height / self.scene._height
 
         # Store drawing parameters for mouse coordinate conversion
         self.label.drawing_params = {
@@ -402,12 +450,13 @@ class MainWindow(QMainWindow):
             "y_offset": y_offset,
             "draw_width": draw_width,
             "draw_height": draw_height,
-            "scale_x": scale,
-            "scale_y": scale,
+            "scale_x": scale_x,
+            "scale_y": scale_y,
         }
 
-        # Create a pixmap for drawing
-        qpixmap = QPixmap(label_width, label_height)
+        # Create a pixmap exactly the size of the draw area (not the entire label)
+        # This way the black rectangle will only be as big as the scene
+        qpixmap = QPixmap(int(draw_width), int(draw_height))
         qpixmap.fill(Qt.GlobalColor.black)
 
         with QPainter(qpixmap) as painter:
@@ -415,25 +464,22 @@ class MainWindow(QMainWindow):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
 
-            # Draw scene onto pixmap with letterboxing
+            # Draw scene onto pixmap - now filling the entire pixmap
             painter.drawImage(
-                QRect(int(x_offset), int(y_offset), int(draw_width), int(draw_height)),
+                QRect(0, 0, int(draw_width), int(draw_height)),
                 qimage,
                 QRect(0, 0, self.scene._width, self.scene._height),
             )
 
-            # Draw guidelines indicating scene boundaries
-            if x_offset > 0 or y_offset > 0:
-                # Use a semi-transparent gray for the guidelines
-                painter.setPen(QPen(Qt.GlobalColor.darkGray, 1, Qt.PenStyle.DashLine))
+        # Create a full-size pixmap for the label with transparent background
+        label_pixmap = QPixmap(label_width, label_height)
+        label_pixmap.fill(Qt.GlobalColor.transparent)
 
-                # Draw scene dimension text
-                # painter.drawText(int(x_offset + 5), int(y_offset + 15), f"{self.scene._width}x{self.scene._height}")
+        # Draw the scene pixmap onto the label pixmap at the correct position
+        with QPainter(label_pixmap) as painter:
+            painter.drawPixmap(int(x_offset), int(y_offset), qpixmap)
 
-                # Draw guidelines around scene area
-                painter.drawRect(int(x_offset), int(y_offset), int(draw_width), int(draw_height))
-
-        self.label.setPixmap(qpixmap)
+        self.label.setPixmap(label_pixmap)
 
     def update_frame_counter(self) -> None:
         """Update the frame counter display."""

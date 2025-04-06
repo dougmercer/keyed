@@ -10,7 +10,7 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from keyed.constants import Quality, QualitySetting
+from keyed.constants import Quality
 from keyed.debug import dependency_manager
 from keyed.parser import SceneEvaluator
 from keyed.previewer import PREVIEW_AVAILABLE
@@ -94,7 +94,7 @@ def preview(
         print_error(f"File not found: {file}")
         raise typer.Exit(1)
 
-    q: QualitySetting = getattr(Quality, quality).value
+    q = getattr(Quality, quality)
 
     # Initialize scene evaluator
     evaluator = SceneEvaluator()
