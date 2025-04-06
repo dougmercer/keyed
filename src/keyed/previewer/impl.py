@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QRect, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -241,6 +243,7 @@ class MainWindow(QMainWindow):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
         playback_menu = menu_bar.addMenu("Playback")
+        help_menu = menu_bar.addMenu("Help")
 
         # File menu actions
         save_images_action = QAction("Save As Images", self)
@@ -255,7 +258,7 @@ class MainWindow(QMainWindow):
         save_video_action.triggered.connect(self.save_as_video)
         file_menu.addAction(save_video_action)
 
-        # View menu for frame rate options
+        # Playback menu
         framerate_menu = playback_menu.addMenu("Frame Rate")
         framerate_group = QActionGroup(self)
         framerate_group.setExclusive(True)
@@ -267,6 +270,11 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda checked, r=rate: self.set_frame_rate(r))
             framerate_group.addAction(action)
             framerate_menu.addAction(action)
+
+        # Help menu
+        keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
+        keyboard_shortcuts_action.triggered.connect(self.show_keyboard_shortcuts)
+        help_menu.addAction(keyboard_shortcuts_action)
 
         # Scene info in status bar
         status_bar = self.statusBar()
@@ -494,6 +502,17 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard events."""
+        modifiers = event.modifiers()
+
+        if modifiers & Qt.KeyboardModifier.AltModifier:
+            # Control key combinations
+            if event.key() == Qt.Key.Key_Left:
+                self.jump_to_start()
+                return
+            elif event.key() == Qt.Key.Key_Right:
+                self.jump_to_end()
+                return
+
         if event.key() == Qt.Key.Key_Right:
             self.increment_frame()
         elif event.key() == Qt.Key.Key_Left:
@@ -668,6 +687,77 @@ class MainWindow(QMainWindow):
             painter.drawPixmap(int(x_offset), int(y_offset), qpixmap)
 
         self.label.setPixmap(label_pixmap)
+
+    def show_keyboard_shortcuts(self) -> None:
+        """Display a dialog with keyboard shortcuts."""
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Keyboard Shortcuts")
+        dialog.setMinimumWidth(400)
+
+        layout = QVBoxLayout()
+
+        # Title
+        title_label = QLabel("Keyboard Shortcuts")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        layout.addWidget(title_label)
+
+        # Shortcuts grid
+        grid = QGridLayout()
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 2)
+
+        shortcuts = [
+            ("Space", "Play/Pause"),
+            ("Right Arrow", "Next Frame"),
+            ("Left Arrow", "Previous Frame"),
+            ("Alt + Right", "Jump to Last Frame"),
+            ("Alt + Left", "Jump to First Frame"),
+        ]
+
+        for row, (key, action) in enumerate(shortcuts):
+            key_label = QLabel(key)
+            key_label.setStyleSheet("""
+                background-color: #444;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-family: monospace;
+            """)
+
+            action_label = QLabel(action)
+
+            grid.addWidget(key_label, row, 0)
+            grid.addWidget(action_label, row, 1)
+
+        layout.addLayout(grid)
+
+        # Close button
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(dialog.close)
+        layout.addWidget(close_button, alignment=Qt.AlignmentFlag.AlignRight)
+
+        dialog.setLayout(layout)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #333;
+                color: white;
+            }
+            QLabel {
+                color: white;
+            }
+            QPushButton {
+                background-color: #444;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+        """)
+
+        dialog.exec()
 
     def update_frame_counter(self) -> None:
         """Update the frame counter display with improved formatting."""
