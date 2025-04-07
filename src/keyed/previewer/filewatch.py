@@ -74,15 +74,13 @@ class LiveReloadWindow(MainWindow):
         # Recalculate display dimensions based on the new scene
         self.calculate_display_dimensions()
 
-        # Update display info label
-        self.display_info_label.setText(f"{self.display_width}x{self.display_height}")
-
         # Update UI for new scene
         self.slider.setMaximum(new_scene.num_frames - 1)
         if current_frame >= new_scene.num_frames:
             current_frame = 0
 
         # Update status bar info
+        # TODO - This should not need to be manually set.
         self.statusBar().showMessage(f"Scene: {new_scene._width}x{new_scene._height} px, {new_scene.num_frames} frames")
 
         # Update display

@@ -40,7 +40,7 @@ def create_animation_window(scene: Scene, frame_rate: int = 24, quality: Quality
     from .impl import MainWindow
 
     app = QApplication(sys.argv)  # type: ignore
-    window = MainWindow(scene, quality=quality.value, frame_rate=frame_rate)
+    window = MainWindow(scene, frame_rate=frame_rate)
     window.show()
     sys.exit(app.exec())
 
