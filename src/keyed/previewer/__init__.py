@@ -6,8 +6,6 @@ import importlib.util
 import sys
 from typing import TYPE_CHECKING, NoReturn
 
-from ..constants import Quality
-
 if TYPE_CHECKING:
     from keyed import Scene
 
@@ -19,13 +17,12 @@ PREVIEW_AVAILABLE = importlib.util.find_spec("PySide6") is not None and importli
 __all__ = ["create_animation_window", "PREVIEW_AVAILABLE"]
 
 
-def create_animation_window(scene: Scene, frame_rate: int = 24, quality: Quality = Quality.very_high) -> NoReturn:
+def create_animation_window(scene: Scene, frame_rate: int = 24) -> NoReturn:
     """Create the animation preview window for the provided scene.
 
     Args:
         scene: Scene to preview
         frame_rate: Playback frame rate
-        quality: Size of the preview window
 
     Raises:
         ImportError: If required preview dependencies are not installed

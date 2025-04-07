@@ -18,7 +18,7 @@ from tqdm import tqdm
 from .base import Base, is_visible
 from .compositor import BlendMode, composite_layers
 from .config import get_default_render_engine
-from .constants import EXTRAS_INSTALLED, Quality
+from .constants import EXTRAS_INSTALLED
 from .effects import Effect
 from .group import Selection
 from .helpers import Freezeable, freeze, guard_frozen
@@ -413,20 +413,15 @@ class Scene(Transformable, Freezeable):
             return None
 
     @freeze
-    def preview(
-        self,
-        quality: Quality = Quality.high,
-        frame_rate: int = 24,
-    ) -> None:
-        """Preview the scene in a window with specified quality and frame rate.
+    def preview(self, frame_rate: int = 24) -> None:
+        """Preview the scene in a window with specified frame rate.
 
         Args:
-            quality: The quality level of the preview. Default is Quality.high.
             frame_rate: The frame rate at which to preview the animation. Default is 24 fps.
         """
         from .previewer import create_animation_window
 
-        create_animation_window(self, quality=quality, frame_rate=frame_rate)
+        create_animation_window(self, frame_rate=frame_rate)
 
     def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
         """Get the drawing context for the scene.

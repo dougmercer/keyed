@@ -22,14 +22,6 @@ def main():
     cli()
 
 
-class QualityChoices(str, Enum):
-    very_low = "very_low"
-    low = "low"
-    medium = "medium"
-    high = "high"
-    very_high = "very_high"
-
-
 class OutputFormat(str, Enum):
     WEBM = "webm"
     MOV = "mov"
