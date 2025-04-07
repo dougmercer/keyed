@@ -1,7 +1,6 @@
 import ast
 from pathlib import Path
 
-from .constants import Quality
 from .scene import Scene
 
 __all__ = ["SceneEvaluator"]
@@ -18,7 +17,6 @@ class SceneEvaluator:
         self.globals.update(
             {
                 "Scene": Scene,
-                "Quality": Quality,
             }
         )
 
