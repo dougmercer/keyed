@@ -199,3 +199,21 @@ class DependencyManager:
 
 
 dependency_manager = DependencyManager()
+
+dependency_manager.register_feature(
+    feature_id="previewer",
+    import_path="keyed.previewer",
+    import_checks=[
+        {
+            "name": "PySide6",
+            "import_command": "import PySide6",
+            "version_command": "import PySide6; print(PySide6.__version__)",
+        },
+        {
+            "name": "watchdog",
+            "import_command": "import watchdog",
+            "version_command": "import watchdog.version; print(watchdog.version.VERSION_STRING)",
+        },
+    ],
+    error_message="Previewer not available. Install with: pip install 'keyed[previewer]'",
+)
