@@ -18,6 +18,7 @@ dependencies = [
     "pycairo",
     "pydantic",
     "pygments",
+    "rich",
     "scipy",
     "shapely",
     "signified",

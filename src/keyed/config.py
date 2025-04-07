@@ -105,3 +105,27 @@ def get_default_render_engine() -> RenderEngine:
 
     # Auto-detect if no explicit setting (lowest precedence)
     return RenderEngine.FFMPEG if is_ffmpeg_available() else RenderEngine.PYAV
+
+
+def get_previewer_config() -> Dict[str, Any]:
+    """Get previewer configuration settings.
+
+    Returns:
+        Dictionary with previewer configuration settings
+    """
+    config = load_config()
+    previewer = config.get("previewer", {})
+
+    # Default values
+    default_config = {
+        "default_width": 1280,
+        "default_height": 720,
+        "min_width": 640,
+        "min_height": 360,
+        "frame_rate": 24,
+    }
+
+    # Update defaults with user config
+    default_config.update(previewer)
+
+    return default_config

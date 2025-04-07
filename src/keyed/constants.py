@@ -3,7 +3,7 @@
 import importlib.util
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Iterator, Self, SupportsIndex, cast
+from typing import Any, Self, SupportsIndex, cast
 
 import numpy as np
 
@@ -21,7 +21,6 @@ __all__ = [
     "ALWAYS",
     "EXTRAS_INSTALLED",
     "Quality",
-    "QualitySetting",
 ]
 
 
@@ -121,43 +120,48 @@ EXTRAS_INSTALLED = importlib.util.find_spec("keyed_extras") is not None
 """Whether or not `keyed-extras` is installed."""
 
 
-@dataclass(frozen=True)
-class QualitySetting:
-    """Animation quality setting.
-
-    Args:
-        width: Width of the preview window.
-        height: Height of the preview window.
-    """
-
-    width: int
-    height: int
-
-    def __post_init__(self) -> None:
-        assert self.width / self.height == 16 / 9, "Not 16:9"
-        assert self.width <= 1920, "Too big to fit on preview window"
-
-    def __str__(self) -> str:
-        return f"{self.width}x{self.height}"
-
-    def __iter__(self) -> Iterator[int]:
-        yield self.width
-        yield self.height
-
-
 class Quality(Enum):
-    """Enum of animation previewer squality settings.
+    """Enum of animation previewer quality settings.
+
+    Each quality level represents a scale factor relative to the original scene dimensions.
+    This preserves the aspect ratio while allowing different levels of detail.
 
     Attributes:
-        very_low: 1024x576 resolution (SD)
-        low: 1152x648 resolution
-        medium: 1280x720 resolution (720p HD)
-        high: 1600x900 resolution
-        very_high: 1920x1080 resolution (1080p Full HD)
+        very_low: 1/8 of original dimensions (12.5%)
+        low: 1/4 of original dimensions (25%)
+        medium: 1/2 of original dimensions (50%)
+        high: 3/4 of original dimensions (75%)
+        very_high: Original dimensions (100%)
     """
 
-    very_low = QualitySetting(width=1024, height=576)
-    low = QualitySetting(width=1152, height=648)
-    medium = QualitySetting(width=1280, height=720)
-    high = QualitySetting(width=1600, height=900)
-    very_high = QualitySetting(width=1920, height=1080)
+    very_low = 0.125  # 1/8
+    low = 0.25  # 1/4
+    medium = 0.5  # 1/2
+    high = 0.75  # 3/4
+    very_high = 1.0  # Full size
+
+    def get_scaled_dimensions(self, original_width: int, original_height: int) -> tuple[int, int]:
+        """Calculate dimensions based on the quality scale factor.
+
+        Args:
+            original_width: Original scene width
+            original_height: Original scene height
+
+        Returns:
+            Tuple of (width, height) scaled according to the quality level
+        """
+        # Ensure minimum dimensions
+        width = max(200, int(original_width * self.value))
+        height = max(100, int(original_height * self.value))
+
+        # Cap maximum dimensions for very large scenes
+        max_width = 1920
+        max_height = 1080
+
+        if width > max_width or height > max_height:
+            # Scale down proportionally if too large
+            scale = min(max_width / width, max_height / height)
+            width = int(width * scale)
+            height = int(height * scale)
+
+        return width, height
