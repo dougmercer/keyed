@@ -239,42 +239,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(6)
         self.central_widget.setLayout(layout)
 
-        # Menu bar setup
-        menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu("File")
-        playback_menu = menu_bar.addMenu("Playback")
-        help_menu = menu_bar.addMenu("Help")
-
-        # File menu actions
-        save_images_action = QAction("Save As Images", self)
-        save_images_action.triggered.connect(self.save_as_images)
-        file_menu.addAction(save_images_action)
-
-        save_layers_action = QAction("Save Layers As Images", self)
-        save_layers_action.triggered.connect(self.save_layers_as_images)
-        file_menu.addAction(save_layers_action)
-
-        save_video_action = QAction("Save as Video", self)
-        save_video_action.triggered.connect(self.save_as_video)
-        file_menu.addAction(save_video_action)
-
-        # Playback menu
-        framerate_menu = playback_menu.addMenu("Frame Rate")
-        framerate_group = QActionGroup(self)
-        framerate_group.setExclusive(True)
-
-        for rate in [24, 30, 60]:
-            action = QAction(f"{rate} fps", self)
-            action.setCheckable(True)
-            action.setChecked(rate == self.frame_rate)
-            action.triggered.connect(lambda checked, r=rate: self.set_frame_rate(r))
-            framerate_group.addAction(action)
-            framerate_menu.addAction(action)
-
-        # Help menu
-        keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
-        keyboard_shortcuts_action.triggered.connect(self.show_keyboard_shortcuts)
-        help_menu.addAction(keyboard_shortcuts_action)
+        self.init_menu_bar()
 
         # Scene info in status bar
         status_bar = self.statusBar()
@@ -486,6 +451,44 @@ class MainWindow(QMainWindow):
         # Update the timer if currently playing
         if self.playing:
             self.update_timer.start(1000 // self.frame_rate)
+
+    def init_menu_bar(self):
+        # Menu bar setup
+        menu_bar = self.menuBar()
+        file_menu = menu_bar.addMenu("File")
+        playback_menu = menu_bar.addMenu("Playback")
+        help_menu = menu_bar.addMenu("Help")
+
+        # File menu actions
+        save_images_action = QAction("Save As Images", self)
+        save_images_action.triggered.connect(self.save_as_images)
+        file_menu.addAction(save_images_action)
+
+        save_layers_action = QAction("Save Layers As Images", self)
+        save_layers_action.triggered.connect(self.save_layers_as_images)
+        file_menu.addAction(save_layers_action)
+
+        save_video_action = QAction("Save as Video", self)
+        save_video_action.triggered.connect(self.save_as_video)
+        file_menu.addAction(save_video_action)
+
+        # Playback menu
+        framerate_menu = playback_menu.addMenu("Frame Rate")
+        framerate_group = QActionGroup(self)
+        framerate_group.setExclusive(True)
+
+        for rate in [24, 30, 60]:
+            action = QAction(f"{rate} fps", self)
+            action.setCheckable(True)
+            action.setChecked(rate == self.frame_rate)
+            action.triggered.connect(lambda checked, r=rate: self.set_frame_rate(r))
+            framerate_group.addAction(action)
+            framerate_menu.addAction(action)
+
+        # Help menu
+        keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
+        keyboard_shortcuts_action.triggered.connect(self.show_keyboard_shortcuts)
+        help_menu.addAction(keyboard_shortcuts_action)
 
     def save_as_images(self) -> None:
         """Save the scene as a sequence of image files."""
