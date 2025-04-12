@@ -287,19 +287,20 @@ class MainWindow(QMainWindow):
         self.slider.setMinimumHeight(24)
         slider_layout.addWidget(self.slider, 1)
 
-        # Frame counter - now placed to the right of slider
-        self.frame_counter_label = QLabel("0/119")
+        # Frame counter
+        self.frame_counter_label = QLabel("0")
         self.frame_counter_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         # Calculate max width needed for largest possible frame count
         max_frame_text = f"{self.scene.num_frames - 1}/{self.scene.num_frames - 1}"
-        self.frame_counter_label.setMinimumWidth(self.fontMetrics().horizontalAdvance(max_frame_text) + 24)
+        self.frame_counter_label.setMinimumWidth(self.fontMetrics().horizontalAdvance(max_frame_text) + 40)
         self.frame_counter_label.setStyleSheet("""
             QLabel {
                 background-color: #2c2c2c;
                 border: 1px solid #555;
                 border-radius: 4px;
                 padding: 4px 10px;
-                font-family: monospace;
+                font-family: 'Courier New', 'DejaVu Sans Mono', monospace;
                 font-size: 14px;
                 font-weight: bold;
                 color: white;
@@ -374,32 +375,7 @@ class MainWindow(QMainWindow):
             }
         """)
         play_controls_layout.addWidget(self.end_button)
-
         control_layout.addWidget(play_controls_container)
-        control_layout.addSpacing(24)
-
-        # Loop button separate from media controls
-        self.loop_button = QPushButton()
-        self.loop_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
-        self.loop_button.clicked.connect(self.toggle_loop)
-        self.loop_button.setFixedSize(36, 36)
-        self.loop_button.setIconSize(QSize(16, 16))
-        self.loop_button.setCheckable(True)
-        self.loop_button.setStyleSheet("""
-            QPushButton {
-                background-color: #444;
-                border-radius: 18px;
-                padding: 4px;
-            }
-            QPushButton:hover {
-                background-color: #555;
-            }
-            QPushButton:checked {
-                background-color: #2980b9;
-            }
-        """)
-        control_layout.addWidget(self.loop_button)
-
         layout.addLayout(control_layout)
 
         # Enhanced status bar with cursor position
@@ -485,6 +461,13 @@ class MainWindow(QMainWindow):
             framerate_group.addAction(action)
             framerate_menu.addAction(action)
 
+        playback_menu.addSeparator()
+        self.loop_action = QAction("Loop Playback", self)
+        self.loop_action.setCheckable(True)
+        self.loop_action.setChecked(self.looping)  # Initial state
+        self.loop_action.triggered.connect(self.toggle_loop)
+        playback_menu.addAction(self.loop_action)
+
         # Help menu
         keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
         keyboard_shortcuts_action.triggered.connect(self.show_keyboard_shortcuts)
@@ -530,6 +513,8 @@ class MainWindow(QMainWindow):
             self.current_frame = self.scene.num_frames - 1
             self.update_canvas(self.current_frame)
             self.slider.setValue(self.current_frame)
+        elif event.key() == Qt.Key.Key_L:
+            self.toggle_loop()
 
     def increment_frame(self) -> None:
         """Go to the next frame."""
@@ -570,29 +555,7 @@ class MainWindow(QMainWindow):
     def toggle_loop(self) -> None:
         """Toggle between looping and non-looping playback."""
         self.looping = not self.looping
-        self.loop_button.setChecked(self.looping)
-        if self.looping:
-            self.loop_button.setStyleSheet("""
-                QPushButton {
-                    background-color: #2980b9;
-                    border-radius: 18px;
-                    padding: 6px;
-                }
-                QPushButton:hover {
-                    background-color: #3498db;
-                }
-            """)
-        else:
-            self.loop_button.setStyleSheet("""
-                QPushButton {
-                    background-color: #444;
-                    border-radius: 18px;
-                    padding: 6px;
-                }
-                QPushButton:hover {
-                    background-color: #555;
-                }
-            """)
+        self.loop_action.setChecked(self.looping)
 
     def slider_changed(self, value: int) -> None:
         """Handle slider value changes."""
@@ -716,6 +679,7 @@ class MainWindow(QMainWindow):
             ("Left Arrow", "Previous Frame"),
             ("Alt + Right", "Jump to Last Frame"),
             ("Alt + Left", "Jump to First Frame"),
+            ("L", "Toggle Loop"),
         ]
 
         for row, (key, action) in enumerate(shortcuts):
@@ -724,7 +688,7 @@ class MainWindow(QMainWindow):
                 background-color: #444;
                 padding: 4px 8px;
                 border-radius: 4px;
-                font-family: monospace;
+                font-family: 'Courier New', 'DejaVu Sans Mono', monospace;
             """)
 
             action_label = QLabel(action)
