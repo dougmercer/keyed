@@ -1,4 +1,4 @@
-from keyed import AnimationType, Code, Scene, stagger, tokenize
+from keyed import Code, Scene, stagger, tokenize
 
 scene = Scene(scene_name="code_replace", num_frames=60, width=800, height=600)
 

@@ -18,5 +18,5 @@ floor = Line(scene, x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), 
 
 title = Text(scene, "Thanks for dropping by!", size=50).move_to(scene.nx(0.5), scene.ny(0.2))
 
-# Render the animation
+# Add the objects to the scene
 scene.add(floor, ball, title)

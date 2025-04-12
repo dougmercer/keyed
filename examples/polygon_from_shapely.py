@@ -1,7 +1,7 @@
 import numpy as np
 import shapely
 
-from keyed import Scene, Geometry
+from keyed import Geometry, Scene
 
 # Define the exterior of the polygon (a simple square)
 exterior = np.array([(0, 0), (100, 0), (100, 10), (0, 100), (0, 0)]) + 100

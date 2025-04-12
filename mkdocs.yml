@@ -142,7 +142,7 @@ nav:
     - Implementation Details: api/impl.md
   - Gallery:
     - Gallery: gallery/index.md
-    - Bouncing Bowl: gallery/first_scene.md
+    - Bouncing Ball: gallery/first_scene.md
     - Code Animation: gallery/code_replace_complex.md
     - Color Interpolation: gallery/color_interp.md
     - Code Highlighting: gallery/curve_interp.md

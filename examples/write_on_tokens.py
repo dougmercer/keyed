@@ -1,4 +1,4 @@
-from keyed import AnimationType, Code, Scene, stagger, tokenize
+from keyed import Code, Scene, stagger, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()

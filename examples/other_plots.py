@@ -4,7 +4,7 @@ from keyed import FunctionPlot, PointPlot, Scene
 
 scene = Scene(scene_name="plot_examples", num_frames=120, width=1920, height=1080)
 
-f = lambda x: np.sin(x) * np.exp(-0.1 * x)
+f = lambda x: np.sin(x) * np.exp(-0.1 * x)  # noqa: E731
 
 # Simple function plot
 plot1 = (
