@@ -1,6 +1,7 @@
 import shapely
+from signified import Computed
 
-from keyed import *
+from keyed import Geometry, Rectangle, Scene
 
 s = Scene()
 x = Rectangle(s, width=600, height=300, fill_color=(1, 1, 0)).rotate(180, 0, 24).scale(2, 24, 48)

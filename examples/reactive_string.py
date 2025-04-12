@@ -1,5 +1,6 @@
-from keyed import Animation, Scene, Text, easing
 from signified import computed
+
+from keyed import Animation, Scene, Text, easing
 
 s = Scene()
 
