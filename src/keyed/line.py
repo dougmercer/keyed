@@ -83,10 +83,10 @@ class Line(Base):
     def __init__(
         self,
         scene: Scene,
-        x0: HasValue[float],
-        y0: HasValue[float],
-        x1: HasValue[float],
-        y1: HasValue[float],
+        x0: HasValue[float] | None = None,
+        y0: HasValue[float] | None = None,
+        x1: HasValue[float] | None = None,
+        y1: HasValue[float] | None = None,
         color: HasValue[Color] | tuple[float, float, float] = (1, 1, 1),
         alpha: HasValue[float] = 1,
         dash: tuple[Sequence[float], float] | None = None,
@@ -98,10 +98,10 @@ class Line(Base):
         self.ctx = scene.get_context()
         self.start: ReactiveValue[float] = Signal(0)
         self.end: ReactiveValue[float] = Signal(1)
-        self.x0 = as_signal(x0)
-        self.y0 = as_signal(y0)
-        self.x1 = as_signal(x1)
-        self.y1 = as_signal(y1)
+        self.x0 = as_signal(x0 if x0 is not None else 0)
+        self.y0 = as_signal(y0 if y0 is not None else scene.ny(0.5))
+        self.x1 = as_signal(x1 if x1 is not None else scene.nx(1))
+        self.y1 = as_signal(y1 if y1 is not None else scene.ny(0.5))
         self.color = as_color(color)
         self.alpha = as_signal(alpha)
         self.dash = dash
