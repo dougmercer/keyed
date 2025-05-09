@@ -16,6 +16,7 @@ from .effects import *  # noqa
 from .highlight import *  # noqa
 from .line import *  # noqa
 from .geometry import *  # noqa
+from .grid import *  # noqa
 from .plot import *  # noqa
 from .scene import *  # noqa
 from .group import *  # noqa
