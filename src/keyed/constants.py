@@ -24,18 +24,20 @@ __all__ = [
 
 @dataclass
 class Direction:
-    """A 2D vector.
+    """A 3D vector.
 
     Args:
         x: X position, typically in the unit square.
         y: Y position, typically in the unit square.
+        z: Z position, typically in the unit square.
     """
 
-    x: float
-    y: float
+    x: float = 0
+    y: float = 0
+    z: float = 0
 
     def __post_init__(self) -> None:
-        self.vector = np.array([self.x, self.y], dtype=np.float64)
+        self.vector = np.array([self.x, self.y, self.z], dtype=np.float64)
 
     def __add__(self, other: Any) -> Self:
         if isinstance(other, Direction):
@@ -87,19 +89,23 @@ class Direction:
         return cast(float, self.vector[idx.__index__()])
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.vector[0]}, {self.vector[1]})"
+        return f"{self.__class__.__name__}({self.vector[0]}, {self.vector[1]}, {self.vector[2]})"
 
 
-ORIGIN = Direction(0.0, 0.0)
+ORIGIN = Direction(0.0, 0.0, 0.0)
 """Center."""
-LEFT = Direction(-1.0, 0.0)
+LEFT = Direction(-1.0, 0.0, 0.0)
 """Left side."""
-RIGHT = Direction(1.0, 0.0)
+RIGHT = Direction(1.0, 0.0, 0.0)
 """Right side."""
-DOWN = Direction(0.0, -1.0)
+DOWN = Direction(0.0, -1.0, 0.0)
 """Bottom side."""
-UP = Direction(0.0, 1.0)
+UP = Direction(0.0, 1.0, 0.0)
 """Top side."""
+FRONT = Direction(0.0, 0.0, 1.0)
+"""Front side."""
+BACK = Direction(0.0, 0.0, -1.0)
+"""Back side."""
 DL = DOWN + LEFT
 """Bottom left side."""
 DR = DOWN + RIGHT
