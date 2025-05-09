@@ -458,20 +458,24 @@ class Transformable:
         return self.apply_transform(matrix)
 
     @property
+    def bounds(self) -> Computed[tuple[float, float, float, float]]:
+        return self._get_cached_computed("bounds", lambda: self.geom.bounds)
+
+    @property
     def down(self) -> Computed[float]:
-        return self._get_cached_computed("down", lambda: self.geom.bounds[3])
+        return self._get_cached_computed("down", lambda: self.bounds[3])
 
     @property
     def up(self) -> Computed[float]:
-        return self._get_cached_computed("up", lambda: self.geom.bounds[1])
+        return self._get_cached_computed("up", lambda: self.bounds[1])
 
     @property
     def left(self) -> Computed[float]:
-        return self._get_cached_computed("left", lambda: self.geom.bounds[0])
+        return self._get_cached_computed("left", lambda: self.bounds[0])
 
     @property
     def right(self) -> Computed[float]:
-        return self._get_cached_computed("right", lambda: self.geom.bounds[2])
+        return self._get_cached_computed("right", lambda: self.bounds[2])
 
     @property
     def width(self) -> Computed[float]:
