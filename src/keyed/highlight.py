@@ -145,9 +145,9 @@ def tokenize(
     raw_tokens = _split_multiline_tokens(lex(text, lexer or PythonLexer()))
 
     # Apply post-processor to enhance token types
-    from .extras import post_process_tokens
+    # from .extras import post_process_tokens
 
-    processed_tokens = post_process_tokens(text, raw_tokens, filename)
+    # processed_tokens = post_process_tokens(text, raw_tokens, filename)
 
-    json_str = format(processed_tokens, formatter)
+    json_str = format(raw_tokens, formatter)
     return StyledTokens.validate_json(json_str)
