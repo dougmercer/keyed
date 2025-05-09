@@ -11,12 +11,18 @@ import shapely
 import shapely.ops
 from pygments.token import Token as PygmentsToken
 from pygments.token import _TokenType as Pygments_TokenType
-from signified import HasValue, ReactiveValue, Signal, as_signal, unref
+from shapely.geometry import Point
+from signified import Computed, HasValue, ReactiveValue, Signal, as_signal, computed, unref
 
+from .animation import stagger
 from .base import Base
 from .color import as_color
+from .constants import LEFT, RIGHT
+from .easing import linear_in_out
+from .geometry import Geometry
 from .group import Selection
 from .highlight import StyledToken
+from .transforms import affine_transform
 
 if TYPE_CHECKING:
     from .curve import Curve
@@ -24,6 +30,14 @@ if TYPE_CHECKING:
 
 
 __all__ = ["Text", "Code", "TextSelection"]
+
+
+@computed
+def blink(frame: int, start: int, blink_interval: int) -> float:
+    if frame < start:
+        return 0.0
+    ticks = (frame - start) // blink_interval
+    return 1.0 if (ticks % 2) == 0 else 0.0
 
 
 class Text(Base):
@@ -55,7 +69,7 @@ class Text(Base):
         font: str = "Anonymous Pro",
         color: tuple[float, float, float] = (1, 1, 1),
         fill_color: tuple[float, float, float] | None = None,
-        alpha: float = 1.0,
+        alpha: HasValue[float] = 1.0,
         line_width: float = 2,
         slant: cairo.FontSlant = cairo.FONT_SLANT_NORMAL,
         weight: cairo.FontWeight = cairo.FONT_WEIGHT_NORMAL,
@@ -248,6 +262,17 @@ class _Character(Base):
         """Return a selection containing just this character."""
         return TextSelection([self])
 
+    @property
+    def rep_point(self) -> Computed[shapely.geometry.Point]:
+        ext = self._extents
+        font_extents = self.ctx.font_extents()
+        ascent, descent, height, _, _ = font_extents
+        advance = ext.x_advance
+
+        center_y = (descent - ascent) / 2 - height
+        pt = Point(advance, center_y)
+        return computed(affine_transform)(pt, self.controls.matrix)
+
 
 CodeTextT = TypeVar("CodeTextT", _Character, "_Token", "_Line")
 
@@ -349,6 +374,52 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
             line_width=line_width,
             tension=tension,
         )
+
+    def type_on(
+        self,
+        start: int,
+        delay: int,
+        duration: int,
+        cursor: Base,
+    ) -> Self:
+        animator = stagger(start_value=0, end_value=1, easing=linear_in_out)
+
+        frame = start
+        for char in self:
+            assert isinstance(char, _Character)
+
+            anim = animator(start=frame, end=frame + duration)
+            char._animate("alpha", anim)
+
+            anchor = Geometry(char.rep_point, center_geometry=False)
+            cursor.next_to(anchor, start=frame, end=frame, offset=cursor.width, direction=RIGHT)
+
+            frame += delay
+
+        return self
+
+    def type_off(
+        self,
+        start: int,
+        delay: int,
+        duration: int,
+        cursor: Base,
+    ) -> Self:
+        animator = stagger(start_value=1, end_value=0, easing=linear_in_out)
+
+        frame = start
+        for char in self:
+            assert isinstance(char, _Character)
+
+            anim = animator(start=frame, end=frame + duration)
+            char._animate("alpha", anim)
+
+            anchor = Geometry(char.rep_point, center_geometry=False)
+            cursor.next_to(anchor, start=frame, end=frame, offset=-cursor.width, direction=LEFT)
+
+            frame += delay
+
+        return self
 
 
 class _Token(TextSelection[_Character]):
