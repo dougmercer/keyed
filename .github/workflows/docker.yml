@@ -2,7 +2,13 @@ name: Docker
 
 on:
   push:
-    branches: [ main, '*' ]
+    # build & test on every branch (you still get a sha tag)
+    branches:
+      - '*'
+  release:
+    # trigger version/latest mirror when a release is published
+    types:
+      - published
 
 jobs:
   build-docker:
@@ -33,29 +39,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Only login when we need to push (main branch)
-      - name: Login to GitHub Container Registry
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Prepare metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # Only include latest tag on main
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            # Only include version tag on main
-            type=raw,value=${{ steps.extract_version.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
-            # Always include sha for traceability
+            # only on a release publish:
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=${{ steps.extract_version.outputs.version }},enable=${{ github.event_name == 'release' }}
+            # always include the short SHA
             type=sha,format=short
 
-      # Build and test the image
       - name: Build and test Docker image
         uses: docker/build-push-action@v5
         with:
@@ -73,9 +68,17 @@ jobs:
           FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           docker run --rm $FIRST_TAG --help
 
-      # Push the image (only on main)
+      # Login whenever we're actually going to push (main‑branch merge or a release)
+      - name: Login to GitHub Container Registry
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'release' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push Docker image
-        if: github.ref == 'refs/heads/main'
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'release' }}
         uses: docker/build-push-action@v5
         with:
           context: .
