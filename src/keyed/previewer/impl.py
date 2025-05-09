@@ -158,6 +158,18 @@ class InteractiveLabel(QLabel):
 
         self.coordinates_label.setText(f"Cursor Position in Scene: ({scene_x:.1f}, {scene_y:.1f})")
 
+        if self.coordinates_label:
+            window = self.window()
+            if isinstance(window, MainWindow):
+                if window.cursor_units == "Normalized (0-1)":
+                    # Convert to normalized coordinates (0-1)
+                    norm_x = scene_x / self.scene._width
+                    norm_y = scene_y / self.scene._height
+                    self.coordinates_label.setText(f"Cursor Position: ({norm_x:.3f}, {norm_y:.3f})")
+                else:
+                    # Default pixels
+                    self.coordinates_label.setText(f"Cursor Position: ({scene_x:.1f}, {scene_y:.1f})")
+
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize events to update the canvas."""
         super().resizeEvent(event)
@@ -183,6 +195,7 @@ class MainWindow(QMainWindow):
         self.current_frame = 0
         self.playing = False
         self.looping = False
+        self.cursor_units = "Pixels"
 
         # Get previewer configuration
         self.config = get_previewer_config()
@@ -461,12 +474,25 @@ class MainWindow(QMainWindow):
             framerate_group.addAction(action)
             framerate_menu.addAction(action)
 
+        # Loop
         playback_menu.addSeparator()
         self.loop_action = QAction("Loop Playback", self)
         self.loop_action.setCheckable(True)
         self.loop_action.setChecked(self.looping)  # Initial state
         self.loop_action.triggered.connect(self.toggle_loop)
         playback_menu.addAction(self.loop_action)
+
+        # Cursor Units
+        cursor_menu = playback_menu.addMenu("Cursor Units")
+        cursor_group = QActionGroup(self)
+        cursor_group.setExclusive(True)
+        for unit in ["Pixels", "Normalized (0-1)"]:
+            action = QAction(unit, self)
+            action.setCheckable(True)
+            action.setChecked(unit == "Pixels")  # Default to pixels
+            action.triggered.connect(lambda checked, u=unit: self.set_cursor_units(u))
+            cursor_group.addAction(action)
+            cursor_menu.addAction(action)
 
         # Help menu
         keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
@@ -563,6 +589,14 @@ class MainWindow(QMainWindow):
             self.current_frame = value
             self.update_canvas(value)
             self.update_frame_counter()
+
+    def set_cursor_units(self, units: str) -> None:
+        """Change the cursor position display units.
+
+        Args:
+            units: The units to display cursor position in ("Pixels" or "Normalized (0-1)")
+        """
+        self.cursor_units = units
 
     def play_animation(self) -> None:
         """Advance to the next frame in animation playback."""
