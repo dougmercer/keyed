@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QRect, QSize, Qt, QTimer
+from PySide6.QtCore import QRect, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QImage, QKeyEvent, QMouseEvent, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
+    QDockWidget,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QStatusBar,
     QStyle,
+    QTextEdit,
     QToolTip,
     QVBoxLayout,
     QWidget,
@@ -56,6 +58,8 @@ def get_object_info(scene: Scene, x: float, y: float, frame: int) -> Base | None
 
 class InteractiveLabel(QLabel):
     """An interactive label that displays the scene and handles mouse events."""
+
+    object_selected = Signal(object)
 
     def __init__(
         self,
@@ -117,9 +121,13 @@ class InteractiveLabel(QLabel):
         scene_y = adjusted_y / scale_y
 
         # Get object info
-        info = self.get_object_info(scene_x, scene_y)
-        if info:
-            QToolTip.showText(ev.globalPosition().toPoint(), info, self)
+        nearest_obj = self.get_object_info(scene_x, scene_y)
+        if nearest_obj:
+            # Still show tooltip for quick info
+            QToolTip.showText(ev.globalPosition().toPoint(), repr(nearest_obj), self)
+
+            # Emit signal for detailed panel
+            self.object_selected.emit(nearest_obj)
         else:
             QToolTip.hideText()
 
@@ -177,12 +185,12 @@ class InteractiveLabel(QLabel):
         if isinstance(window, MainWindow) and hasattr(window, "current_frame"):
             window.update_canvas(window.current_frame)
 
-    def get_object_info(self, x: float, y: float) -> str:
+    def get_object_info(self, x: float, y: float) -> object:
         """Get information about an object at the given coordinates."""
         window = self.window()
         assert isinstance(window, MainWindow)
         nearest = get_object_info(window.scene, x, y, window.current_frame)
-        return repr(nearest) if nearest else "No object found"
+        return nearest
 
 
 class MainWindow(QMainWindow):
@@ -422,6 +430,25 @@ class MainWindow(QMainWindow):
         # Animation timer
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.play_animation)
+
+        # Create debug panel
+        self.debug_panel = QDockWidget("Object Properties", self)
+        self.debug_panel.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
+        self.debug_panel.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable)
+
+        # Create content for the debug panel
+        self.property_widget = QWidget()
+        self.property_layout = QVBoxLayout(self.property_widget)
+        self.property_text = QTextEdit()
+        self.property_text.setReadOnly(True)
+        self.property_layout.addWidget(self.property_text)
+
+        self.debug_panel.setWidget(self.property_widget)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.debug_panel)
+        self.debug_panel.hide()  # Hidden by default
+
+        # Connect signals
+        self.label.object_selected.connect(self.update_debug_panel)
 
         # Initialize display
         self.update_canvas(0)
@@ -763,3 +790,33 @@ class MainWindow(QMainWindow):
     def update_frame_counter(self) -> None:
         """Update the frame counter display with improved formatting."""
         self.frame_counter_label.setText(f"{self.current_frame}/{self.scene.num_frames - 1}")
+
+    def update_debug_panel(self, obj):
+        """Update the debug panel with object information."""
+        self.debug_panel.show()
+
+        # Format the object info
+        info = self.format_object_properties(obj)
+        self.property_text.setText(info)
+
+    def format_object_properties(self, obj):
+        """Format object properties in a readable way."""
+        props = []
+        props.append(f"<h3>{type(obj).__name__}</h3>")
+
+        # Add basic object info
+        props.append(f"<b>ID:</b> {id(obj)}")
+
+        # Try to get important properties
+        for name in dir(obj):
+            if name.startswith("_"):
+                continue
+            try:
+                value = getattr(obj, name)
+                if callable(value):
+                    continue
+                props.append(f"<b>{name}:</b> {repr(value)}")
+            except Exception:
+                pass
+
+        return "<br>".join(props)
