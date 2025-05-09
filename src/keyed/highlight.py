@@ -88,6 +88,8 @@ def _split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenTy
         Token.Literal.String.Doc,
         Token.Literal.String.Single,
         Token.Literal.String.Double,
+        Token.Comment.Single,
+        Token.Comment.Multiline,
         Token.Generic.Output,
     ):
         return [token]
@@ -115,6 +117,10 @@ def _split_multiline_token(token: tuple[_TokenType, str]) -> list[tuple[_TokenTy
 
 
 def _split_multiline_tokens(tokens: Iterable[tuple[_TokenType, str]]) -> list[tuple[_TokenType, str]]:
+    # Note: This is a hack. The Text object uses cairo for Text, which does not support
+    # multiline text objects, so it does not properly render text containing \n.
+    # This would be resolved by using Pango (with some other changes to Code required)
+    # but we manually and probably incompletely correct for it for now.
     return list(itertools.chain(*(_split_multiline_token(token) for token in tokens)))
 
 
