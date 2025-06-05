@@ -28,26 +28,26 @@ Sponsors currently enjoy access to the following exclusive features:
 - [x] [Hand Drawn Mode] <!-- md:flag experimental -->
 - [x] ... and more!
 
-  [Object: Editor Window]: https://dougmercer.github.io/keyed-extras-docs/api/editor/#keyed_extras.editor.Editor
-  [Object: SubScene]: https://dougmercer.github.io/keyed-extras-docs/api/subscene/#keyed_extras.subscene.SubScene
-  [Object: Rich Text]: https://dougmercer.github.io/keyed-extras-docs/api/rich-text/#keyed_extras.rich_text.RichText
-  [Object: Image]: https://dougmercer.github.io/keyed-extras-docs/api/image/#keyed_extras.image.Image
-  [Object: SVGShapes]: https://dougmercer.github.io/keyed-extras-docs/api/svg/#keyed_extras.svg.SVGShapes
-  [Object: SVG]: https://dougmercer.github.io/keyed-extras-docs/api/svg/#keyed_extras.svg.SVG
-  [Object: SquigglyLine]: https://dougmercer.github.io/keyed-extras-docs/api/shapes/#keyed_extras.squiggly.SquigglyLine
-  [Effect: Blur]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.blur.Blur
-  [Effect: Bloom]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.bloom.Bloom
-  [Effect: Displace]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.displace.Displace
-  [Effect: ColorAdjust]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ColorAdjust
-  [Effect: ChromaticAberration]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ChromaticAberration
-  [Effect: ColorQuantization]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.ColorQuantization
-  [Effect: Invert]: https://dougmercer.github.io/keyed-extras-docs/api/effects/#keyed_extras.effects.color.Invert
-  [Pattern: Crosshatch]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.cross_hatch_pattern
-  [Pattern: Polka Dot]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.polka_dot_pattern
-  [Pattern: Stipple]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.stipple_pattern
-  [Pattern: Spiral]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.spiral_pattern
-  [Pattern: Linear Gradient]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.linear_gradient_pattern
-  [Pattern: Radial Gradient]: https://dougmercer.github.io/keyed-extras-docs/api/patterns/#keyed_extras.patterns.radial_gradient_pattern
+  [Object: Editor Window]: https://extras.keyed.dev/api/editor/#keyed_extras.editor.Editor
+  [Object: SubScene]: https://extras.keyed.dev/api/subscene/#keyed_extras.subscene.SubScene
+  [Object: Rich Text]: https://extras.keyed.dev/api/rich-text/#keyed_extras.rich_text.RichText
+  [Object: Image]: https://extras.keyed.dev/api/image/#keyed_extras.image.Image
+  [Object: SVGShapes]: https://extras.keyed.dev/api/svg/#keyed_extras.svg.SVGShapes
+  [Object: SVG]: https://extras.keyed.dev/api/svg/#keyed_extras.svg.SVG
+  [Object: SquigglyLine]: https://extras.keyed.dev/api/shapes/#keyed_extras.squiggly.SquigglyLine
+  [Effect: Blur]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.blur.Blur
+  [Effect: Bloom]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.bloom.Bloom
+  [Effect: Displace]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.displace.Displace
+  [Effect: ColorAdjust]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.color.ColorAdjust
+  [Effect: ChromaticAberration]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.color.ChromaticAberration
+  [Effect: ColorQuantization]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.color.ColorQuantization
+  [Effect: Invert]: https://extras.keyed.dev/api/effects/#keyed_extras.effects.color.Invert
+  [Pattern: Crosshatch]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.cross_hatch_pattern
+  [Pattern: Polka Dot]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.polka_dot_pattern
+  [Pattern: Stipple]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.stipple_pattern
+  [Pattern: Spiral]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.spiral_pattern
+  [Pattern: Linear Gradient]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.linear_gradient_pattern
+  [Pattern: Radial Gradient]: https://extras.keyed.dev/api/patterns/#keyed_extras.patterns.radial_gradient_pattern
   [Enhanced Syntax Highlighting]: https://www.google.com
   [Hand Drawn Mode]: https://www.google.com
 </div>

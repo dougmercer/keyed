@@ -312,7 +312,7 @@ def info():
 
         # Display help information
         help_panel = Panel(
-            "[dim]For installation help:[/dim] [blue]https://dougmercer.github.io/keyed-extras-docs/install[/blue]\n"
+            "[dim]For installation help:[/dim] [blue]https://extras.keyed.dev/install[/blue]\n"
             "[dim]To report issues:[/dim] [blue]https://github.com/dougmercer-yt/keyed-extras/issues[/blue]",
             title="Help Resources",
             border_style="green",

@@ -9,7 +9,7 @@ This page covers the basic installation process for the core `keyed` package.
 
 !!! info "keyed-extras Users"
 
-    If you're a sponsor <!-- md:sponsors --> with access to `keyed-extras`, please follow the `keyed-extras` [installation documentation](https://dougmercer.github.io/keyed-extras-docs/install/) instead, which includes all necessary instructions for both packages.
+    If you're a sponsor <!-- md:sponsors --> with access to `keyed-extras`, please follow the `keyed-extras` [installation documentation](https://extras.keyed.dev/install/) instead, which includes all necessary instructions for both packages.
 
 !!! note
 

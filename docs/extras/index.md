@@ -32,7 +32,7 @@ As a sponsor, you'll get:
 
 1. Become a GitHub sponsor through [our sponsorship page](https://github.com/sponsors/dougmercer/)
 2. You'll receive access to the private repository and package index.
-3. [Install `keyed-extras`](https://dougmercer.github.io/keyed-extras-docs/install/).
+3. [Install `keyed-extras`](https://extras.keyed.dev/install/).
 
 ## Want to find out more?
 

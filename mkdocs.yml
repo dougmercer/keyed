@@ -1,5 +1,5 @@
 site_name: Keyed
-site_url: https://dougmercer.github.io/keyed
+site_url: https://keyed.dev
 repo_url: https://github.com/dougmercer/keyed
 
 theme:
@@ -156,7 +156,7 @@ nav:
     - Keyed Extras: extras/index.md
     - Features & Goals: extras/goals.md
     - Fair Use Policy: extras/fairuse.md
-    - Keyed Extras: https://dougmercer.github.io/keyed-extras-docs/
+    - Keyed Extras: https://extras.keyed.dev
 
 hooks:
   - docs/hooks/video_replace.py
@@ -171,7 +171,7 @@ plugins:
         python:
           paths: [src]
           inventories:
-          - https://dougmercer.github.io/keyed-extras-docs/objects.inv
+          - https://extras.keyed.dev/objects.inv
           - https://dougmercer.github.io/signified/objects.inv
           - https://shapely.readthedocs.io/en/latest/objects.inv
           - https://docs.python.org/3/objects.inv

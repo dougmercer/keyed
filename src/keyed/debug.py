@@ -194,7 +194,7 @@ class DependencyManager:
             error_msg = self.get_feature_error(feature_id)
             raise ImportError(
                 f"{feature_id} feature is not available: {error_msg}\n"
-                "For installation instructions, visit: https://dougmercer.github.io/keyed-extras-docs/install"
+                "For installation instructions, visit: https://extras.keyed.dev/install"
             )
 
 

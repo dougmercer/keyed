@@ -1,12 +1,12 @@
 # Keyed
 
-[![PyPI - Downloads](https://img.shields.io/pypi/dw/keyed)](https://pypi.org/project/keyed/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dw/keyed)](https://pypistats.org/packages/keyed)
 [![PyPI - Version](https://img.shields.io/pypi/v/keyed)](https://pypi.org/project/keyed/)
 [![Tests Status](https://github.com/dougmercer/keyed/actions/workflows/tests.yml/badge.svg)](https://github.com/dougmercer/keyed/actions/workflows/tests.yml?query=branch%3Amain)
 
 ---
 
-**Documentation**: [https://dougmercer.github.io/keyed](https://dougmercer.github.io/keyed)  
+**Documentation**: [https://keyed.dev](https://keyed.dev)
 **Source Code**: [https://github.com/dougmercer/keyed](https://github.com/dougmercer/keyed)
 
 ---
@@ -24,7 +24,7 @@ Keyed is a Python library for creating programmatically defined animations. Name
 
 Keyed requires a couple system level dependencies (e.g., [Cairo](https://www.cairographics.org/download/) and [ffmpeg](https://www.ffmpeg.org/)).
 
-For detailed installation instructions visit our [Installation Guide](https://dougmercer.github.io/keyed/install)
+For detailed installation instructions visit our [Installation Guide](https://keyed.dev/install)
 .
 
 But, once you have the necessary system dependencies installed, installing `keyed` is as simple as,
