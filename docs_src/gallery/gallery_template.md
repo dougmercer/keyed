@@ -7,7 +7,7 @@
     ---
 
     <video autoplay loop muted playsinline>
-    <source src="../media/gallery/{{ scene.name }}.webm" type="video/webm">
+    <source src="/media/gallery/{{ scene.name }}.webm" type="video/webm">
     </video>
     
     {{ scene.description }}

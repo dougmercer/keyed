@@ -5,7 +5,7 @@ from jinja2 import Template
 
 # Set the paths
 SCRIPT_DIR = Path(__file__).parent
-DOCS_DIR = SCRIPT_DIR / "../../docs/" # Adjust to your docs structure
+DOCS_DIR = SCRIPT_DIR / "../../docs/"
 
 # List of all easing functions
 EASING_FUNCTIONS = [

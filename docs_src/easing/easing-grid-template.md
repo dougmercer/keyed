@@ -5,7 +5,7 @@
     ---
 
     <video autoplay loop muted playsinline>
-    <source src="/keyed/media/easing/{{ func }}.webm" type="video/webm">
+    <source src="/media/easing/{{ func }}.webm" type="video/webm">
     </video>
     
     

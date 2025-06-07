@@ -44,7 +44,7 @@ Here's an example of how we can control the acceleration of a circle travelling 
 
 <div class="centered-video">
     <video autoplay loop muted playsinline>
-        <source src="/keyed/media/tutorial/moving_circle.webm" type="video/webm">
+        <source src="/media/tutorial/moving_circle.webm" type="video/webm">
     </video>
 </div>
 
