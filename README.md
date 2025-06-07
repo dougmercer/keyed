@@ -18,7 +18,7 @@ Keyed is a Python library for creating programmatically defined animations. Name
 - **Reactive Programming Model**: Built using the reactive programming library [signified](https://github.com/dougmercer/signified) to make declaratively defining highly dynamic animations a breeze
 - **Vector Graphics**: [Cairo](https://www.cairographics.org)-based rendering for crisp, scalable graphics
 - **Flexible Shape System**: Define basic lines, shapes, curves, and complex geometries
-- **Code Animation**: Animate syntax highled code snippets
+- **Text and Code Animation**: Animate syntax highlighted code snippets
 
 ## Installation
 
@@ -42,5 +42,5 @@ While I find `keyed` very fun and useful (particularly for animating syntax high
 
 Before you decide to use `keyed`, be sure to check out:
 
-* [Manim](https://manim.community): Comprehensive mathematical animation system originally created by Grant Sanderson of the YouTube channel 3blue1brown, but later adopted and extended by the manim community.
+* [Manim](https://manim.community): Comprehensive mathematical animation system originally created by Grant Sanderson of the YouTube channel [3blue1brown](https://youtube.com/@3blue1brown), but later adopted and extended by the manim community.
 * [py5](https://py5coding.org): A Python wrapper for p5, the Java animation library.
