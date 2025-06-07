@@ -241,7 +241,7 @@ class Curve(Shape):
         cp1, cp2 = _calculate_control_points(self.tension.value, points)
 
         # Calculate segment lengths for parameterization
-        segment_lengths = np.array([bezier_length(*b) for b in zip(points[:-1], cp1, cp2, points[1:])])
+        segment_lengths = np.array([bezier_length(*b) for b in zip(points[:-1], cp1, cp2, points[1:])])  # pyright: ignore[reportArgumentType]
         total_length = np.sum(segment_lengths)
         cumulative_lengths = np.hstack([0, np.cumsum(segment_lengths)])
 
