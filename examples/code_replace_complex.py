@@ -23,7 +23,7 @@ after.chars[8:18].write_on(
 )
 
 # Outline the code
-outline = before.emphasize(draw_fill = False, radius=10, line_width=5, buffer=40)
+outline = before.emphasize(draw_fill=False, radius=10, line_width=5, buffer=40)
 
 # Add everything to the scene
 scene.add(before, after, outline)

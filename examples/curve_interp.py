@@ -15,7 +15,8 @@ curve = (
     # Create the curve
     .highlight(alpha=0.5, line_width=5, tension=0.5)
     # Start the curve completely undrawn, and animate it being drawn
-    .set("end", 0).write_on(1, 0, 24)
+    .set("end", 0)
+    .write_on(1, 0, 24)
 )
 
 scene.add(code, curve)

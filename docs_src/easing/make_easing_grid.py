@@ -8,6 +8,7 @@ SCRIPT_DIR = Path(__file__).parent
 DOCS_DIR = SCRIPT_DIR / "../../docs/"
 
 # List of all easing functions
+# fmt: off
 EASING_FUNCTIONS = [
     # Quad family
     "quad_in", "quad_out", "quad_in_out",
@@ -32,6 +33,8 @@ EASING_FUNCTIONS = [
     # Linear
     "linear_in_out",
 ]
+# fmt: on
+
 
 # Optional: Verify that all webm files exist
 def verify_files_exist():
@@ -40,13 +43,14 @@ def verify_files_exist():
         filepath = DOCS_DIR / "media" / "easing" / f"{func}.webm"
         if not filepath.exists():
             missing_files.append(func)
-    
+
     if missing_files:
         print("Warning: The following easing function animations are missing:", file=sys.stderr)
         for func in missing_files:
             print(f"  - {func}.webm", file=sys.stderr)
         return False
     return True
+
 
 # Read the template
 with open(SCRIPT_DIR / "easing-grid-template.md", "r") as f:

@@ -1,5 +1,5 @@
-from pathlib import Path
 import multiprocessing as mp
+from pathlib import Path
 
 from keyed import DOWN, UP, Circle, Line, Scene, Text, easing
 from keyed.plot import EasingVisualizer

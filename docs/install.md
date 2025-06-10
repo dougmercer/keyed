@@ -11,10 +11,6 @@ This page covers the basic installation process for the core `keyed` package.
 
     If you're a sponsor <!-- md:sponsors --> with access to `keyed-extras`, please follow the `keyed-extras` [installation documentation](https://extras.keyed.dev/install/) instead, which includes all necessary instructions for both packages.
 
-!!! note
-
-    Contributions improving the installation procedure or documentation are welcome!
-
 `keyed` requires some non-Python dependencies for its rendering capabilities. 
 
 | Dependency | Required for | Installation Priority |
@@ -107,6 +103,10 @@ Choose the method that works best for your system:
     1. Download and install `cairo` from [https://www.cairographics.org/download/](https://www.cairographics.org/download/).
     2. Download and install `ffmpeg` from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
     3. `pip install keyed[previewer]`
+
+    !!! tip "Want to contribute to keyed?"
+
+        If you get `keyed` working on Windows, consider contributing improved Windows instructions =].
 
 
 ## FAQ
