@@ -24,12 +24,12 @@ with open(gallery_dir / "index.md", "w") as f:
     f.write(gallery_content)
 
 # Generate individual scene pages
-with open(HERE/ "scene_template.md", "r") as f:
+with open(HERE / "scene_template.md", "r") as f:
     scene_template = Template(f.read())
 
 for scene in scenes:
     scene_content = scene_template.render(scene=scene)
-    
+
     with open(gallery_dir / f"{scene['name']}.md", "w") as f:
         f.write(scene_content)
 

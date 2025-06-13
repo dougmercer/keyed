@@ -3,7 +3,9 @@ from keyed import Animation, Background, Circle, Color, PingPong, Scene
 s = Scene(num_frames=180, width=600, height=600)
 
 # Create a reactive color value that smoothly interpolates between Red and Blue and back
-color = PingPong(Animation(start=0, end=90, start_value=Color(1, 0, 0), end_value=Color(0, 0, 1)))(Color(1, 0, 0), s.frame)
+red = Color(1, 0, 0)
+blue = Color(0, 0, 1)
+color = PingPong(Animation(start=0, end=90, start_value=red, end_value=blue))(red, s.frame)
 
 # Create a background with this time-varying color
 r = Background(s, fill_color=color)

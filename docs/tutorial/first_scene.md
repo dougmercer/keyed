@@ -1,6 +1,6 @@
 # Creating Your First Scene
 
-Let's create a simple animation of a bouncing ball with a title. This tutorial will walk you through creating scenes, adding objects, and applying animations in Keyed.
+Let's create a simple animation of a bouncing ball with a title. This tutorial will walk you through creating scenes, adding objects, and applying transformation-based animations in Keyed.
 
 ## The Complete Code
 
