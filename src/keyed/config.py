@@ -2,11 +2,10 @@
 
 import os
 import subprocess
+import tomllib
 import warnings
 from pathlib import Path
 from typing import Any, Dict
-
-import tomllib
 
 from .renderer import RenderEngine
 
