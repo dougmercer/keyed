@@ -46,6 +46,39 @@ def test_add_multiple_drawables() -> None:
     assert green_present, "Green pixels expected but not found"
 
 
+def test_add_flattens_selection() -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
+    text0 = Text(scene, "Hello")
+    text1 = Text(scene, "World")
+    selection = TextSelection([text0, text1])
+
+    scene.add(selection)
+
+    assert scene.default_layer.content == [text0, text1]
+
+
+def test_add_flattens_nested_iterables() -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
+    text0 = Text(scene, "Hello")
+    text1 = Text(scene, "World")
+
+    scene.add([text0, [text1]])
+
+    assert scene.default_layer.content == [text0, text1]
+
+
+def test_layer_add_flattens_selection() -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
+    layer = scene.create_layer("overlay")
+    text0 = Text(scene, "Hello")
+    text1 = Text(scene, "World")
+    selection = TextSelection([text0, text1])
+
+    layer.add(selection)
+
+    assert layer.content == [text0, text1]
+
+
 def test_output_directory_creation(tmpdir: Path) -> None:
     output_dir = Path(tmpdir)
     scene_dir = output_dir / "test_scene"

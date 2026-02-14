@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import subprocess
 import warnings
+from collections.abc import Iterable, Sequence
 from enum import Enum
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Literal, Self, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import cairo
 import numpy as np
@@ -29,6 +30,20 @@ if TYPE_CHECKING:
     from .extras import FreeHandContext
 
 __all__ = ["Scene", "Layer"]
+
+
+NestedBase = Base | Iterable["NestedBase"]
+
+
+def _iter_base_objects(values: Iterable[NestedBase]) -> Iterable[Base]:
+    """Yield Base objects, recursively flattening non-string iterables."""
+    for value in values:
+        if isinstance(value, Base):
+            yield value
+        elif isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+            yield from _iter_base_objects(value)
+        else:
+            raise TypeError(f"Expected Base or iterable of Base, got {type(value).__name__}")
 
 
 class Blend(Enum):
@@ -66,8 +81,8 @@ class Layer(Freezeable):
         self.opacity = Signal(alpha)
 
     @guard_frozen
-    def add(self, *objects: Base) -> None:
-        self.content.extend(objects)
+    def add(self, *objects: Base | Iterable[Any]) -> None:
+        self.content.extend(_iter_base_objects(objects))
 
     if EXTRAS_INSTALLED:
 
@@ -231,11 +246,11 @@ class Scene(Transformable, Freezeable):
         return self.output_dir / self.scene_name
 
     @guard_frozen
-    def add(self, *content: Base) -> None:
-        """Add one or more graphical objects to the scene.
+    def add(self, *content: Base | Iterable[Any]) -> None:
+        """Add one or more graphical objects (or nested containers of them) to the scene.
 
         Args:
-            content: One or more Base-derived objects to be added to the scene.
+            content: One or more Base-derived objects and/or nested iterables of them.
         """
         self.default_layer.add(*content)
 
