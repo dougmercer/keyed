@@ -322,7 +322,7 @@ class Scene(Transformable, Freezeable):
 
             # Apply layer opacity if not 1.0
             if layer.opacity.value < 1.0:
-                layer_out[:, :, 3] = (layer_out[:, :, 3] * layer.opacity.value).astype(np.uint8)
+                np.multiply(layer_out[:, :, 3], layer.opacity.value, out=layer_out[:, :, 3], casting="unsafe")
 
             layer_arrays.append(layer_out)
             blend_modes.append(BlendMode(layer.blend))
