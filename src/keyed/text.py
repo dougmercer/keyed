@@ -543,7 +543,7 @@ class Code(TextSelection[_Line]):
         if line:
             lines.append(line)
 
-        objects: TextSelection[_Line] = TextSelection()
+        objects: list[_Line] = []
         for line in lines:
             objects.append(
                 _Line(
