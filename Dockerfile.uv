@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+
+ARG UV_IMAGE=ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+ARG PYTHON_IMAGE=python:3.12.9-slim-bookworm
+
+FROM ${UV_IMAGE} AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcairo2-dev \
+    pkg-config \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install third-party dependencies first for stronger cache reuse.
+COPY pyproject.toml uv.lock README.md LICENSE ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
+
+COPY src ./src
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable
+
+FROM ${PYTHON_IMAGE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+LABEL org.opencontainers.image.title="Keyed" \
+      org.opencontainers.image.description="A reactive animation library for Python" \
+      org.opencontainers.image.source="https://github.com/dougmercer/keyed"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcairo2 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd --create-home keyeduser
+
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+RUN chown -R keyeduser:keyeduser /app /opt/venv
+
+USER keyeduser
+
+ENTRYPOINT ["keyed", "iostream"]
