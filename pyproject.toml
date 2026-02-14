@@ -11,7 +11,7 @@ license = {file="LICENSE"}
 authors = [
     {name = "Doug Mercer", email = "dougmerceryt@gmail.com"}
 ]
-requires-python = ">=3.11,<3.13"  # taichi is most restrictive
+requires-python = ">=3.11,<4"
 dependencies = [
     "av",
     "pillow",
@@ -30,12 +30,23 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 keywords = ["keyed", "animation", "reactive"]
 
-
 [project.optional-dependencies]
 login = ["keyed-login"]
+previewer = [
+    "pyside6",
+    "watchdog",
+]
+gpu-compositor = [
+    "taichi",
+]
+all = ["keyed[previewer,gpu-compositor,login]"]
+
+[dependency-groups]
 lint = [
     "ruff",
     "pyright",
@@ -53,14 +64,6 @@ docs = [
     "mkdocstrings[python]",
     "mkdocs-material-extensions",
 ]
-previewer = [
-    "pyside6",
-    "watchdog",
-]
-gpu-compositor = [
-    "taichi",
-]
-all = ["keyed[lint,test,docs,login,previewer,gpu-compositor]"]
 
 [tool.setuptools.package-data]
 keyed = ["py.typed"]

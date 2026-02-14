@@ -10,20 +10,14 @@ jobs:
   type-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-          cache: 'pip'
-          cache-dependency-path: '**/pyproject.toml'
+          enable-cache: true
       - uses: ./.github/actions/install-system-deps
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ".[lint,previewer,login]"
+        run: uv sync --group lint --extra previewer --extra login
       - name: Run Pyright
-        uses: jakebailey/pyright-action@v2
-        with:
-          pylance-version: latest-release
-          extra-args: "src/"
+        run: uv run --group lint --extra previewer --no-sync pyright src/

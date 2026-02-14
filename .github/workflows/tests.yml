@@ -13,32 +13,18 @@ jobs:
       matrix:
         python-version: ["3.12"]  # ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: '**/pyproject.toml'
-
-      - name: Set cache ID
-        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
-
-      - uses: actions/cache@v4
-        with:
-          key: pytest-cache-${{ runner.os }}-py${{ matrix.python-version }}-${{ env.cache_id }}
-          path: .pytest_cache
-          restore-keys: |
-            pytest-cache-${{ runner.os }}-py${{ matrix.python-version }}-
+          enable-cache: true
 
       - uses: ./.github/actions/install-system-deps
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ".[test]"
+        run: uv sync --group test
 
       - name: Run all non-shapshot tests
-        run: |
-          pytest tests/ -m "not snapshot" --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml
+        run: uv run --group test --no-sync pytest tests/ -m "not snapshot" --pyargs keyed --cov=keyed --cov-report=xml --junitxml=junit/test-results.xml

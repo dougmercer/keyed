@@ -20,17 +20,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.13'
+          enable-cache: true
 
       - name: Extract version from pyproject.toml
         id: extract_version
         run: |
-          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          VERSION=$(uv version --short)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
