@@ -20,3 +20,7 @@ testing
 docs/keyed
 junit
 coverage.xml
+
+# pixi environments
+.pixi
+*.egg-info

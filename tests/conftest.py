@@ -106,8 +106,8 @@ def pytest_assertrepr_compare(op, left, right):
 
             try:
                 # Convert both to images
-                asserted_img = Image.open(io.BytesIO(bytes(execution.asserted_data)))
-                recalled_img = Image.open(io.BytesIO(bytes(execution.recalled_data)))
+                asserted_img = Image.open(io.BytesIO(bytes(execution.asserted_data))) # pyright: ignore[reportArgumentType]
+                recalled_img = Image.open(io.BytesIO(bytes(execution.recalled_data))) # pyright: ignore[reportArgumentType]
 
                 # Generate diff report for this snapshot
                 diff_report = generate_image_diff_report(asserted_img, recalled_img, execution.snapshot_name)
