@@ -1,6 +1,6 @@
+import argparse
 import tempfile
 from pathlib import Path
-import argparse
 
 import cairo
 import matplotlib.pyplot as plt
