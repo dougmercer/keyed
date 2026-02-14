@@ -35,6 +35,7 @@ keywords = ["keyed", "animation", "reactive"]
 
 
 [project.optional-dependencies]
+login = ["keyed-login"]
 lint = [
     "ruff",
     "pyright",
@@ -59,7 +60,7 @@ previewer = [
 gpu-compositor = [
     "taichi",
 ]
-all = ["keyed[lint,test,docs,previewer,gpu-compositor]"]
+all = ["keyed[lint,test,docs,login,previewer,gpu-compositor]"]
 
 [tool.setuptools.package-data]
 keyed = ["py.typed"]
