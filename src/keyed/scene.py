@@ -24,7 +24,7 @@ from .effects import Effect
 from .group import Selection
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
-from .transforms import Transformable
+from .transforms import TransformNode
 
 if TYPE_CHECKING:
     from .extras import FreeHandContext
@@ -130,7 +130,7 @@ class Layer(Freezeable):
             obj.cleanup()
 
 
-class Scene(Transformable, Freezeable):
+class Scene(TransformNode, Freezeable):
     """A scene within which graphical objects are placed and manipulated.
 
     Args:

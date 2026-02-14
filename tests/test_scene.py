@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from keyed import Rectangle, Scene, Text, TextSelection
+from keyed import Group, Rectangle, Scene, Text
 
 
 def test_text_drawing() -> None:
@@ -50,7 +50,7 @@ def test_add_flattens_selection() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
     text0 = Text(scene, "Hello")
     text1 = Text(scene, "World")
-    selection = TextSelection([text0, text1])
+    selection = Group([text0, text1])
 
     scene.add(selection)
 
@@ -72,7 +72,7 @@ def test_layer_add_flattens_selection() -> None:
     layer = scene.create_layer("overlay")
     text0 = Text(scene, "Hello")
     text1 = Text(scene, "World")
-    selection = TextSelection([text0, text1])
+    selection = Group([text0, text1])
 
     layer.add(selection)
 
@@ -182,7 +182,7 @@ def test_find_collection(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
     text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
     text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
-    s = TextSelection([text0, text1])
+    s = Group([text0, text1])
     scene.add(s)
 
     # Make sure we don't return the TextSelection

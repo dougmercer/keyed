@@ -15,7 +15,7 @@ from signified import HasValue, Variable, unref
 from .animation import Animation, step
 from .constants import ALWAYS, LEFT, ORIGIN, RIGHT, Direction
 from .easing import EasingFunctionT, linear_in_out
-from .transforms import Transformable, get_critical_point
+from .transforms import TransformNode, get_critical_point
 from .types import HasAlpha
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ class Lifetime:
         return (self.start <= frame) and (self.end >= frame)
 
 
-class Base(Transformable):
+class Base(TransformNode):
     """Base class for drawable objects in an animation scene.
 
     Attributes:
@@ -69,7 +69,7 @@ class Base(Transformable):
     lifetime: Lifetime
 
     def __init__(self, scene: Scene) -> None:
-        Transformable.__init__(self, scene.frame)
+        TransformNode.__init__(self, scene.frame)
         self.lifetime = Lifetime()
 
     @property
@@ -232,7 +232,7 @@ class Base(Transformable):
 
     def line_to(
         self, other: Base, self_direction: Direction = RIGHT, other_direction: Direction = LEFT, **line_kwargs: Any
-    ) -> "Line":
+    ) -> Line:
         """Create a line connecting this object to another object.
 
         Args:

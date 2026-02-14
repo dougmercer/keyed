@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Iterable,
     Self,
+    Sequence,
     SupportsIndex,
     TypeVar,
     overload,
@@ -15,31 +16,19 @@ from typing import (
 
 import cairo
 import shapely
-import shapely.affinity
 from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
 
 from .animation import Animation
-from .base import Base, Lifetime
-from .constants import ALWAYS, LEFT, ORIGIN, Direction
+from .base import Base
+from .constants import ALWAYS, LEFT, ORIGIN, RIGHT, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
 from .transforms import (
     Transformable,
-    TransformControls,
-    align_to,
     get_critical_point,
-    lock_on,
-    match_size,
-    move_to,
-    next_to,
-    rotate,
-    scale,
-    shear,
-    stretch,
-    translate,
 )
-from .types import GeometryT
 
 if TYPE_CHECKING:
+    from .line import Line
     from .scene import Scene
 
 __all__ = ["Group", "Selection"]
@@ -48,27 +37,15 @@ __all__ = ["Group", "Selection"]
 T = TypeVar("T", bound=Base)
 
 
-class Group(Base, list[T]):  # type: ignore[misc]
-    """A sequence of drawable objects, allowing collective transformations and animations.
+class Group(Transformable, list[T]):
+    """A plain container of drawable objects with batch transformations/animations.
 
     Args:
         iterable: An iterable of drawable objects.
     """
 
     def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
-        ## Note: This intentionally reimplements portions of the Base and
-        # Transformable __init__ methods.
-
-        # list
-        list.__init__(self, iterable)
-
-        # Base
-        self.lifetime = Lifetime()
-        self._dependencies: list[Variable] = []
-
-        # From Transformable
-        self.controls = TransformControls(self)
-        self._cache: dict[str, Computed[Any]] = {}
+        super().__init__(iterable)
 
     @property
     def scene(self) -> Scene:  # type: ignore[override]
@@ -146,6 +123,58 @@ class Group(Base, list[T]):  # type: ignore[misc]
             item.set_literal(property, value)
         return self
 
+    def center(self, frame: int = ALWAYS) -> Self:
+        """Center the group within the scene."""
+        self.align_to(self.scene, start=frame, end=frame, direction=ORIGIN, center_on_zero=True)
+        return self
+
+    def line_to(
+        self,
+        other: Transformable,
+        self_direction: Direction = RIGHT,
+        other_direction: Direction = LEFT,
+        **line_kwargs: Any,
+    ) -> Line:
+        """Create a line connecting this group to another transformable object."""
+        from .line import Line
+
+        self_point = get_critical_point(self.geom, direction=self_direction)  # type: ignore[arg-type]
+        other_point = get_critical_point(other.geom, direction=other_direction)
+        return Line(self.scene, x0=self_point[0], y0=self_point[1], x1=other_point[0], y1=other_point[1], **line_kwargs)
+
+    def emphasize(
+        self,
+        buffer: float = 5,
+        radius: float = 0,
+        fill_color: tuple[float, float, float] = (1, 1, 1),
+        color: tuple[float, float, float] = (1, 1, 1),
+        alpha: float = 1,
+        dash: tuple[Sequence[float], float] | None = None,
+        line_width: float = 2,
+        draw_fill: bool = True,
+        draw_stroke: bool = True,
+        operator: cairo.Operator = cairo.OPERATOR_SCREEN,
+    ):
+        """Emphasize the group by drawing a rectangle around its geometry."""
+        from .shapes import Rectangle
+
+        return Rectangle(
+            self.scene,
+            color=color,
+            x=self.center_x,
+            y=self.center_y,
+            width=self.width + buffer,
+            height=self.height + buffer,
+            fill_color=fill_color,
+            alpha=alpha,
+            dash=dash,
+            operator=operator,
+            line_width=line_width,
+            draw_fill=draw_fill,
+            draw_stroke=draw_stroke,
+            radius=radius,
+        )
+
     def write_on(
         self,
         property: str,
@@ -187,11 +216,6 @@ class Group(Base, list[T]):  # type: ignore[misc]
             return super().__getitem__(key)
 
     @property
-    def _raw_geom_now(self) -> shapely.Polygon:
-        """Not really used. Only here to comply with the best class."""
-        raise NotImplementedError("Don't call this method on Selections.")
-
-    @property
     def geom(self) -> Computed[shapely.GeometryCollection[shapely.geometry.base.BaseGeometry]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a reactive value of the geometry.
 
@@ -209,235 +233,15 @@ class Group(Base, list[T]):  # type: ignore[misc]
     def geom_now(self) -> shapely.GeometryCollection:
         return shapely.GeometryCollection([obj.geom_now for obj in self])
 
-    # def __copy__(self) -> Self:
-    #     return type(self)(list(self))
-
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         # TODO should we allow transform by HasValue[cairo.Matrix]? Probably...
         for obj in self:
             obj.apply_transform(matrix)
         return self
 
-    def translate(
-        self,
-        x: HasValue[float] = 0,
-        y: HasValue[float] = 0,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-    ) -> Self:
-        matrix = translate(start, end, x, y, self.frame, easing)
-        self.apply_transform(matrix)
-        return self
-
-    def move_to(
-        self,
-        x: HasValue[float] | None = None,
-        y: HasValue[float] | None = None,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-    ) -> Self:
-        """Move object to absolute coordinates.
-
-        Args:
-            x: Destination x coordinate
-            y: Destination y coordinate
-            start: Starting frame, by default ALWAYS
-            end: Ending frame, by default ALWAYS
-            easing: Easing function, by default cubic_in_out
-
-        Returns:
-            Self
-        """
-        center = center if center is not None else self.geom  # type: ignore[assignment]
-        cx, cy = get_critical_point(center, direction)  # type: ignore[argument]
-        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
-        return self
-
-    def rotate(
-        self,
-        amount: HasValue[float],
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-    ) -> Self:
-        center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = rotate(start, end, amount, cx, cy, self.frame, easing)
-        self.apply_transform(matrix)
-        return self
-
-    def scale(
-        self,
-        amount: HasValue[float],
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-    ) -> Self:
-        center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = scale(start, end, amount, cx, cy, self.frame, easing)
-        self.apply_transform(matrix)
-        return self
-
-    def stretch(
-        self,
-        scale_x: HasValue[float] = 1,
-        scale_y: HasValue[float] = 1,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-    ) -> Self:
-        center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = stretch(start, end, scale_x, scale_y, cx, cy, self.frame, easing)
-        self.apply_transform(matrix)
-        return self
-
-    def shear(
-        self,
-        angle_x: HasValue[float] = 0,
-        angle_y: HasValue[float] = 0,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-    ) -> Self:
-        center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, ORIGIN)  # type: ignore[argument]
-        matrix = shear(start, end, angle_x, angle_y, cx, cy, self.frame, easing)
-        self.apply_transform(matrix)
-        return self
-
-    def align_to(
-        self,
-        to: Transformable,
-        start: int = ALWAYS,
-        lock: int | None = None,
-        end: int = ALWAYS,
-        from_: ReactiveValue[GeometryT] | None = None,
-        easing: EasingFunctionT = cubic_in_out,
-        direction: Direction = ORIGIN,
-        center_on_zero: bool = False,
-    ) -> Self:
-        lock = lock if lock is not None else end
-        matrix = align_to(
-            to.geom,
-            from_ if from_ is not None else self.geom,  # type: ignore[argument]
-            frame=self.frame,
-            start=start,
-            lock=lock,
-            end=end,
-            ease=easing,
-            direction=direction,
-            center_on_zero=center_on_zero,
-        )
-        self.apply_transform(matrix)
-        return self
-
-    def lock_on(
-        self,
-        target: Transformable,
-        reference: ReactiveValue[GeometryT] | None = None,
-        start: int = ALWAYS,
-        end: int = -ALWAYS,
-        direction: Direction = ORIGIN,
-        x: bool = True,
-        y: bool = True,
-    ) -> Self:
-        matrix = lock_on(
-            target=target.geom,
-            reference=reference if reference is not None else self.geom,  # type: ignore[argument]
-            frame=self.frame,
-            start=start,
-            end=end,
-            direction=direction,
-            x=x,
-            y=y,
-        )
-        self.apply_transform(matrix)
-        return self
-
-    def match_size(
-        self,
-        other: Transformable,
-        match_x: bool = True,
-        match_y: bool = True,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-    ) -> Self:
-        center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
-        matrix = match_size(
-            start=start,
-            end=end,
-            match_x=match_x,
-            match_y=match_y,
-            target_width=other.width,
-            target_height=other.height,
-            original_width=self.width,
-            original_height=self.height,
-            cx=cx,
-            cy=cy,
-            frame=self.frame,
-            ease=easing,
-        )
-        self.apply_transform(matrix)
-        return self
-
-    def next_to(
-        self,
-        to: Transformable,
-        start: int = ALWAYS,
-        end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
-        offset: HasValue[float] = 10.0,
-        direction: Direction = LEFT,
-    ) -> Self:
-        """Align the object to another object.
-
-        Args:
-            to: The object to align to.
-            start: Start of animation (begin aligning to the object).
-            end: End of animation (finish aligning to the object at this frame, and then stay there).
-            easing: The easing function to use.
-            offset: Distance between objects (in pixels).
-            direction: The critical point of to and from_to use for the alignment.
-
-        Returns:
-            self
-        """
-        self_x, self_y = get_critical_point(self.geom, -1 * direction)  # type: ignore[argument]
-        target_x, target_y = get_critical_point(to.geom, direction)
-        matrix = next_to(
-            start=start,
-            end=end,
-            target_x=target_x,
-            target_y=target_y,
-            self_x=self_x,
-            self_y=self_y,
-            direction=direction,
-            offset=offset,
-            ease=easing,
-            frame=self.frame,
-        )
-        return self.apply_transform(matrix)
-
     @property
     def dependencies(self) -> list[Variable]:
-        out = []
+        out: list[Variable] = []
         for obj in self:
             out.extend(obj.dependencies)
         return out
