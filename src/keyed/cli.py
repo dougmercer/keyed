@@ -1,5 +1,6 @@
 """Command line interface for Keyed animations."""
 
+import importlib.util
 import os
 import sys
 import tempfile
@@ -40,7 +41,7 @@ def print_success(message: str):
 
 def cli():
     """Entry point for the CLI that handles direct file paths."""
-    if len(sys.argv) > 1 and sys.argv[1] not in ["info", "preview", "render", "iostream", "--help"]:
+    if len(sys.argv) > 1 and sys.argv[1] not in ["info", "preview", "render", "iostream", "login", "--help"]:
         sys.argv[1:1] = ["preview"]  # Insert 'preview' command before the file path
     return app()
 
@@ -324,3 +325,9 @@ def info():
 
         console = Console(stderr=True)
         console.print(f"[bold red]Error running diagnostics:[/bold red] {str(e)}")
+
+
+if importlib.util.find_spec("keyed_login"):
+    from keyed_login import app as keyed_login_app
+
+    app.add_typer(keyed_login_app, name="login")
