@@ -2,7 +2,7 @@ from keyed import Animation, AnimationType, Circle, PingPong, Scene, Text
 
 scene = Scene(scene_name="circle", num_frames=90, width=3840, height=2160)
 
-circle = Circle(scene, 100, 100, radius=20)
+circle = Circle(x=100, y=100, radius=20)
 
 scene.add(circle)
 
@@ -19,7 +19,7 @@ a = PingPong(
 
 circle.translate(0, a(circle.controls.delta_y, scene.frame))
 
-text = Text(scene, "Abc", 24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0))
+text = Text("Abc", size=24, x=200, y=200, font="Anonymous Pro", color=(1, 0, 0))
 scene.add(text)
 
 b = PingPong(

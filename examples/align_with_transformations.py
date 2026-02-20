@@ -5,12 +5,12 @@ from keyed.easing import linear_in_out
 
 scene = Scene(num_frames=90, width=1920, height=1080)
 
-r1 = Rectangle(scene, width=50, height=100, y=60, x=35, alpha=0.5, fill_color=(0, 0, 1))
-r2 = Rectangle(scene, width=10, height=10, x=15, y=15, fill_color=(1, 0, 0), alpha=0.5)
+r1 = Rectangle(width=50, height=100, y=60, x=35, alpha=0.5, fill_color=(0, 0, 1))
+r2 = Rectangle(width=10, height=10, x=15, y=15, fill_color=(1, 0, 0), alpha=0.5)
 scene.add(r1, r2)
 
 for x, y in itertools.product([10, 600], [10, 600]):
-    scene.add(Text(scene, f"{x}_{y}", x=x, y=y))
+    scene.add(Text(f"{x}_{y}", x=x, y=y))
 
 r1.translate(100, 0, 0, 3)
 start_frame = 6

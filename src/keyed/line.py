@@ -82,7 +82,7 @@ class Line(Base):
 
     def __init__(
         self,
-        scene: Scene,
+        scene: Scene | None = None,
         x0: HasValue[float] | None = None,
         y0: HasValue[float] | None = None,
         x1: HasValue[float] | None = None,
@@ -94,7 +94,7 @@ class Line(Base):
         line_width: HasValue[float] = 1,
     ) -> None:
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.start: ReactiveValue[float] = Signal(0)
         self.end: ReactiveValue[float] = Signal(1)
@@ -206,7 +206,6 @@ class Line(Base):
 class BezierCurve(Base):
     def __init__(
         self,
-        scene: Scene,
         x0: HasValue[float],
         y0: HasValue[float],
         x1: HasValue[float],
@@ -215,6 +214,8 @@ class BezierCurve(Base):
         y2: HasValue[float],
         x3: HasValue[float],
         y3: HasValue[float],
+        *,
+        scene: Scene | None = None,
         color: HasValue[Color] | tuple[float, float, float] = (1, 1, 1),
         alpha: HasValue[float] = 1,
         dash: tuple[Sequence[float], float] | None = None,
@@ -222,7 +223,7 @@ class BezierCurve(Base):
         line_width: HasValue[float] = 1,
     ) -> None:
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.start: ReactiveValue[float] = Signal(0.0)
         self.end: ReactiveValue[float] = Signal(1.0)

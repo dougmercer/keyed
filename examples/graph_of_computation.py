@@ -54,8 +54,8 @@ for k, (symbol, label) in enumerate(iterable):
         fill_color = reactive_color
     else:
         fill_color = reactive_color2
-    label = Text(s, text=label, size=60)
-    value = Text(s, text=as_str(symbol), size=100).lock_on(label).translate(0, 100)
+    label = Text(text=label, size=60)
+    value = Text(text=as_str(symbol), size=100).lock_on(label).translate(0, 100)
     text_group = Selection([label, value])
     circle = Circle(fill_color=fill_color, **circle_params)
     text_group.lock_on(circle)

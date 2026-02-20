@@ -19,7 +19,6 @@ def create_easing_visualization(easing_data):
     # Main visualization
     viz = (
         EasingVisualizer(
-            scene,
             width=150,
             height=150,
             easing_func=easing_func,
@@ -34,7 +33,6 @@ def create_easing_visualization(easing_data):
 
     # Vertical line for value demonstration
     value_line = Line(
-        scene,
         x0=viz.right.value + scene.nx(0.3),
         y0=viz.down.value,
         x1=viz.right.value + scene.nx(0.3),
@@ -49,28 +47,26 @@ def create_easing_visualization(easing_data):
     font = "Anonymous Pro"
 
     value_label = (
-        Text(scene, "Value", font=font, size=30, color=(0.8, 0.8, 0.8))
+        Text("Value", font=font, size=30, color=(0.8, 0.8, 0.8))
         .align_to(value_line, direction=UP, center_on_zero=True)
         .translate(0, -scene.ny(0.15))
     )
 
     # Value markers
     one_label = (
-        Text(scene, "1", font=font, size=30, color=(0.8, 0.8, 0.8))
+        Text("1", font=font, size=30, color=(0.8, 0.8, 0.8))
         .align_to(value_line, direction=UP, center_on_zero=True)
         .translate(-scene.nx(0.1), 0)
     )
 
     zero_label = (
-        Text(scene, "0", font=font, size=30, color=(0.8, 0.8, 0.8))
+        Text("0", font=font, size=30, color=(0.8, 0.8, 0.8))
         .align_to(value_line, direction=DOWN, center_on_zero=True)
         .translate(-scene.nx(0.1), 0)
     )
 
     # Animated circle
-    moving_circle = Circle(
-        scene, color=(1, 0.5, 0), fill_color=(1, 0.5, 0), radius=8, x=value_line.x0.value, y=viz.position.y
-    )
+    moving_circle = Circle(color=(1, 0.5, 0), fill_color=(1, 0.5, 0), radius=8, x=value_line.x0.value, y=viz.position.y)
 
     # Add everything to the scene
     scene.add(viz, value_line, value_label, zero_label, one_label, moving_circle)

@@ -5,7 +5,7 @@ with open("examples/_example.py", "r") as f:
 styled_tokens = tokenize(content)
 
 scene = Scene(scene_name="trace", num_frames=60, width=800, height=800)
-code = Code(scene, styled_tokens, font_size=40, alpha=1, x=100, y=100).center()
+code = Code(styled_tokens, font_size=40, alpha=1, x=100, y=100).center()
 
 curve = (
     # Select specific charaters for the highlight to pass through

@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Self,
-    Sequence,
-)
+from typing import TYPE_CHECKING, Any, Self, Sequence
 
 import cairo
 from signified import HasValue, Variable, unref
@@ -68,8 +63,11 @@ class Base(TransformNode):
     scene: Scene
     lifetime: Lifetime
 
-    def __init__(self, scene: Scene) -> None:
-        TransformNode.__init__(self, scene.frame)
+    def __init__(self, scene: Scene | None = None) -> None:
+        from .scene import resolve_scene
+
+        self.scene = resolve_scene(scene)
+        TransformNode.__init__(self, self.scene.frame)
         self.lifetime = Lifetime()
 
     @property

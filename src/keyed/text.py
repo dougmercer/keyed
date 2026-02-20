@@ -46,8 +46,9 @@ class Text(Base):
 
     def __init__(
         self,
-        scene: Scene,
         text: HasValue[str],
+        *,
+        scene: Scene | None = None,
         size: float = 24,
         x: HasValue[float] | None = None,
         y: HasValue[float] | None = None,
@@ -61,7 +62,7 @@ class Text(Base):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
     ):
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.text = as_signal(text)
         self.font = font
         self.color = as_color(color)
@@ -341,8 +342,8 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
 
         # TODO - c should be c.clone(), but clone not implemented for text.
         return Curve(
-            self.scene,
             objects=[c for c in self.chars.filter_whitespace()],
+            scene=self.scene,
             color=color,
             alpha=alpha,
             dash=dash,
@@ -512,8 +513,9 @@ class Code(TextSelection[_Line]):
 
     def __init__(
         self,
-        scene: Scene,
         tokens: list[StyledToken],
+        *,
+        scene: Scene | None = None,
         font: str = "Anonymous Pro",
         font_size: int = 24,
         x: float = 10,
@@ -522,6 +524,10 @@ class Code(TextSelection[_Line]):
         operator: cairo.Operator = cairo.OPERATOR_OVER,
         _ascent_correction: bool = True,
     ) -> None:
+        from .scene import resolve_scene
+
+        scene = resolve_scene(scene)
+
         self._tokens = tokens
         self.font = font
         self.font_size = font_size

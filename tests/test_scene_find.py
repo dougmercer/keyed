@@ -20,7 +20,7 @@ def scene() -> Scene:
 
 
 def test_scene_find(scene: Scene, tokens: list[StyledToken]) -> None:
-    code = Code(scene, tokens, font_size=48, alpha=1)
+    code = Code(tokens, font_size=48, alpha=1)
     scene.add(code)
     obj = code.chars[15]
     actual = scene.find(obj.x, obj.y, 0)
@@ -28,7 +28,7 @@ def test_scene_find(scene: Scene, tokens: list[StyledToken]) -> None:
 
 
 def test_scene_find_not_visible(scene: Scene, tokens: list[StyledToken]) -> None:
-    code = Code(scene, tokens, font_size=48, alpha=0)
+    code = Code(tokens, font_size=48, alpha=0)
     scene.add(code)
     obj = code.chars[15]
     actual = scene.find(obj.x, obj.y, 0)

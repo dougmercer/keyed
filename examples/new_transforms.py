@@ -3,11 +3,11 @@ from keyed import Circle, Rectangle, Scene
 scene = Scene("transform_demo", num_frames=120)
 
 rect = Rectangle(
-    scene, width=100, height=100, color=(0.2, 0.5, 1.0), fill_color=(0.4, 0.7, 1.0), x=scene.nx(0.5), y=scene.ny(0.5)
+    width=100, height=100, color=(0.2, 0.5, 1.0), fill_color=(0.4, 0.7, 1.0), x=scene.nx(0.5), y=scene.ny(0.5)
 )
 
 center_dot = Circle(
-    scene, radius=5, color=(1, 0.3, 0.3), fill_color=(1, 0.3, 0.3), x=scene.width / 2, y=scene.height / 2, alpha=0.5
+    radius=5, color=(1, 0.3, 0.3), fill_color=(1, 0.3, 0.3), x=scene.width / 2, y=scene.height / 2, alpha=0.5
 )
 
 scene.add(rect, center_dot)

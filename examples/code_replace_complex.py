@@ -4,8 +4,8 @@ scene = Scene(scene_name="code_replace_complex", num_frames=90, width=800, heigh
 
 # Create the before/after code snippets, and align them
 # so that the final code snippet would be centered on the screen
-before = Code(scene, tokenize(r"x = 1 + 2 + 3"), font_size=60)
-after = Code(scene, tokenize(r"x = 1 + get_two() + 3"), font_size=60, alpha=0).center()
+before = Code(tokenize(r"x = 1 + 2 + 3"), font_size=60)
+after = Code(tokenize(r"x = 1 + get_two() + 3"), font_size=60, alpha=0).center()
 before.align_to(after, direction=LEFT, center_on_zero=True)
 
 # Animate transforming from before to after
