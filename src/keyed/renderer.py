@@ -162,7 +162,7 @@ class Renderer:
         # Render frames
         with Popen(command, stdin=PIPE) as ffmpeg:
             for frame in range(self.scene.num_frames):
-                ffmpeg.stdin.write(self.scene.asarray(frame).tobytes())  # type: ignore
+                ffmpeg.stdin.write(memoryview(self.scene.asarray(frame)))  # type: ignore[arg-type]
 
     def _render_pyav(self, output_path: Path, format: VideoFormat, frame_rate: int, **kwargs) -> None:
         """Render video using PyAV.
