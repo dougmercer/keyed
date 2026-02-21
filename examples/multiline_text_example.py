@@ -7,6 +7,6 @@ with open("tests/data/multiline_string.py", "r") as f:
     content = f.read()
 styled_tokens = tokenize(content)
 
-code = Code(scene, styled_tokens, font_size=36)
+code = Code(styled_tokens, font_size=36)
 
 scene.add(code)

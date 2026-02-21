@@ -63,7 +63,7 @@ class Shape(Base):
     fill_pattern: cairo.Pattern | None
     stroke_pattern: cairo.Pattern | None
 
-    def __init__(self, scene: Scene) -> None:
+    def __init__(self, scene: Scene | None = None) -> None:
         super().__init__(scene)
         self.fill_pattern: cairo.Pattern | None = None
         self.stroke_pattern: cairo.Pattern | None = None
@@ -214,7 +214,7 @@ class Rectangle(Shape):
 
     def __init__(
         self,
-        scene: Scene,
+        scene: Scene | None = None,
         width: HasValue[float] = 10,
         height: HasValue[float] = 10,
         x: HasValue[float] | None = None,
@@ -235,7 +235,7 @@ class Rectangle(Shape):
         round_bl: bool = True,
     ) -> None:
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.x = x if x is not None else scene.nx(0.5)
         self.y = y if y is not None else scene.ny(0.5)
@@ -403,7 +403,7 @@ class Circle(Shape):
 
     def __init__(
         self,
-        scene: Scene,
+        scene: Scene | None = None,
         x: HasValue[float] | None = None,
         y: HasValue[float] | None = None,
         radius: HasValue[float] = 1,
@@ -417,7 +417,7 @@ class Circle(Shape):
         line_width: float = 2,
     ) -> None:
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.x = x if x is not None else scene.nx(0.5)
         self.y = y if y is not None else scene.ny(0.5)
@@ -491,7 +491,7 @@ class Background(Rectangle):
 
     def __init__(
         self,
-        scene: Scene,
+        scene: Scene | None = None,
         color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
         fill_color: tuple[float, float, float] | HasValue[Color] = (1, 1, 1),
         alpha: HasValue[float] = 1,
@@ -501,6 +501,10 @@ class Background(Rectangle):
         draw_stroke: bool = True,
         line_width: HasValue[float] = 2,
     ) -> None:
+        if scene is None:
+            from .scene import resolve_scene
+
+            scene = resolve_scene(scene)
         super().__init__(
             scene=scene,
             color=color,

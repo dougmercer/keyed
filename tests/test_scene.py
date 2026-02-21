@@ -11,7 +11,6 @@ from keyed import Group, Rectangle, Scene, Text
 def test_text_drawing() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=100, height=100)
     text = Text(
-        scene,
         text="Hello",
         size=20,
         x=10,
@@ -32,8 +31,8 @@ def test_text_drawing() -> None:
 
 def test_add_multiple_drawables() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
-    text1 = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)  # Red text
-    text2 = Text(scene, "World", 20, 100, 50, "Sans", (0, 1, 0), alpha=1)  # Green text
+    text1 = Text("Hello", size=20, x=10, y=50, font="Sans", color=(1, 0, 0), alpha=1)  # Red text
+    text2 = Text("World", size=20, x=100, y=50, font="Sans", color=(0, 1, 0), alpha=1)  # Green text
     scene.add(text1, text2)
 
     buf = scene.rasterize(0).get_data()
@@ -48,8 +47,8 @@ def test_add_multiple_drawables() -> None:
 
 def test_add_flattens_selection() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
-    text0 = Text(scene, "Hello")
-    text1 = Text(scene, "World")
+    text0 = Text("Hello")
+    text1 = Text("World")
     selection = Group([text0, text1])
 
     scene.add(selection)
@@ -59,8 +58,8 @@ def test_add_flattens_selection() -> None:
 
 def test_add_flattens_nested_iterables() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
-    text0 = Text(scene, "Hello")
-    text1 = Text(scene, "World")
+    text0 = Text("Hello")
+    text1 = Text("World")
 
     scene.add([text0, [text1]])
 
@@ -70,8 +69,8 @@ def test_add_flattens_nested_iterables() -> None:
 def test_layer_add_flattens_selection() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
     layer = scene.create_layer("overlay")
-    text0 = Text(scene, "Hello")
-    text1 = Text(scene, "World")
+    text0 = Text("Hello")
+    text1 = Text("World")
     selection = Group([text0, text1])
 
     layer.add(selection)
@@ -98,7 +97,7 @@ def test_clear_scene() -> None:
     width = 100
     height = 100
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=width, height=height)
-    text = Text(scene, "Hello", 20, 10, 50, "Sans", (1, 0, 0), alpha=1)
+    text = Text("Hello", size=20, x=10, y=50, font="Sans", color=(1, 0, 0), alpha=1)
     scene.add(text)
     scene.rasterize(0)
     scene.clear()
@@ -119,8 +118,8 @@ def test_clear_scene() -> None:
 def test_draw_as_layers(tmp_path: Path) -> None:
     # Write content to file layerwise
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
-    text0 = Text(scene, "Hello", color=(1, 0, 0))
-    text1 = Text(scene, "World", color=(0, 1, 0))
+    text0 = Text("Hello", color=(1, 0, 0))
+    text1 = Text("World", color=(0, 1, 0))
     scene.add(text0)
     layer2 = scene.create_layer("2")
     layer2.add(text1)
@@ -141,7 +140,7 @@ def test_draw_as_layers(tmp_path: Path) -> None:
 def test_delete_old_frames(tmp_path: Path) -> None:
     # Write content to file layerwise
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
-    text0 = Text(scene, "Hello", color=(1, 0, 0))
+    text0 = Text("Hello", color=(1, 0, 0))
     scene.add(text0)
     scene.draw()
 
@@ -153,8 +152,8 @@ def test_delete_old_frames(tmp_path: Path) -> None:
 
 def test_find(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
-    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
-    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    text0 = Text("Hello", x=10, y=10, color=(1, 0, 0))
+    text1 = Text("World", x=90, y=90, color=(1, 0, 0))
     scene.add(text0, text1)
 
     assert scene.find(11, 11, 0) == text0
@@ -170,8 +169,8 @@ def test_find_no_content(tmp_path: Path) -> None:
 
 def test_find_not_visible(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
-    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0), alpha=0)
-    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    text0 = Text("Hello", x=10, y=10, color=(1, 0, 0), alpha=0)
+    text1 = Text("World", x=90, y=90, color=(1, 0, 0))
     scene.add(text0, text1)
 
     # Although text0 is much closer to (11, 11), it is not visible. So, find returns text1
@@ -180,8 +179,8 @@ def test_find_not_visible(tmp_path: Path) -> None:
 
 def test_find_collection(tmp_path: Path) -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=tmp_path, width=100, height=100)
-    text0 = Text(scene, "Hello", x=10, y=10, color=(1, 0, 0))
-    text1 = Text(scene, "World", x=90, y=90, color=(1, 0, 0))
+    text0 = Text("Hello", x=10, y=10, color=(1, 0, 0))
+    text1 = Text("World", x=90, y=90, color=(1, 0, 0))
     s = Group([text0, text1])
     scene.add(s)
 
@@ -204,7 +203,7 @@ def test_cant_write_without_scene_name() -> None:
 
 def test_asarray() -> None:
     scene = Scene(width=20, height=30)
-    text = Text(scene, "Hello")
+    text = Text("Hello")
     scene.add(text)
     arr = scene.asarray(0)
     assert isinstance(arr, np.ndarray)

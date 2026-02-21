@@ -38,7 +38,7 @@ We start by creating a [`Scene`][keyed.scene.Scene] object, which serves as our 
 ### Creating the Ball
 ```python
 ball = (
-    Circle(scene, radius=50)
+    Circle(radius=50)
     .translate(0, 300, start=0, end=24, easing=easing.bounce_out)
     .scale(2, start=24, end=48, direction=DOWN)
     .stretch(2, 0.5, start=50, end=60, direction=DOWN)
@@ -65,7 +65,7 @@ Notice how we specify start and end frames for each animation. The ball will:
 ### Creating the Floor
 
 ```python
-floor = Line(scene, x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), line_width=5)
+floor = Line(x0=0, x1=scene.nx(1), y0=scene.ny(0.75), y1=scene.ny(0.75), line_width=5)
 ```
 
 The floor is a simple [`Line`][keyed.line.Line] that:
@@ -77,7 +77,7 @@ Note that our Scene's cooridinate system is such that the top left corner of the
 
 ### Creating the Title
 ```python
-title = Text(scene, "Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
+title = Text("Thanks for dropping by!", size=100).move_to(scene.nx(0.5), scene.ny(0.2))
 ```
 
 We create a [`Text`][keyed.text.Text] object that:

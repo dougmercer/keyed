@@ -9,6 +9,7 @@ from enum import Enum
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self
+from weakref import ReferenceType, ref
 
 import cairo
 import numpy as np
@@ -29,7 +30,47 @@ from .transforms import TransformNode
 if TYPE_CHECKING:
     from .extras import FreeHandContext
 
-__all__ = ["Scene", "Layer"]
+__all__ = ["Scene", "Layer", "resolve_scene"]
+
+_SCENE_REGISTRY: list[ReferenceType[Scene]] = []
+_ACTIVE_SCENE: ReferenceType[Scene] | None = None
+
+
+def _live_scenes() -> list[Scene]:
+    global _SCENE_REGISTRY
+    scenes = [scene for scene_ref in _SCENE_REGISTRY if (scene := scene_ref()) is not None]
+    _SCENE_REGISTRY = [scene_ref for scene_ref in _SCENE_REGISTRY if scene_ref() is not None]
+    return scenes
+
+
+def _set_active_scene(scene: Scene) -> Scene:
+    global _ACTIVE_SCENE
+    scenes = _live_scenes()
+    if all(existing is not scene for existing in scenes):
+        _SCENE_REGISTRY.append(ref(scene))
+    _ACTIVE_SCENE = ref(scene)
+    return scene
+
+
+def _register_scene(scene: Scene) -> None:
+    _set_active_scene(scene)
+
+
+def resolve_scene(scene: Scene | None = None) -> Scene:
+    """Resolve an optional scene argument into a concrete Scene."""
+    if scene is not None:
+        if not isinstance(scene, Scene):
+            raise TypeError(f"Expected scene to be a Scene or None, got {type(scene).__name__}.")
+        return _set_active_scene(scene)
+
+    if _ACTIVE_SCENE is not None and (active := _ACTIVE_SCENE()) is not None:
+        return active
+
+    scenes = _live_scenes()
+    if scenes:
+        return _set_active_scene(scenes[-1])
+
+    raise ValueError("No active Scene found. Create a Scene first or pass `scene=` explicitly.")
 
 
 NestedBase = Base | Iterable["NestedBase"]
@@ -170,6 +211,7 @@ class Scene(TransformNode, Freezeable):
         self.layers: list[Layer] = []
         self.default_layer = self.create_layer("default", z_index=0)
         self.renderer = Renderer(self)
+        _register_scene(self)
 
     def nx(self, n: float) -> float:
         """Convert normalized x coordinate (0-1) to pixel value.
@@ -224,6 +266,11 @@ class Scene(TransformNode, Freezeable):
 
     def tic(self) -> None:
         self.frame.value = self.frame.value + 1
+
+    def activate(self) -> Self:
+        """Set this Scene as the active scene used by implicit constructors."""
+        _set_active_scene(self)
+        return self
 
     def __repr__(self) -> str:
         return (

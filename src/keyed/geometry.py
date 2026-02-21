@@ -46,8 +46,9 @@ class Geometry(Shape):
 
     def __init__(
         self,
-        scene: Scene,
         geometry: HasValue[BaseGeometry],
+        *,
+        scene: Scene | None = None,
         color: Union[tuple[float, float, float], Color] = (1, 1, 1),
         fill_color: Union[tuple[float, float, float], Color] = (1, 1, 1),
         alpha: float = 1,
@@ -62,7 +63,7 @@ class Geometry(Shape):
         center_geometry: bool = True,
     ):
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         g = as_signal(geometry)
         self.geometry = center(g, scene) if center_geometry else g

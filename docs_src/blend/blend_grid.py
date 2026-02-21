@@ -48,7 +48,7 @@ scene = Scene(scene_name="blend_modes", num_frames=1, width=cols * 200, height=r
 
 # Create a background layer with checkerboard pattern
 background_layer = scene.create_layer("background", z_index=0)
-bg = Rectangle(scene=scene, width=scene.nx(1), height=scene.ny(1), draw_stroke=False)
+bg = Rectangle(width=scene.nx(1), height=scene.ny(1), draw_stroke=False)
 background_layer.add(bg)
 
 foreground_layer = scene.create_layer("background", z_index=1000)
@@ -70,7 +70,6 @@ for i, (name, operator) in enumerate(blend_modes):
 
     # Add the red rectangle (dest)
     red_rect = Rectangle(
-        scene=scene,
         x=x - 20,
         y=y - 15,
         width=120,
@@ -83,7 +82,6 @@ for i, (name, operator) in enumerate(blend_modes):
 
     # Add the blue rectangle (source)
     blue_rect = Rectangle(
-        scene=scene,
         x=x + 20,
         y=y + 15,
         width=120,
@@ -97,7 +95,6 @@ for i, (name, operator) in enumerate(blend_modes):
 
     # Add a frame around the example
     frame = Rectangle(
-        scene=scene,
         x=x,
         y=y,
         width=180,
@@ -112,7 +109,7 @@ for i, (name, operator) in enumerate(blend_modes):
 
     # Add title text
     title = (
-        Text(scene=scene, text=name.replace("_", " "), size=18, color=(0, 0, 0), alpha=1.0)
+        Text(text=name.replace("_", " "), size=18, color=(0, 0, 0), alpha=1.0)
         .align_to(frame, direction=UP, center_on_zero=True)
         .translate(y=-15)
     )

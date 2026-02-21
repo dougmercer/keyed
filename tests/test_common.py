@@ -40,5 +40,5 @@ def test_common_methods_dont_fail(
     method: Callable,
 ) -> None:
     drawable, kwargs = drawable_args
-    obj = drawable(scene, **kwargs)
+    obj = drawable(**kwargs, scene=scene)
     method(obj)

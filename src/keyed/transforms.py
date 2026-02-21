@@ -515,6 +515,7 @@ class TransformNode(Transformable):
         # self._cache.pop('geom', None)
         return self
 
+
 class TransformControls:
     """Control how transforms are applied to the object.
 

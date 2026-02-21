@@ -186,8 +186,9 @@ class Curve(Shape):
 
     def __init__(
         self,
-        scene: Scene,
         objects: Sequence[Base],
+        *,
+        scene: Scene | None = None,
         color: tuple[float, float, float] | Color = (1, 1, 1),
         fill_color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
@@ -203,7 +204,7 @@ class Curve(Shape):
         if len(objects) < 2:
             raise ValueError("Need at least two objects")
 
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.objects = objects
         self.color = as_color(color)
@@ -331,8 +332,9 @@ class Curve(Shape):
     @classmethod
     def from_points(
         cls,
-        scene: Scene,
         points: Sequence[tuple[float, float]] | np.ndarray,
+        *,
+        scene: Scene | None = None,
         color: tuple[float, float, float] | Color = (1, 1, 1),
         fill_color: tuple[float, float, float] | Color = (1, 1, 1),
         alpha: float = 1,
@@ -345,10 +347,14 @@ class Curve(Shape):
         draw_stroke: bool = True,
     ) -> Self:
         """Create a Curve object directly from a sequence of points."""
-        objects = [Circle(scene, x, y, alpha=0) for (x, y) in points]
+        from .scene import resolve_scene
+
+        resolved_scene = resolve_scene(scene)
+
+        objects = [Circle(resolved_scene, x, y, alpha=0) for (x, y) in points]
         return cls(
-            scene=scene,
             objects=objects,
+            scene=resolved_scene,
             color=color,
             fill_color=fill_color,
             alpha=alpha,

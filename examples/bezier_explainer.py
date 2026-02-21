@@ -13,13 +13,13 @@ x3, y3 = s._width - delta, delta
 
 # Create a reactive variable that represets the progress through the bezier curve
 progress = Animation(0, round(num_frames * 0.9), 0.0, 1.0)(0, s.frame)
-curve = BezierCurve(s, x0, y0, x1, y1, x2, y2, x3, y3, line_width=20, color=(0, 0.2, 0.8))
+curve = BezierCurve(x0, y0, x1, y1, x2, y2, x3, y3, line_width=20, color=(0, 0.2, 0.8))
 curve.end = progress
 
 
 def draw_point(s, x, y, label, radius=40, offset=150, size=40):
-    p = Circle(s, x=x, y=y, radius=radius, draw_fill=False, line_width=10)
-    t = Text(s, label, size=size).align_to(p, center_on_zero=True).translate(offset, 0)
+    p = Circle(x=x, y=y, radius=radius, draw_fill=False, line_width=10)
+    t = Text(label, size=size).align_to(p, center_on_zero=True).translate(offset, 0)
     return p, t
 
 
@@ -28,9 +28,9 @@ p1, t1 = draw_point(s, x1, y1, label="Point 1")
 p2, t2 = draw_point(s, x2, y2, label="Point 2", offset=-150)
 p3, t3 = draw_point(s, x3, y3, label="Point 3", offset=-150)
 
-line01 = Line(s, x0, y0, x1, y1, line_width=5)
-line12 = Line(s, x1, y1, x2, y2, line_width=5)
-line23 = Line(s, x2, y2, x3, y3, line_width=5)
+line01 = Line(x0=x0, y0=y0, x1=x1, y1=y1, line_width=5)
+line12 = Line(x0=x1, y0=y1, x1=x2, y1=y2, line_width=5)
+line23 = Line(x0=x2, y0=y2, x1=x3, y1=y3, line_width=5)
 
 x01 = lerp(x0, x1, progress)
 y01 = lerp(y0, y1, progress)
@@ -51,11 +51,11 @@ x_curve = lerp(x012, x123, progress)
 y_curve = lerp(y012, y123, progress)
 
 # Lines that will be dynamically updated
-line012_interp = Line(s, x01, y01, x12, y12, line_width=5)
-line123_interp = Line(s, x12, y12, x23, y23, line_width=5)
-line0123_interp = Line(s, x012, y012, x123, y123, line_width=5, color=(1, 0, 0))
+line012_interp = Line(x0=x01, y0=y01, x1=x12, y1=y12, line_width=5)
+line123_interp = Line(x0=x12, y0=y12, x1=x23, y1=y23, line_width=5)
+line0123_interp = Line(x0=x012, y0=y012, x1=x123, y1=y123, line_width=5, color=(1, 0, 0))
 
-value = Circle(s, x_curve, y_curve, radius=40, color=(0, 0.2, 0.8), draw_fill=False, line_width=10)
+value = Circle(x=x_curve, y=y_curve, radius=40, color=(0, 0.2, 0.8), draw_fill=False, line_width=10)
 
 # fmt: off
 s.add(

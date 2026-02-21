@@ -2,7 +2,7 @@ from keyed import Circle, Scene
 
 scene = Scene(scene_name="circle", num_frames=48, width=1920, height=1080)
 
-c1 = Circle(scene, 100, 100, radius=20)
+c1 = Circle(x=100, y=100, radius=20)
 
 c1.translate(100, 0, 0, 12)
 c2 = c1.clone()

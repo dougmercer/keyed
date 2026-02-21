@@ -9,7 +9,6 @@ f = lambda x: np.sin(x) * np.exp(-0.1 * x)  # noqa: E731
 # Simple function plot
 plot1 = (
     FunctionPlot(
-        scene,
         func=f,
         x_start=-10,
         x_end=10,
@@ -28,7 +27,6 @@ y_points = np.array([f(x) for x in x_points])
 
 plot2 = (
     PointPlot(
-        scene,
         x_points=x_points,
         y_points=y_points,
         width=400,
@@ -45,7 +43,6 @@ plot2 = (
 # Point plot without interpolation (straight lines)
 plot3 = (
     PointPlot(
-        scene,
         x_points=x_points,
         y_points=y_points,
         width=400,

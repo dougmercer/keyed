@@ -55,13 +55,13 @@ class Axes(Base):
 
     def __init__(
         self,
-        scene: Scene,
+        scene: Scene | None = None,
         x_config: AxisConfig | None = None,
         y_config: AxisConfig | None = None,
         plot: AxesAnchorable | None = None,
     ):
         super().__init__(scene)
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
         self.x_config = x_config or AxisConfig()
         self.y_config = y_config or AxisConfig()
@@ -206,9 +206,10 @@ class ParametricPlot(Base, AxesAnchorable):
 
     def __init__(
         self,
-        scene: Scene,
         x_func: Callable[[float], float],
         y_func: Callable[[float], float],
+        *,
+        scene: Scene | None = None,
         width: float = 400,
         height: float = 400,
         t_start: float = 0,
@@ -225,7 +226,7 @@ class ParametricPlot(Base, AxesAnchorable):
         super().__init__(scene)
 
         # Store scene and context
-        self.scene = scene
+        scene = self.scene
         self.ctx = scene.get_context()
 
         # Store functions and parameters
@@ -397,8 +398,9 @@ class EasingVisualizer(ParametricPlot):
 
     def __init__(
         self,
-        scene: Scene,
         easing_func: Callable[[float], float],
+        *,
+        scene: Scene | None = None,
         width: float = 400,
         height: float = 400,
         point_color: tuple[float, float, float] = (1, 0.5, 0),
@@ -450,8 +452,9 @@ class FunctionPlot(ParametricPlot):
 
     def __init__(
         self,
-        scene: Scene,
         func: Callable[[float], float],
+        *,
+        scene: Scene | None = None,
         width: float = 400,
         height: float = 400,
         x_start: float = -5,
@@ -513,9 +516,10 @@ class PointPlot(ParametricPlot):
 
     def __init__(
         self,
-        scene: Scene,
         x_points: Sequence[float] | np.ndarray,
         y_points: Sequence[float] | np.ndarray,
+        *,
+        scene: Scene | None = None,
         width: float = 400,
         height: float = 400,
         x_range: tuple[float, float] | None = None,
