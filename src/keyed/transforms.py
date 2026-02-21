@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Literal, Self, cast
+from typing import Any, Callable, Literal, Self, TypeVar, cast
 
 import cairo
 import shapely
@@ -15,96 +15,64 @@ from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
 from .types import GeometryT
 
-__all__ = [
-    "Transformable",
-    "TransformControls",
-    "affine_transform",
-    "translate",
-    "rotate",
-    "scale",
-    "move_to",
-    "align_to",
-    "lock_on",
-    "shear",
-    "stretch",
-    "match_size",
-    "next_to",
-    "get_critical_point",
-    "get_critical_point_now",
-    "get_position_along_dim",
-    "get_position_along_dim_now",
-]
+__all__ = ["Transformable", "TransformNode", "TransformControls"]
+
+ComputedT = TypeVar("ComputedT")
 
 
 class Transformable:
-    """A base class for things that have a geometry."""
+    """Shared interface for objects that can be transformed and have a reactive geometry.
 
-    controls: TransformControls
-    frame: Signal[int]
-    _dependencies: list[Any]
-    _cache: dict[str, Computed[Any]]
+    Provides geometry-derived properties (bounds, width, height, center) and transform
+    methods (translate, rotate, scale, align_to, etc.). Both TransformNode (for individual
+    drawables like Base and Scene) and Group (for collections) inherit from this class.
+    """
 
-    def __init__(self, frame: Signal[int]) -> None:
-        super().__init__()
-        self.frame = frame
-        self.controls = TransformControls(self)
-        self._dependencies = []
-        # self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
-        self._cache: dict[str, Computed[Any]] = {}
+    frame: Any
+    geom: Any
 
-    def _get_cached_computed(self, name: str, factory: Callable[[], Computed[Any]]) -> Computed[Any]:
-        """Get a cached computed value, creating it if it doesn't exist.
-
-        This is intended to reduce the number of reactive values created when accessing methods like `geom`.
-
-        Args:
-            name: The name to cache the computed value under
-            factory: A function that creates the computed value
-
-        Returns:
-            The cached computed value
-        """
-        if name not in self._cache:
-            self._cache[name] = factory()
-        return self._cache[name]
-
-    def _invalidate_cache(self) -> Self:
-        """Clear all cached computed values."""
-        self._cache.clear()
-        return self
+    def _memo_computed(self, name: str, factory: Callable[[], Computed[ComputedT]]) -> Computed[ComputedT]:
+        """Memoize a computed value, optionally using subclass-specific caching."""
+        return factory()
 
     @property
-    def _raw_geom_now(self) -> GeometryT:
-        """Return the geometry at the current frame, before any transformations.
-
-        Returns:
-            The raw geometry, before any transformations, now.
-        """
-        ...
+    def bounds(self) -> Computed[tuple[float, float, float, float]]:
+        return self._memo_computed("bounds", lambda: computed(lambda geom: geom.bounds)(self.geom))
 
     @property
-    def _raw_geom(self) -> Computed[GeometryT]:
-        """Return a reactive value of the raw geometry."""
-        return self._get_cached_computed("_raw_geom", lambda: Computed(lambda: self._raw_geom_now, self._dependencies))
+    def down(self) -> Computed[float]:
+        return self._memo_computed("down", lambda: self.bounds[3])
 
     @property
-    def geom(self) -> Computed[GeometryT]:
-        """Return a reactive value of the transformed geometry."""
-        return self._get_cached_computed(
-            "geom", lambda: computed(affine_transform)(self._raw_geom, self.controls.matrix)
-        )
+    def up(self) -> Computed[float]:
+        return self._memo_computed("up", lambda: self.bounds[1])
 
     @property
-    def geom_now(self) -> GeometryT:
-        m = self.controls.matrix
-        return affine_transform(unref(self._raw_geom), m.value)
+    def left(self) -> Computed[float]:
+        return self._memo_computed("left", lambda: self.bounds[0])
+
+    @property
+    def right(self) -> Computed[float]:
+        return self._memo_computed("right", lambda: self.bounds[2])
+
+    @property
+    def width(self) -> Computed[float]:
+        return self._memo_computed("width", lambda: self.right - self.left)
+
+    @property
+    def height(self) -> Computed[float]:
+        return self._memo_computed("height", lambda: self.down - self.up)
+
+    @property
+    def center_x(self) -> Computed[float]:
+        return self._memo_computed("center_x", lambda: (self.left + self.right) / 2)
+
+    @property
+    def center_y(self) -> Computed[float]:
+        return self._memo_computed("center_y", lambda: (self.up + self.down) / 2)
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
-        self.controls.matrix *= matrix
-        # Invalidate cached geometry
-        self._invalidate_cache()
-        # self._cache.pop('geom', None)
-        return self
+        raise NotImplementedError
 
     def rotate(
         self,
@@ -128,8 +96,8 @@ class Transformable:
         Returns:
             self
         """
-        center = center if center is not None else self.geom
-        cx, cy = get_critical_point(center, direction)
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)
         return self.apply_transform(rotate(start, end, amount, cx, cy, self.frame, easing))
 
     def scale(
@@ -154,8 +122,8 @@ class Transformable:
         Returns:
             self
         """
-        center = center if center is not None else self.geom
-        cx, cy = get_critical_point(center, direction)
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)
         return self.apply_transform(scale(start, end, amount, cx, cy, self.frame, easing))
 
     def translate(
@@ -199,10 +167,11 @@ class Transformable:
         Returns:
             Self
         """
-        center = center if center is not None else self.geom
-        cx, cy = get_critical_point(center, direction)
-        self.apply_transform(move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing))
-        return self
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)
+        return self.apply_transform(
+            move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing)
+        )
 
     def align_to(
         self,
@@ -210,7 +179,7 @@ class Transformable:
         start: int = ALWAYS,
         lock: int | None = None,
         end: int = ALWAYS,
-        from_: ReactiveValue[GeometryT] | None = None,
+        from_: HasValue[GeometryT] | None = None,
         easing: EasingFunctionT = cubic_in_out,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
@@ -234,12 +203,13 @@ class Transformable:
             self
         """
         # TODO: I'd like to get rid of center_on_zero.
-        from_ = from_ or self.geom
+        to_geom = to.geom
+        from_geom = from_ if from_ is not None else self.geom
         lock = lock if lock is not None else end
         return self.apply_transform(
             align_to(
-                to.geom,
-                from_,
+                to_geom,
+                from_geom,
                 frame=self.frame,
                 start=start,
                 lock=lock,
@@ -271,42 +241,14 @@ class Transformable:
             x: If true, lock on in the x dimension.
             y: If true, lock on in the y dimension.
         """
-        reference = reference or self.geom
+        reference_ = reference if reference is not None else self.geom
         return self.apply_transform(
             lock_on(
                 target=target.geom,
-                reference=reference,
+                reference=reference_,
                 frame=self.frame,
                 start=start,
                 end=end,
-                direction=direction,
-                x=x,
-                y=y,
-            )
-        )
-
-    def lock_on2(
-        self,
-        target: Transformable,
-        reference: ReactiveValue[GeometryT] | None = None,
-        direction: Direction = ORIGIN,
-        x: bool = True,
-        y: bool = True,
-    ) -> Self:
-        """Lock on to a target.
-
-        Args:
-            target: Object to lock onto
-            reference: Measure from this object. This is useful for TextSelections, where you want to align
-                to a particular character in the selection.
-            x: If true, lock on in the x dimension.
-            y: if true, lock on in the y dimension.
-        """
-        reference = reference or self.geom
-        return self.apply_transform(
-            align_now(
-                target=target.geom,
-                reference=reference,
                 direction=direction,
                 x=x,
                 y=y,
@@ -335,8 +277,8 @@ class Transformable:
         Returns:
             self
         """
-        center = center if center is not None else self.geom
-        cx, cy = get_critical_point(center, ORIGIN)
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, ORIGIN)
         return self.apply_transform(
             shear(
                 start=start,
@@ -374,8 +316,8 @@ class Transformable:
         Returns:
             self
         """
-        center = center if center is not None else self.geom
-        cx, cy = get_critical_point(center, direction)
+        center_ = center if center is not None else self.geom
+        cx, cy = get_critical_point(center_, direction)
         return self.apply_transform(
             stretch(
                 start=start,
@@ -400,8 +342,23 @@ class Transformable:
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
+        """Scale object dimensions to match another object.
+
+        Args:
+            other: Object whose width and height to match.
+            match_x: If True, match width.
+            match_y: If True, match height.
+            start: Frame at which scaling begins.
+            end: Frame at which scaling stops varying.
+            easing: Easing function to use.
+            center: The object around which to scale.
+            direction: The relative critical point of the center.
+
+        Returns:
+            self
+        """
         center_ = center if center is not None else self.geom
-        cx, cy = get_critical_point(center_, direction)  # type: ignore[argument]
+        cx, cy = get_critical_point(center_, direction)
         matrix = match_size(
             start=start,
             end=end,
@@ -416,8 +373,7 @@ class Transformable:
             frame=self.frame,
             ease=easing,
         )
-        self.apply_transform(matrix)
-        return self
+        return self.apply_transform(matrix)
 
     def next_to(
         self,
@@ -436,7 +392,7 @@ class Transformable:
             end: End of animation (finish aligning to the object at this frame, and then stay there).
             easing: The easing function to use.
             offset: Distance between objects (in pixels).
-            direction: The critical point of to and from_to use for the alignment.
+            direction: The critical point of `to` and self to use for the alignment.
 
         Returns:
             self
@@ -457,42 +413,107 @@ class Transformable:
         )
         return self.apply_transform(matrix)
 
-    @property
-    def bounds(self) -> Computed[tuple[float, float, float, float]]:
-        return self._get_cached_computed("bounds", lambda: self.geom.bounds)
+    def lock_on2(
+        self,
+        target: Transformable,
+        reference: ReactiveValue[GeometryT] | None = None,
+        direction: Direction = ORIGIN,
+        x: bool = True,
+        y: bool = True,
+    ) -> Self:
+        """Lock on to a target.
+
+        Args:
+            target: Object to lock onto
+            reference: Measure from this object. This is useful for TextSelections, where you want to align
+                to a particular character in the selection.
+            x: If true, lock on in the x dimension.
+            y: if true, lock on in the y dimension.
+        """
+        reference_ = reference if reference is not None else self.geom
+        return self.apply_transform(
+            align_now(
+                target=target.geom,
+                reference=reference_,
+                direction=direction,
+                x=x,
+                y=y,
+            )
+        )
+
+
+class TransformNode(Transformable):
+    """Concrete transformable that owns a TransformControls and geometry pipeline.
+
+    Manages a raw geometry (_raw_geom) transformed through a composable matrix
+    (via TransformControls), with memoized computed properties. Base and Scene
+    inherit from this class.
+    """
+
+    controls: TransformControls
+    frame: Signal[int]
+    _dependencies: list[Any]
+    _cache: dict[str, Computed[Any]]
+
+    def __init__(self, frame: Signal[int]) -> None:
+        super().__init__()
+        self.frame = frame
+        self.controls = TransformControls(self)
+        self._dependencies = []
+        # self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
+        self._cache: dict[str, Computed[Any]] = {}
+
+    def _memo_computed(self, name: str, factory: Callable[[], Computed[ComputedT]]) -> Computed[ComputedT]:
+        """Get a cached computed value, creating it if it doesn't exist.
+
+        This is intended to reduce the number of reactive values created when accessing methods like `geom`.
+
+        Args:
+            name: The name to cache the computed value under
+            factory: A function that creates the computed value
+
+        Returns:
+            The cached computed value
+        """
+        if name not in self._cache:
+            self._cache[name] = factory()
+        return self._cache[name]
+
+    def _invalidate_cache(self) -> Self:
+        """Clear all cached computed values."""
+        self._cache.clear()
+        return self
 
     @property
-    def down(self) -> Computed[float]:
-        return self._get_cached_computed("down", lambda: self.bounds[3])
+    def _raw_geom_now(self) -> GeometryT:
+        """Return the geometry at the current frame, before any transformations.
+
+        Returns:
+            The raw geometry, before any transformations, now.
+        """
+        ...
 
     @property
-    def up(self) -> Computed[float]:
-        return self._get_cached_computed("up", lambda: self.bounds[1])
+    def _raw_geom(self) -> Computed[GeometryT]:
+        """Return a reactive value of the raw geometry."""
+        return self._memo_computed("_raw_geom", lambda: Computed(lambda: self._raw_geom_now, self._dependencies))
 
     @property
-    def left(self) -> Computed[float]:
-        return self._get_cached_computed("left", lambda: self.bounds[0])
+    def geom(self) -> Computed[GeometryT]:
+        """Return a reactive value of the transformed geometry."""
+        return self._memo_computed("geom", lambda: computed(affine_transform)(self._raw_geom, self.controls.matrix))
 
     @property
-    def right(self) -> Computed[float]:
-        return self._get_cached_computed("right", lambda: self.bounds[2])
+    def geom_now(self) -> GeometryT:
+        m = self.controls.matrix
+        return affine_transform(unref(self._raw_geom), m.value)
 
-    @property
-    def width(self) -> Computed[float]:
-        return self._get_cached_computed("width", lambda: self.right - self.left)
-
-    @property
-    def height(self) -> Computed[float]:
-        return self._get_cached_computed("height", lambda: self.down - self.up)
-
-    @property
-    def center_x(self) -> Computed[float]:
-        return self._get_cached_computed("center_x", lambda: (self.left + self.right) / 2)
-
-    @property
-    def center_y(self) -> Computed[float]:
-        return self._get_cached_computed("center_y", lambda: (self.up + self.down) / 2)
-
+    def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
+        self.controls.matrix *= matrix
+        # Invalidate cached geometry
+        self._invalidate_cache()
+        # self._cache.pop('geom', None)
+        return self
 
 class TransformControls:
     """Control how transforms are applied to the object.
@@ -504,7 +525,7 @@ class TransformControls:
         Passing obj seems a little awkward.
     """
 
-    def __init__(self, obj: Transformable) -> None:
+    def __init__(self, obj: TransformNode) -> None:
         super().__init__()
         self.rotation = Signal(0.0)
         self.scale = Signal(1.0)
@@ -632,8 +653,8 @@ def align_now(
 
 
 def align_to(
-    to: ReactiveValue[GeometryT],
-    from_: ReactiveValue[GeometryT],
+    to: HasValue[GeometryT],
+    from_: HasValue[GeometryT],
     frame: Signal[int],
     start: int = ALWAYS,
     lock: int = ALWAYS,

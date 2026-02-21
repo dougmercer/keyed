@@ -27,7 +27,7 @@ def to_intensity(rgba: np.ndarray) -> np.ndarray:
 def find_centroid(intensity: np.ndarray) -> tuple[float, float]:
     # Calculate the centroid from intensity
     m, n = intensity.shape
-    y, x = np.indices((m, n))
+    y, x = np.indices((m, n))  # type: ignore
     x: int
     y: int
     total_intensity = intensity.sum()
