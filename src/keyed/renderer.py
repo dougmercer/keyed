@@ -181,15 +181,17 @@ class Renderer:
         # Format-specific configurations
         if format == VideoFormat.MOV_PRORES:
             stream = container.add_stream("prores_ks", rate=frame_rate)
-            stream.pix_fmt = "yuv444p10le"  # type: ignore
+            stream.pix_fmt = "yuva444p10le"  # type: ignore
             stream.width = self.scene._width  # type: ignore
             stream.height = self.scene._height  # type: ignore
+            # prores_ks profile 4 corresponds to "4444" in ffmpeg CLI.
+            stream.options = {"profile": "4"}  # type: ignore
         elif format == VideoFormat.WEBM:
             stream = container.add_stream("libvpx-vp9", rate=frame_rate)
             stream.pix_fmt = "yuva420p"  # type: ignore
             stream.width = self.scene._width  # type: ignore
             stream.height = self.scene._height  # type: ignore
-            stream.options = {"crf": str(kwargs.get("quality", 40)), "b:v": "0"}  # type: ignore
+            stream.options = {"crf": str(kwargs.get("quality", 40)), "b:v": "0", "row-mt": "1"}  # type: ignore
         elif format == VideoFormat.GIF:
             raise NotImplementedError("GIF rendering with PyAV is not supported. Use FFmpeg.")
         else:
