@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from .line import Line
     from .scene import Scene
 
-__all__ = ["Group", "Selection"]
+__all__ = ["Group"]
 
 
 T = TypeVar("T", bound=Base)
@@ -55,7 +55,7 @@ class Group(Transformable, list[T]):
             ValueError: If the group is empty and the scene cannot be retrieved.
         """
         if not self:
-            raise ValueError("Cannot retrieve 'scene': Selection is empty.")
+            raise ValueError("Cannot retrieve 'scene': Group is empty.")
         return self[0].scene
 
     @property
@@ -66,7 +66,7 @@ class Group(Transformable, list[T]):
             ValueError: If the group is empty and the frame cannot be retrieved.
         """
         if not self:
-            raise ValueError("Cannot retrieve 'frame': Selection is empty.")
+            raise ValueError("Cannot retrieve 'frame': Group is empty.")
         return self.scene.frame
 
     def _animate(self, property: str, animation: Animation) -> Self:
@@ -312,7 +312,3 @@ class Group(Transformable, list[T]):
             obj.translate(x=dx, y=dy, start=start, end=end, ease=ease)
 
         return self
-
-
-Selection = Group
-"""Alias of Group."""

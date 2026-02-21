@@ -8,7 +8,7 @@ from keyed import (
     Color,
     Direction,
     Scene,
-    Selection,
+    Group,
     Text,
     step,
 )
@@ -45,7 +45,7 @@ reactive_color = Animation(170 + 36, 170 + 48, yellow, black)(reactive_color, s.
 reactive_color2 = Animation(170 + 36, 170 + 48, black, yellow)(black, s.frame)
 
 
-nodes: list[Selection] = []
+nodes: list[Group] = []
 iterable = zip([x, y, z, a, b], ["x", "y = 2 * x", "z = y + 2", "a = x / 2", "b = a - 2"])
 for k, (symbol, label) in enumerate(iterable):
     if label == "x":
@@ -56,15 +56,15 @@ for k, (symbol, label) in enumerate(iterable):
         fill_color = reactive_color2
     label = Text(text=label, size=60)
     value = Text(text=as_str(symbol), size=100).lock_on(label).translate(0, 100)
-    text_group = Selection([label, value])
+    text_group = Group([label, value])
     circle = Circle(fill_color=fill_color, **circle_params)
     text_group.lock_on(circle)
-    node = Selection([circle, text_group]).center()
+    node = Group([circle, text_group]).center()
     nodes.append(node)
 
 nx, ny, nz, na, nb = nodes
 
-reactive_nodes: list[Selection] = nodes[1:]
+reactive_nodes: list[Group] = nodes[1:]
 
 # Place the nodes
 nx.align_to(s, direction=Direction(-0.7, 0), center_on_zero=True)

@@ -192,7 +192,7 @@ class Transformable:
             end: End of animation (finish aligning to the object at this frame, and then stay there).
             from_: Use this object as self when doing the alignment. This is helpful for code
                 animations. It is sometimes desirable to align, say, the top-left edge of one
-                character in a TextSelection to the top-left of another character.
+                character in a TextGroup to the top-left of another character.
             ease: The easing function to use.
             direction: The critical point of to and from_to use for the alignment.
             center_on_zero: If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
@@ -234,7 +234,7 @@ class Transformable:
 
         Args:
             target: Object to lock onto
-            reference: Measure from this object. This is useful for TextSelections, where you want to align
+            reference: Measure from this object. This is useful for TextGroups, where you want to align
                 to a particular character in the selection.
             start: When to start locking on.
             end: When to end locking on.
@@ -425,7 +425,7 @@ class Transformable:
 
         Args:
             target: Object to lock onto
-            reference: Measure from this object. This is useful for TextSelections, where you want to align
+            reference: Measure from this object. This is useful for TextGroups, where you want to align
                 to a particular character in the selection.
             x: If true, lock on in the x dimension.
             y: if true, lock on in the y dimension.

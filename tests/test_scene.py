@@ -184,7 +184,7 @@ def test_find_collection(tmp_path: Path) -> None:
     s = Group([text0, text1])
     scene.add(s)
 
-    # Make sure we don't return the TextSelection
+    # Make sure we don't return the TextGroup
     assert scene.find(11, 11, 0) != s
 
 

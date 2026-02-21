@@ -1,4 +1,4 @@
-from keyed import Circle, Rectangle, Scene, Selection
+from keyed import Circle, Rectangle, Scene, Group
 
 scene = Scene("transform_demo", num_frames=120)
 
@@ -10,7 +10,7 @@ center_dot = Circle(
     radius=50, color=(1, 0.3, 0.3), fill_color=(1, 0.3, 0.3), x=scene.nx(0.6), y=scene.ny(0.6), alpha=0.5
 )
 
-group = Selection([rect, center_dot])
+group = Group([rect, center_dot])
 
 scene.add(group)
 
