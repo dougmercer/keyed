@@ -23,7 +23,7 @@ from .config import get_default_render_engine
 from .constants import EXTRAS_INSTALLED
 from .context import ContextT
 from .effects import Effect
-from .group import Selection
+from .group import Group
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
 from .transforms import TransformNode
@@ -457,7 +457,7 @@ class Scene(TransformNode, Freezeable):
                             nearest = nested_nearest
                             min_distance = nested_distance
 
-                    elif isinstance(obj, Selection):
+                    elif isinstance(obj, Group):
                         check_objects(list(obj))
                     else:
                         if not is_visible(obj):

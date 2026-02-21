@@ -1,4 +1,4 @@
-from keyed import Animation, Circle, Rectangle, Scene, Selection
+from keyed import Animation, Circle, Rectangle, Scene, Group
 
 scene = Scene()
 
@@ -9,7 +9,7 @@ c2 = Circle(x=200, y=100, radius=20, fill_color=(0, 0, 1))
 
 r1.translate(Animation(0, 6, 0, 10)(0, scene.frame), Animation(0, 6, 0, 10)(0, scene.frame))
 c1.translate(Animation(0, 6, 0, -10)(0, scene.frame), Animation(0, 6, 0, -10)(0, scene.frame))
-s = Selection([r1, c1, r2, c2])
+s = Group([r1, c1, r2, c2])
 
 scene.add(s)
 

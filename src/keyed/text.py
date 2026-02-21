@@ -15,7 +15,7 @@ from signified import HasValue, ReactiveValue, Signal, as_signal, unref
 
 from .base import Base
 from .color import as_color
-from .group import Selection
+from .group import Group
 from .highlight import StyledToken
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from .scene import Scene
 
 
-__all__ = ["Text", "Code", "TextSelection"]
+__all__ = ["Text", "Code", "TextGroup"]
 
 
 class Text(Base):
@@ -244,21 +244,21 @@ class _Character(Base):
         return shapely.box(x, y, x + w, y + h)
 
     @property
-    def chars(self) -> TextSelection[_Character]:
+    def chars(self) -> TextGroup[_Character]:
         """Return a selection containing just this character."""
-        return TextSelection([self])
+        return TextGroup([self])
 
 
 CodeTextT = TypeVar("CodeTextT", _Character, "_Token", "_Line")
 
 
-class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
+class TextGroup(Group[CodeTextT]):  # type: ignore[misc]
     """A sequence of BaseText objects, allowing collective transformations and animations."""
 
     @property
-    def chars(self) -> TextSelection[_Character]:
-        """Return a TextSelection of single characters."""
-        return TextSelection(itertools.chain.from_iterable(item.chars for item in self))
+    def chars(self) -> TextGroup[_Character]:
+        """Return a TextGroup of single characters."""
+        return TextGroup(itertools.chain.from_iterable(item.chars for item in self))
 
     def write_on(
         self,
@@ -301,16 +301,16 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         return all(obj.is_whitespace() for obj in self)
 
     def contains(self, query: _Character) -> bool:
-        """Check if the query text is within the TextSelection's characters."""
+        """Check if the query text is within the TextGroup's characters."""
         return query in self.chars
 
-    def filter_whitespace(self) -> TextSelection:
+    def filter_whitespace(self) -> TextGroup:
         """Filter out all objects that are whitespace from the selection.
 
         Returns:
-            A new TextSelection containing only non-whitespace objects.
+            A new TextGroup containing only non-whitespace objects.
         """
-        return TextSelection(obj for obj in self if not obj.is_whitespace())
+        return TextGroup(obj for obj in self if not obj.is_whitespace())
 
     def highlight(
         self,
@@ -351,7 +351,7 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         )
 
 
-class _Token(TextSelection[_Character]):
+class _Token(TextGroup[_Character]):
     """A collection of characters representing a syntax token.
 
     Not meant to be instantiated directly - created by Code class.
@@ -402,9 +402,9 @@ class _Token(TextSelection[_Character]):
         super().__init__(objects)
 
     @property
-    def chars(self) -> TextSelection[_Character]:
+    def chars(self) -> TextGroup[_Character]:
         """Get characters in this token."""
-        return TextSelection(self)
+        return TextGroup(self)
 
     @property
     def _extents(self) -> cairo.TextExtents:
@@ -428,7 +428,7 @@ class _Token(TextSelection[_Character]):
         )
 
 
-class _Line(TextSelection[_Token]):
+class _Line(TextGroup[_Token]):
     """A line of code consisting of syntax tokens.
 
     Not meant to be instantiated directly - created by Code class.
@@ -476,17 +476,17 @@ class _Line(TextSelection[_Token]):
         super().__init__(objects)
 
     @property
-    def chars(self) -> TextSelection[_Character]:
+    def chars(self) -> TextGroup[_Character]:
         """Get all characters in this line."""
-        return TextSelection(itertools.chain(*self))
+        return TextGroup(itertools.chain(*self))
 
     @property
-    def tokens(self) -> TextSelection[_Token]:
+    def tokens(self) -> TextGroup[_Token]:
         """Get all tokens in this line."""
-        return TextSelection(self)
+        return TextGroup(self)
 
 
-class Code(TextSelection[_Line]):
+class Code(TextGroup[_Line]):
     """A code block.
 
     Args:
@@ -575,14 +575,14 @@ class Code(TextSelection[_Line]):
         ctx.set_font_size(self.font_size)
 
     @property
-    def tokens(self) -> TextSelection[_Token]:
-        """Return a TextSelection of tokens in the code object."""
-        return TextSelection(itertools.chain(*self.lines))
+    def tokens(self) -> TextGroup[_Token]:
+        """Return a TextGroup of tokens in the code object."""
+        return TextGroup(itertools.chain(*self.lines))
 
     @property
-    def lines(self) -> TextSelection[_Line]:
-        """Return a TextSelection of lines in the code object."""
-        return TextSelection(self)
+    def lines(self) -> TextGroup[_Line]:
+        """Return a TextGroup of lines in the code object."""
+        return TextGroup(self)
 
     def find_line(self, query: _Character) -> int:
         """Find the line index of a given character."""
