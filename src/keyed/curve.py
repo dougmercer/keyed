@@ -367,34 +367,34 @@ class Curve(Shape):
             draw_stroke=draw_stroke,
         )
 
-    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_on(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being drawn from start to end.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        self.end = Animation(start, end, self.end, value, ease)(self.end, self.frame)
         return self
 
-    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_off(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being erased from end to start.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        self.start = Animation(start, end, self.start, value, ease)(self.start, self.frame)
         return self
 
     def __repr__(self) -> str:

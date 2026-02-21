@@ -39,11 +39,11 @@ We start by creating a [`Scene`][keyed.scene.Scene] object, which serves as our 
 ```python
 ball = (
     Circle(radius=50)
-    .translate(0, 300, start=0, end=24, easing=easing.bounce_out)
+    .translate(0, 300, start=0, end=24, ease=easing.bounce_out)
     .scale(2, start=24, end=48, direction=DOWN)
     .stretch(2, 0.5, start=50, end=60, direction=DOWN)
-    .stretch(0.5, 2, start=60, end=65, easing=easing.cubic_in, direction=DOWN)
-    .translate(0, -300, start=60, end=110, easing=easing.elastic_out)
+    .stretch(0.5, 2, start=60, end=65, ease=easing.cubic_in, direction=DOWN)
+    .translate(0, -300, start=60, end=110, ease=easing.elastic_out)
 )
 ```
 Here we create and animate the most interesting thing in the animation - a [`Circle`][keyed.shapes.Circle]. We apply a few key framed transformations to the object.

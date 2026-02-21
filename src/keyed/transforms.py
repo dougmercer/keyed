@@ -79,7 +79,7 @@ class Transformable:
         amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
@@ -89,7 +89,7 @@ class Transformable:
             amount: Amount to rotate by.
             start: The frame to start rotating.
             end: The frame to end rotating.
-            easing: The easing function to use.
+            ease: The easing function to use.
             center: The object around which to rotate.
             direction: The relative critical point of the center.
 
@@ -98,14 +98,14 @@ class Transformable:
         """
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)
-        return self.apply_transform(rotate(start, end, amount, cx, cy, self.frame, easing))
+        return self.apply_transform(rotate(start, end, amount, cx, cy, self.frame, ease))
 
     def scale(
         self,
         amount: HasValue[float],
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
@@ -115,7 +115,7 @@ class Transformable:
             amount: Amount to scale by.
             start: The frame to start scaling.
             end: The frame to end scaling.
-            easing: The easing function to use.
+            ease: The easing function to use.
             center: The object around which to rotate.
             direction: The relative critical point of the center.
 
@@ -124,7 +124,7 @@ class Transformable:
         """
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)
-        return self.apply_transform(scale(start, end, amount, cx, cy, self.frame, easing))
+        return self.apply_transform(scale(start, end, amount, cx, cy, self.frame, ease))
 
     def translate(
         self,
@@ -132,7 +132,7 @@ class Transformable:
         y: HasValue[float] = 0,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
     ) -> Self:
         """Translate the object.
 
@@ -141,9 +141,9 @@ class Transformable:
             y: y offset.
             start: The frame to start translating.
             end: The frame to end translating.
-            easing: The easing function to use.
+            ease: The easing function to use.
         """
-        return self.apply_transform(translate(start, end, x, y, self.frame, easing))
+        return self.apply_transform(translate(start, end, x, y, self.frame, ease))
 
     def move_to(
         self,
@@ -151,7 +151,7 @@ class Transformable:
         y: HasValue[float] | None = None,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
@@ -162,7 +162,7 @@ class Transformable:
             y: Destination y coordinate
             start: Starting frame, by default ALWAYS
             end: Ending frame, by default ALWAYS
-            easing: Easing function, by default cubic_in_out
+            ease: Easing function, by default cubic_in_out
 
         Returns:
             Self
@@ -170,7 +170,7 @@ class Transformable:
         center_ = center if center is not None else self.geom
         cx, cy = get_critical_point(center_, direction)
         return self.apply_transform(
-            move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, easing=easing)
+            move_to(start=start, end=end, x=x, y=y, cx=cx, cy=cy, frame=self.frame, ease=ease)
         )
 
     def align_to(
@@ -180,7 +180,7 @@ class Transformable:
         lock: int | None = None,
         end: int = ALWAYS,
         from_: HasValue[GeometryT] | None = None,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
     ) -> Self:
@@ -193,7 +193,7 @@ class Transformable:
             from_: Use this object as self when doing the alignment. This is helpful for code
                 animations. It is sometimes desirable to align, say, the top-left edge of one
                 character in a TextSelection to the top-left of another character.
-            easing: The easing function to use.
+            ease: The easing function to use.
             direction: The critical point of to and from_to use for the alignment.
             center_on_zero: If true, align along the "0"-valued dimensions. Otherwise, only align to on non-zero
                 directions. This is beneficial for, say, centering the object at the origin (which has
@@ -214,7 +214,7 @@ class Transformable:
                 start=start,
                 lock=lock,
                 end=end,
-                ease=easing,
+                ease=ease,
                 direction=direction,
                 center_on_zero=center_on_zero,
             )
@@ -261,7 +261,7 @@ class Transformable:
         angle_y: HasValue[float] = 0,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
     ) -> Self:
         """Shear the object.
@@ -271,7 +271,7 @@ class Transformable:
             angle_y: Angle (in degrees) to shear by along x direction.
             start: The frame to start scaling.
             end: The frame to end scaling.
-            easing: The easing function to use.
+            ease: The easing function to use.
             center: The object around which to rotate.
 
         Returns:
@@ -288,7 +288,7 @@ class Transformable:
                 cx=cx,
                 cy=cy,
                 frame=self.frame,
-                ease=easing,
+                ease=ease,
             )
         )
 
@@ -298,7 +298,7 @@ class Transformable:
         scale_y: HasValue[float] = 1,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
@@ -309,7 +309,7 @@ class Transformable:
             scale_y: Amount to scale by in y direction.
             start: The frame to start scaling.
             end: The frame to end scaling.
-            easing: The easing function to use.
+            ease: The easing function to use.
             center: The object around which to rotate.
             direction: The relative critical point of the center.
 
@@ -327,7 +327,7 @@ class Transformable:
                 cx=cx,
                 cy=cy,
                 frame=self.frame,
-                ease=easing,
+                ease=ease,
             )
         )
 
@@ -338,7 +338,7 @@ class Transformable:
         match_y: bool = True,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         center: ReactiveValue[GeometryT] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
@@ -350,7 +350,7 @@ class Transformable:
             match_y: If True, match height.
             start: Frame at which scaling begins.
             end: Frame at which scaling stops varying.
-            easing: Easing function to use.
+            ease: Easing function to use.
             center: The object around which to scale.
             direction: The relative critical point of the center.
 
@@ -371,7 +371,7 @@ class Transformable:
             cx=cx,
             cy=cy,
             frame=self.frame,
-            ease=easing,
+            ease=ease,
         )
         return self.apply_transform(matrix)
 
@@ -380,7 +380,7 @@ class Transformable:
         to: Transformable,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         offset: HasValue[float] = 10.0,
         direction: Direction = LEFT,
     ) -> Self:
@@ -390,7 +390,7 @@ class Transformable:
             to: The object to align to.
             start: Start of animation (begin aligning to the object).
             end: End of animation (finish aligning to the object at this frame, and then stay there).
-            easing: The easing function to use.
+            ease: The easing function to use.
             offset: Distance between objects (in pixels).
             direction: The critical point of `to` and self to use for the alignment.
 
@@ -408,7 +408,7 @@ class Transformable:
             self_y=self_y,
             direction=direction,
             offset=offset,
-            ease=easing,
+            ease=ease,
             frame=self.frame,
         )
         return self.apply_transform(matrix)
@@ -753,7 +753,7 @@ def move_to(
     cx: HasValue[float],
     cy: HasValue[float],
     frame: ReactiveValue[int],
-    easing: EasingFunctionT = cubic_in_out,
+    ease: EasingFunctionT = cubic_in_out,
 ) -> Computed[cairo.Matrix]:
     """Create a transformation matrix that moves an object to absolute coordinates.
 
@@ -763,7 +763,7 @@ def move_to(
         x: Target x coordinate. If None, ignore.
         y: Target y coordinate. If None, ignore.
         frame: Current frame.
-        easing: Easing function for the movement.
+        ease: Easing function for the movement.
 
     Returns:
         matrix: Transform matrix for the movement
@@ -778,8 +778,8 @@ def move_to(
     if start == end:
         return compute_matrix(x, y, cx, cy)
     else:
-        animated_x = Animation(start, end, cx, x, easing, AnimationType.ABSOLUTE)(cx, frame) if x is not None else cx
-        animated_y = Animation(start, end, cy, y, easing, AnimationType.ABSOLUTE)(cy, frame) if y is not None else cy
+        animated_x = Animation(start, end, cx, x, ease, AnimationType.ABSOLUTE)(cx, frame) if x is not None else cx
+        animated_y = Animation(start, end, cy, y, ease, AnimationType.ABSOLUTE)(cy, frame) if y is not None else cy
         return compute_matrix(animated_x, animated_y, cx, cy)
 
 

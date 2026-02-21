@@ -80,11 +80,11 @@ class Animation(Generic[T]):
 
     def __call__(self, value: HasValue[A], frame: ReactiveValue[int]) -> Computed[A | T]:
         """Bind the animation to the input value and frame."""
-        easing = easing_function(start=self.start_frame, end=self.end_frame, ease=self.ease, frame=frame)
+        ease_value = easing_function(start=self.start_frame, end=self.end_frame, ease=self.ease, frame=frame)
 
         @computed
-        def f(value: A, frame: int, easing: float, start: T, end: T) -> A | T:
-            eased_value = end * easing + start * (1 - easing)  # pyright: ignore[reportOperatorIssue] # noqa: E501
+        def f(value: A, frame: int, ease_value: float, start: T, end: T) -> A | T:
+            eased_value = end * ease_value + start * (1 - ease_value)  # pyright: ignore[reportOperatorIssue] # noqa: E501
 
             match self.animation_type:
                 case AnimationType.ABSOLUTE:
@@ -98,7 +98,7 @@ class Animation(Generic[T]):
 
             return value if frame < self.start_frame else eased_value
 
-        return f(value, frame, easing, self.start_value, self.end_value)
+        return f(value, frame, ease_value, self.start_value, self.end_value)
 
     def __len__(self) -> int:
         """Return number of frames in the animation."""
@@ -226,17 +226,17 @@ class PingPong(Animation):
 def stagger(
     start_value: float = 0,
     end_value: float = 1,
-    easing: EasingFunctionT = linear_in_out,
+    ease: EasingFunctionT = linear_in_out,
     animation_type: AnimationType = AnimationType.ABSOLUTE,
 ) -> partial[Animation]:
     """Partially-initialize an animation for use with [Group.write_on][keyed.group.Group.write_on].
 
-    This will set the animations values, easing, and type without setting its start/end frames.
+    This will set the animations values, ease, and type without setting its start/end frames.
 
     Args:
         start_value: Value at which the animation will start.
         end_value: Value at which the animation will end.
-        easing: The rate in which the value will change throughout the animation.
+        ease: The rate in which the value will change throughout the animation.
         animation_type: How the animation value will affect the original value.
 
     Returns:
@@ -246,7 +246,7 @@ def stagger(
         Animation,
         start_value=start_value,
         end_value=end_value,
-        ease=easing,
+        ease=ease,
         animation_type=animation_type,
     )
 
