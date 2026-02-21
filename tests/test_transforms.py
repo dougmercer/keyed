@@ -32,10 +32,10 @@ def test_rotate(scene: Scene) -> None:
     y0 = scene._height / 2
     delta = 100
     not_center = Circle(scene, x=x0, y=y0 + delta, radius=1)
-    not_center.rotate(90, 0, 1, center=scene.geom, easing=linear_in_out)
-    not_center.rotate(90, 2, 3, center=scene.geom, easing=linear_in_out)
-    not_center.rotate(90, 4, 5, center=scene.geom, easing=linear_in_out)
-    not_center.rotate(90, 6, 7, center=scene.geom, easing=linear_in_out)
+    not_center.rotate(90, 0, 1, center=scene.geom, ease=linear_in_out)
+    not_center.rotate(90, 2, 3, center=scene.geom, ease=linear_in_out)
+    not_center.rotate(90, 4, 5, center=scene.geom, ease=linear_in_out)
+    not_center.rotate(90, 6, 7, center=scene.geom, ease=linear_in_out)
     scene.add(not_center)
     x, y = find_centroid(to_intensity(scene.asarray(1)))
     np.testing.assert_allclose((x0 + delta, y0), (x, y), atol=1, rtol=1e0, verbose=True)

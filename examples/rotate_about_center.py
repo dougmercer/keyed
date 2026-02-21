@@ -7,10 +7,10 @@ delta = 100
 center = Circle(x=x0, y=y0, radius=1)
 g = center.geom
 not_center = Circle(x=x0, y=y0 + delta, radius=1)
-not_center.rotate(start=0, end=6, amount=90, easing=easing.cubic_in_out, center=g)
-not_center.rotate(start=6, end=12, amount=90, easing=easing.cubic_in_out, center=g)
-not_center.rotate(start=12, end=18, amount=90, easing=easing.cubic_in_out, center=g)
-not_center.rotate(start=18, end=24, amount=90, easing=easing.cubic_in_out, center=g)
-not_center.rotate(start=32, end=48, amount=360, easing=easing.cubic_in_out, center=g)
+not_center.rotate(start=0, end=6, amount=90, ease=easing.cubic_in_out, center=g)
+not_center.rotate(start=6, end=12, amount=90, ease=easing.cubic_in_out, center=g)
+not_center.rotate(start=12, end=18, amount=90, ease=easing.cubic_in_out, center=g)
+not_center.rotate(start=18, end=24, amount=90, ease=easing.cubic_in_out, center=g)
+not_center.rotate(start=32, end=48, amount=360, ease=easing.cubic_in_out, center=g)
 
 scene.add(not_center, center)

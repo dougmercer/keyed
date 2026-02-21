@@ -29,7 +29,7 @@ For example, `cubic_in`, `cubic_out`, and `cubic_in_out` are all cubic easing fu
 
 ## Using easing functions in `keyed`
 
-Many of the built-in transformation methods in `keyed` support easing via an `ease` or `easing` input argument. Common methods that accept easing functions include:
+Many of the built-in transformation methods in `keyed` support easing via an `ease` input argument. Common methods that accept easing functions include:
 
 - [`translate()`][keyed.transforms.Transformable.translate] - Move an object
 - [`rotate()`][keyed.transforms.Transformable.rotate] - Rotate an object

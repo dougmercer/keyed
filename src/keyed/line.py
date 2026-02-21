@@ -168,34 +168,34 @@ class Line(Base):
         y1 = lerp(self.y0.value, self.y1.value, self.end.value)
         return shapely.LineString([[x0, y0], [x1, y1]])
 
-    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_on(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being drawn from start to end.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        self.end = Animation(start, end, self.end, value, ease)(self.end, self.frame)
         return self
 
-    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_off(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being erased from end to start.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        self.start = Animation(start, end, self.start, value, ease)(self.start, self.frame)
         return self
 
     def __repr__(self) -> str:
@@ -320,34 +320,34 @@ class BezierCurve(Base):
             [[x0.value, y0.value], [x1.value, y1.value], [x2.value, y2.value], [x3.value, y3.value]]
         )
 
-    def write_on(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_on(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being drawn from start to end.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.end = Animation(start, end, self.end, value, easing)(self.end, self.frame)
+        self.end = Animation(start, end, self.end, value, ease)(self.end, self.frame)
         return self
 
-    def write_off(self, value: HasValue[float], start: int, end: int, easing: EasingFunctionT = cubic_in_out) -> Self:
+    def write_off(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = cubic_in_out) -> Self:
         """Animate the line being erased from end to start.
 
         Args:
             value: Value to animate to
             start: Frame to start the animation
             end: Frame to end the animation
-            easing: Easing function to use
+            ease: Easing function to use
 
         Returns:
             Self
         """
-        self.start = Animation(start, end, self.start, value, easing)(self.start, self.frame)
+        self.start = Animation(start, end, self.start, value, ease)(self.start, self.frame)
         return self
 
     def __repr__(self) -> str:
