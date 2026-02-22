@@ -1,6 +1,6 @@
 import numpy as np
 
-from keyed import Circle, Code, Curve, Scene, TextGroup, tokenize
+from keyed import Circle, Code, SplineCurve, Scene, TextGroup, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()
@@ -15,7 +15,7 @@ scene.add(*s)
 scene.add(code)
 
 points = np.array([np.array(c.geom.centroid.coords.value).flatten() for c in s])
-t = Curve.from_points(points, alpha=0.5, line_width=50, tension=1)
+t = SplineCurve.from_points(points, alpha=0.5, line_width=50, tension=1)
 
 for x, y in points:
     scene.add(Circle(x=x, y=y, radius=5, color=(1, 0, 0)))

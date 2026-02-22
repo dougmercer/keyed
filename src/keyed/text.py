@@ -19,7 +19,7 @@ from .group import Group
 from .highlight import StyledToken
 
 if TYPE_CHECKING:
-    from .curve import Curve
+    from .curve import SplineCurve
     from .scene import Scene
 
 
@@ -322,7 +322,7 @@ class TextGroup(Group[CodeTextT]):  # type: ignore[misc]
         operator: cairo.Operator = cairo.OPERATOR_SCREEN,
         line_width: float = 1,
         tension: float = 1,
-    ) -> Curve:
+    ) -> SplineCurve:
         """Highlight text by drawing a curve passing through the text.
 
         Args:
@@ -336,12 +336,12 @@ class TextGroup(Group[CodeTextT]):  # type: ignore[misc]
                 slack in the bezier curve connecting each set of points.
 
         Returns:
-            A Curve passing through all characters in the underlying text.
+            A SplineCurve passing through all characters in the underlying text.
         """
-        from .curve import Curve
+        from .curve import SplineCurve
 
         # TODO - c should be c.clone(), but clone not implemented for text.
-        return Curve(
+        return SplineCurve(
             objects=[c for c in self.chars.filter_whitespace()],
             scene=self.scene,
             color=color,

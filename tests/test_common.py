@@ -11,8 +11,8 @@ scene = keyed.Scene()
 DRAWABLES = [
     (keyed.Rectangle, {}),
     (keyed.Circle, {}),
-    (keyed.Curve.from_points, {"points": [(1, 1), (2, 2)]}),
-    (keyed.Curve, {"objects": [keyed.Circle(scene), keyed.Circle(scene)]}),
+    (keyed.SplineCurve.from_points, {"points": [(1, 1), (2, 2)]}),
+    (keyed.SplineCurve, {"objects": [keyed.Circle(scene), keyed.Circle(scene)]}),
     (keyed.Code, {"tokens": keyed.tokenize("import this")}),
 ]
 

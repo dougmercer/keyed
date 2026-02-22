@@ -12,6 +12,7 @@ from keyed.types import Cleanable
 
 from .animation import Animation
 from .base import Base
+from .bezier import _de_casteljau
 from .color import Color, as_color
 from .easing import EasingFunctionT, cubic_in_out
 from .scene import Scene
@@ -40,30 +41,6 @@ def lerp(x0: HasValue[T], x1: HasValue[T], t: HasValue[float]) -> T | Computed[T
             return x0 if t < 0.5 else x1
     else:
         return cast(T | Computed[T], (1 - t) * x0 + t * x1)  # pyright: ignore[reportOperatorIssue]
-
-
-def _de_casteljau(t: HasValue[float], x0: T, x1: T, x2: T, x3: T, reverse: bool = False) -> tuple[T, T, T, T]:
-    if reverse:
-        x0, x1, x2, x3 = x3, x2, x1, x0
-        t = 1 - t
-
-    # First level interpolation
-    x01 = lerp(x0, x1, t)
-    x12 = lerp(x1, x2, t)
-    x23 = lerp(x2, x3, t)
-
-    # Second level interpolation
-    x012 = lerp(x01, x12, t)
-    x123 = lerp(x12, x23, t)
-
-    # Third level interpolation (value at t)
-    x0123 = lerp(x012, x123, t)
-
-    if reverse:
-        x0, x01, x012, x0123 = x0123, x012, x01, x0  # type: ignore
-
-    return cast(tuple[T, T, T, T], (x0, x01, x012, x0123))
-
 
 class Line(Base):
     """Draw a line between two points.

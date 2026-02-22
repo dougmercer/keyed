@@ -1,4 +1,4 @@
-from keyed import Code, Curve, Scene, tokenize
+from keyed import Code, SplineCurve, Scene, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()
@@ -9,7 +9,7 @@ code = Code(styled_tokens, font_size=48, alpha=1, x=100, y=100)
 
 scene.add(code)
 
-trace = Curve(code.lines[0:4].chars, alpha=0.5, line_width=50)
+trace = SplineCurve(code.lines[0:4].chars, alpha=0.5, line_width=50)
 
 scene.add(trace)
 

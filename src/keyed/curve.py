@@ -14,6 +14,7 @@ from keyed.animation import Animation
 from keyed.easing import EasingFunctionT, cubic_in_out
 
 from .base import Base
+from .bezier import _de_casteljau
 from .color import Color, as_color
 from .scene import Scene
 from .shapes import Circle, Shape
@@ -23,7 +24,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore", UserWarning)
     from scipy.integrate import quad
 
-__all__ = ["Curve"]
+__all__ = ["SplineCurve"]
 
 Vector = npt.NDArray[np.floating[Any]]  # Intended to to be of shape (2,)
 VecArray = npt.NDArray[np.floating[Any]]  # Intended to to be of shape (n, 2)
@@ -95,53 +96,6 @@ def bezier_length(p0: Vector, p1: Vector, p2: Vector, p3: Vector) -> Vector:
     return arclength
 
 
-def _de_casteljau(
-    t: float,
-    p0: Vector,
-    p1: Vector,
-    p2: Vector,
-    p3: Vector,
-    reverse: bool = False,
-) -> tuple[Vector, Vector, Vector, Vector]:
-    """Find control points such that the new curve is equivalent to the orignal segment from 0 to t.
-
-    Args:
-        t: The parameter at which to subdivide the curve.
-        p0: The first control point of the cubic Bézier curve.
-        p1: Second
-        p2: Third
-        p3: Fourth
-        reverse: If True, reverse the control points before processing.
-
-    Returns:
-        The new control points subdividing the original curve at t.
-    """
-    assert p0.shape == (2,)
-    assert p1.shape == (2,)
-    assert p2.shape == (2,)
-    assert p3.shape == (2,)
-
-    if reverse:
-        p0, p1, p2, p3 = p3, p2, p1, p0
-        t = 1 - t
-
-    # First level interpolation
-    a = (1 - t) * p0 + t * p1
-    b = (1 - t) * p1 + t * p2
-    c = (1 - t) * p2 + t * p3
-
-    # Second level interpolation
-    d = (1 - t) * a + t * b
-    e = (1 - t) * b + t * c
-
-    # Third level interpolation (new endpoint at t)
-    f = (1 - t) * d + t * e
-
-    if reverse:
-        p0, a, d, f = f, d, a, p0
-    return p0, a, d, f
-
-
 def _calculate_control_points(tension: float, points: list[tuple[float, float]] | Vector) -> tuple[Vector, Vector]:
     """Calculate the control points for a smooth curve through given points with specified tension.
 
@@ -166,7 +120,7 @@ def _calculate_control_points(tension: float, points: list[tuple[float, float]] 
     return cp1, cp2
 
 
-class Curve(Shape):
+class SplineCurve(Shape):
     """Draw a curve through the a collection of object's centroids centroids.
 
     Args:
@@ -346,7 +300,7 @@ class Curve(Shape):
         draw_fill: bool = True,
         draw_stroke: bool = True,
     ) -> Self:
-        """Create a Curve object directly from a sequence of points."""
+        """Create a SplineCurve object directly from a sequence of points."""
         from .scene import resolve_scene
 
         resolved_scene = resolve_scene(scene)
@@ -399,3 +353,7 @@ class Curve(Shape):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(...)"
+
+
+# Backward compatibility alias. Prefer `SplineCurve`.
+Curve = SplineCurve
