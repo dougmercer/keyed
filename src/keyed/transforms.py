@@ -8,7 +8,7 @@ from typing import Any, Callable, Literal, Self, TypeVar, cast
 import cairo
 import shapely
 import shapely.affinity
-from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
+from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed
 
 from .animation import Animation, AnimationType
 from .constants import ALWAYS, LEFT, ORIGIN, Direction
@@ -452,15 +452,12 @@ class TransformNode(Transformable):
 
     controls: TransformControls
     frame: Signal[int]
-    _dependencies: list[Any]
     _cache: dict[str, Computed[Any]]
 
     def __init__(self, frame: Signal[int]) -> None:
         super().__init__()
         self.frame = frame
         self.controls = TransformControls(self)
-        self._dependencies = []
-        # self._dependencies = [self.controls.delta_x, self.controls.delta_y, self.controls.scale, self.controls.rotation]
         self._cache: dict[str, Computed[Any]] = {}
 
     def _memo_computed(self, name: str, factory: Callable[[], Computed[ComputedT]]) -> Computed[ComputedT]:
@@ -496,7 +493,12 @@ class TransformNode(Transformable):
     @property
     def _raw_geom(self) -> Computed[GeometryT]:
         """Return a reactive value of the raw geometry."""
-        return self._memo_computed("_raw_geom", lambda: Computed(lambda: self._raw_geom_now, self._dependencies))
+
+        @computed
+        def current_raw_geom() -> GeometryT:
+            return self._raw_geom_now
+
+        return self._memo_computed("_raw_geom", current_raw_geom)
 
     @property
     def geom(self) -> Computed[GeometryT]:
@@ -505,8 +507,7 @@ class TransformNode(Transformable):
 
     @property
     def geom_now(self) -> GeometryT:
-        m = self.controls.matrix
-        return affine_transform(unref(self._raw_geom), m.value)
+        return self.geom.value
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
         self.controls.matrix *= matrix

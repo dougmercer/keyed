@@ -222,10 +222,6 @@ class Curve(Shape):
         self.start: ReactiveValue[float] = Signal(0.0)
         self.end: ReactiveValue[float] = Signal(1.0)
 
-        # Add dependencies from child objects
-        for item in self.objects:
-            self._dependencies.extend(item.dependencies)
-
         # Initialize transform controls
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()

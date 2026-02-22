@@ -79,7 +79,6 @@ class Geometry(Shape):
         self.line_cap = line_cap
         self.line_join = line_join
 
-        self._dependencies.extend([self.geometry, self.buffer])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -208,7 +207,7 @@ class Geometry(Shape):
         Returns:
             The raw geometry.
         """
-        geometry = unref(self.geometry)
+        geometry = self.geometry.value
         if self.buffer.value > 0:
             return geometry.buffer(self.buffer.value)
         return geometry

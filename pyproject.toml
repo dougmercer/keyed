@@ -11,7 +11,7 @@ license = {file="LICENSE"}
 authors = [
     {name = "Doug Mercer", email = "dougmerceryt@gmail.com"}
 ]
-requires-python = ">=3.11,<3.13"  # taichi is most restrictive
+requires-python = ">=3.12,<3.13"  # taichi is most restrictive
 dependencies = [
     "av",
     "pillow",
@@ -21,7 +21,7 @@ dependencies = [
     "rich",
     "scipy",
     "shapely",
-    "signified",
+    "signified>=0.3.1",
     "tqdm",
     "typer",
 ]

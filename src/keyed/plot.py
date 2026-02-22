@@ -256,7 +256,6 @@ class ParametricPlot(Base, AxesAnchorable):
         self._calculate_curve_points()
 
         # Initialize transform controls
-        self._dependencies.extend([self.line_width, self.point_radius, self.progress])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 

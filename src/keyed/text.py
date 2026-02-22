@@ -78,7 +78,6 @@ class Text(Base):
         self.controls.delta_y.value = self.y
         self.ctx = scene.get_context()
         self.operator = operator
-        self._dependencies.extend([self.size, self.text])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -123,7 +122,7 @@ class Text(Base):
     def _extents(self) -> cairo.TextExtents:
         """Get the text dimensions."""
         with self._style():
-            return self.ctx.text_extents(unref(self.text))
+            return self.ctx.text_extents(self.text.value)
 
     @property
     def _raw_geom_now(self) -> shapely.Polygon:
@@ -186,7 +185,6 @@ class _Character(Base):
         self.controls.delta_y.value = self.y
         self.ctx = scene.get_context()
         self.operator = operator
-        self._dependencies.extend([self.size, self.text])
         assert isinstance(self.controls.matrix, Signal)
         self.controls.matrix.value = self.controls.base_matrix()
 
@@ -227,7 +225,7 @@ class _Character(Base):
     def _extents(self) -> cairo.TextExtents:
         """Get the character dimensions."""
         with self._style():
-            return self.ctx.text_extents(unref(self.text))
+            return self.ctx.text_extents(self.text.value)
 
     def is_whitespace(self) -> bool:
         """Check if this character is whitespace."""

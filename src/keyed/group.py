@@ -16,7 +16,7 @@ from typing import (
 
 import cairo
 import shapely
-from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed, unref
+from signified import Computed, HasValue, ReactiveValue, Signal, computed
 
 from .animation import Animation
 from .base import Base
@@ -225,7 +225,7 @@ class Group(Transformable, list[T]):
 
         @computed
         def f(geoms: list[shapely.geometry.base.BaseGeometry]) -> shapely.GeometryCollection:
-            return shapely.GeometryCollection([unref(geom) for geom in geoms])
+            return shapely.GeometryCollection(geoms)
 
         return f([obj.geom for obj in self])
 
@@ -238,13 +238,6 @@ class Group(Transformable, list[T]):
         for obj in self:
             obj.apply_transform(matrix)
         return self
-
-    @property
-    def dependencies(self) -> list[Variable]:
-        out: list[Variable] = []
-        for obj in self:
-            out.extend(obj.dependencies)
-        return out
 
     def cleanup(self) -> None:
         for obj in self:
