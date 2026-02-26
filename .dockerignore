@@ -14,6 +14,7 @@ doc_src/
 .hypothesis/
 .ruff_cache/
 .vscode/
+.venv/
 build/
 .pytest_cache/
 examples/
