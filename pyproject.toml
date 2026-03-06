@@ -57,13 +57,16 @@ previewer = [
     "pyside6",
     "watchdog",
 ]
+web-previewer = [
+    "watchdog",
+]
 gpu-compositor = [
     "taichi",
 ]
-all = ["keyed[lint,test,docs,login,previewer,gpu-compositor]"]
+all = ["keyed[lint,test,docs,login,previewer,web-previewer,gpu-compositor]"]
 
 [tool.setuptools.package-data]
-keyed = ["py.typed"]
+keyed = ["py.typed", "web_previewer/static/*"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-report=xml --junitxml=junit/test-results.xml --durations=10"

@@ -475,15 +475,59 @@ class Scene(TransformNode, Freezeable):
             return None
 
     @freeze
-    def preview(self, frame_rate: int = 24) -> None:
-        """Preview the scene in a window with specified frame rate.
+    def preview(
+        self,
+        frame_rate: int = 24,
+        backend: Literal["native", "web"] = "native",
+        host: str | None = None,
+        port: int | None = None,
+        open_browser: bool | None = None,
+    ) -> None:
+        """Preview the scene using the selected backend.
 
         Args:
             frame_rate: The frame rate at which to preview the animation. Default is 24 fps.
+            backend: Preview backend to use. Defaults to the native PySide6 previewer.
+            host: Host interface for the web preview backend.
+            port: Port for the web preview backend.
+            open_browser: Whether to open the browser automatically for the web preview backend.
         """
-        from .previewer import create_animation_window
+        if backend == "native":
+            from .previewer import create_animation_window
 
-        create_animation_window(self, frame_rate=frame_rate)
+            create_animation_window(self, frame_rate=frame_rate)
+            return
+
+        if backend == "web":
+            from .web_previewer import serve_scene
+
+            serve_scene(
+                self,
+                frame_rate=frame_rate,
+                host=host,
+                port=port,
+                open_browser=open_browser,
+            )
+            return
+
+        raise ValueError(f"Unknown preview backend: {backend}")
+
+    @freeze
+    def preview_web(
+        self,
+        frame_rate: int = 24,
+        host: str | None = None,
+        port: int | None = None,
+        open_browser: bool | None = None,
+    ) -> None:
+        """Preview the scene in a browser using the web preview backend."""
+        self.preview(
+            frame_rate=frame_rate,
+            backend="web",
+            host=host,
+            port=port,
+            open_browser=open_browser,
+        )
 
     def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
         """Get the drawing context for the scene.

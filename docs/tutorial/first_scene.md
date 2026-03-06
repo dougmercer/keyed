@@ -18,6 +18,12 @@ You can use the `keyed` command line interface to preview this animation by runn
 keyed first_scene.py
 ```
 
+Or, if you want a browser-based preview instead of the native PySide6 window:
+
+```console
+keyed preview first_scene.py --backend web
+```
+
 <video autoplay loop muted playsinline>
 <source src="/media/tutorial/bouncing_ball.webm" type="video/webm">
 </video>
@@ -97,4 +103,5 @@ Without adding them to the scene, our animation would be empty.
 
 ## The `keyed` CLI
 
-Finally, when we run the `keyed` CLI, it opens a previewer window and displays the scene.
+Finally, when we run the `keyed` CLI, it opens a previewer and displays the scene. The default backend is the native
+PySide6 window, but `--backend web` serves the preview in your browser instead.

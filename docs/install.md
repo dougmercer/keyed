@@ -38,7 +38,7 @@ Choose the method that works best for your system:
     - cairo
     - pip
     - pip:
-        - "keyed[previewer]"
+        - "keyed[previewer,web-previewer]"
     ```
 
     After creating your environment.yml file, run:
@@ -59,7 +59,7 @@ Choose the method that works best for your system:
 
     !!! note "Limited Capabilities"
 
-        Does not support the animation previewer window.
+        Does not support the native PySide6 previewer window. Use `keyed preview --backend web` instead.
 
 ??? info "Ubuntu/Debian"
     ```shell
@@ -69,31 +69,31 @@ Choose the method that works best for your system:
         python3-dev \
         gcc \
         ffmpeg  # Optional - enables faster rendering
-    pip install keyed[previewer]
+    pip install "keyed[previewer,web-previewer]"
     ```
 
 ??? info "macOS"
     ```shell
     brew install cairo pkg-config ffmpeg
-    pip install "keyed[previewer]"
+    pip install "keyed[previewer,web-previewer]"
     ```
 
 ??? info "Fedora"
     ```shell
     sudo dnf install cairo-devel pkg-config python3-devel ffmpeg
-    pip install keyed[previewer]
+    pip install "keyed[previewer,web-previewer]"
     ```
 
 ??? info "Arch"
     ```shell
     sudo pacman -S cairo pkgconf ffmpeg
-    pip install keyed[previewer]
+    pip install "keyed[previewer,web-previewer]"
     ```
 
 ??? info "openSUSE"
     ```shell
     sudo zypper install cairo-devel pkg-config python3-devel ffmpeg
-    pip install keyed[previewer]
+    pip install "keyed[previewer,web-previewer]"
     ```
 
 ??? warning "Windows"
@@ -102,7 +102,7 @@ Choose the method that works best for your system:
 
     1. Download and install `cairo` from [https://www.cairographics.org/download/](https://www.cairographics.org/download/).
     2. Download and install `ffmpeg` from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
-    3. `pip install keyed[previewer]`
+    3. `pip install "keyed[previewer,web-previewer]"`
 
     !!! tip "Want to contribute to keyed?"
 

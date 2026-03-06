@@ -128,3 +128,20 @@ def get_previewer_config() -> Dict[str, Any]:
     default_config.update(previewer)
 
     return default_config
+
+
+def get_web_previewer_config() -> Dict[str, Any]:
+    """Get web previewer configuration settings."""
+    config = load_config()
+    previewer = config.get("web_previewer", {})
+
+    default_config = {
+        "host": "127.0.0.1",
+        "port": 8000,
+        "open_browser": True,
+        "poll_interval_ms": 1000,
+    }
+
+    default_config.update(previewer)
+
+    return default_config

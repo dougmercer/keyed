@@ -14,6 +14,7 @@ from rich.panel import Panel
 from keyed.debug import dependency_manager
 from keyed.parser import SceneEvaluator
 from keyed.previewer import PREVIEW_AVAILABLE
+from keyed.web_previewer import WEB_PREVIEW_AVAILABLE
 from keyed.renderer import VideoFormat
 
 app = typer.Typer()
@@ -58,9 +59,17 @@ def callback(ctx: typer.Context):
 def preview(
     file: Path = typer.Argument(..., help="Python file containing a Scene definition"),
     frame_rate: int = typer.Option(24, "--frame-rate", "-r", help="Frame rate for playback"),
+    backend: str = typer.Option("native", "--backend", "-b", help="Preview backend: native or web"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host for the web preview server"),
+    port: int = typer.Option(8000, "--port", help="Port for the web preview server"),
+    open_browser: bool = typer.Option(True, "--open-browser/--no-open-browser", help="Open the browser automatically"),
 ) -> None:
-    """Preview a scene in a live-reloading window."""
-    if not PREVIEW_AVAILABLE:
+    """Preview a scene in the native window or the browser."""
+    if backend not in {"native", "web"}:
+        print_error(f"Unknown preview backend: {backend}")
+        raise typer.Exit(1)
+
+    if backend == "native" and not PREVIEW_AVAILABLE:
         from rich.console import Console
         from rich.panel import Panel
         from rich.text import Text
@@ -75,35 +84,67 @@ def preview(
         console.print(Panel(error_text, title="Error", border_style="red"))
         raise typer.Exit(1)
 
-    from PySide6.QtWidgets import QApplication
-
-    from keyed.previewer import FileWatcher, LiveReloadWindow
-
     if not file.exists():
         print_error(f"File not found: {file}")
         raise typer.Exit(1)
 
-    # Initialize scene evaluator
+    if backend == "web":
+        if not WEB_PREVIEW_AVAILABLE:
+            from rich.console import Console
+            from rich.panel import Panel
+            from rich.text import Text
+
+            console = Console(stderr=True)
+
+            error_text = Text()
+            error_text.append("Web previewer unavailable!", style="bold red")
+            error_text.append("\nInstall with: ", style="dim")
+            error_text.append("pip install 'keyed[web-previewer]'", style="bold green")
+
+            console.print(Panel(error_text, title="Error", border_style="red"))
+            raise typer.Exit(1)
+
+        from keyed.web_previewer import serve_scene_file
+
+        try:
+            serve_scene_file(
+                file,
+                frame_rate=frame_rate,
+                host=host,
+                port=port,
+                open_browser=open_browser,
+            )
+        except RuntimeError as exc:
+            print_error(str(exc))
+            raise typer.Exit(1) from exc
+        return
+
+    from PySide6.QtWidgets import QApplication
+
+    from keyed.previewer import FileWatcher, LiveReloadWindow
+
     evaluator = SceneEvaluator()
 
-    # Get initial scene
-    scene = evaluator.evaluate_file(file)
-    if not scene:
-        print_error(f"No Scene object found in {file}")
-        raise typer.Exit(1)
+    try:
+        scene = evaluator.evaluate_file(file)
+    except Exception as exc:
+        print_error(f"Failed to evaluate {file}: {exc}")
+        raise typer.Exit(1) from exc
 
-    # Create application and window
     app = QApplication(sys.argv)
     window = LiveReloadWindow(scene, frame_rate=frame_rate)
     window.show()
 
-    # Setup file watcher
     watcher = FileWatcher(file)
 
     def handle_file_changed():
         """Handle updates to the scene file."""
-        if new_scene := evaluator.evaluate_file(file):
-            window.update_scene(new_scene)
+        try:
+            new_scene = evaluator.evaluate_file(file)
+        except Exception as exc:
+            print_error(f"Failed to evaluate {file}: {exc}")
+            return
+        window.update_scene(new_scene)
 
     watcher.file_changed.connect(handle_file_changed)
     watcher.start()

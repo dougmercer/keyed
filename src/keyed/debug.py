@@ -217,3 +217,16 @@ dependency_manager.register_feature(
     ],
     error_message="Previewer not available. Install with: pip install 'keyed[previewer]'",
 )
+
+dependency_manager.register_feature(
+    feature_id="web-previewer",
+    import_path="keyed.web_previewer",
+    import_checks=[
+        {
+            "name": "watchdog",
+            "import_command": "import watchdog",
+            "version_command": "import watchdog.version; print(watchdog.version.VERSION_STRING)",
+        },
+    ],
+    error_message="Web previewer not available. Install with: pip install 'keyed[web-previewer]'",
+)

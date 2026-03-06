@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keyed Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4efe3;
+      --surface: #faf7f0;
+      --surface-2: #ede8da;
+      --ink: #27241d;
+      --muted: #7a7063;
+      --accent: #c44030;
+      --accent-soft: rgba(196,64,48,0.11);
+      --line: rgba(39,36,29,0.15);
+      --error: #8f1616;
+      --error-line: rgba(143,22,22,0.22);
+      --error-bg: rgba(143,22,22,0.06);
+      --viewport-bg: #181614;
+      --shadow: rgba(39,36,29,0.13);
+    }
+    [data-theme="dark"] {
+      --bg: #1c1b18;
+      --surface: #252320;
+      --surface-2: #2e2c28;
+      --ink: #e9e3d8;
+      --muted: #968f82;
+      --accent: #e87c43;
+      --accent-soft: rgba(232,124,67,0.14);
+      --line: rgba(233,227,216,0.11);
+      --error: #de5252;
+      --error-line: rgba(222,82,82,0.25);
+      --error-bg: rgba(222,82,82,0.07);
+      --viewport-bg: #0d0c0b;
+      --shadow: rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      padding: 1.25rem;
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Caveat', 'Comic Sans MS', cursive;
+      font-size: 16px;
+      line-height: 1.5;
+      transition: background-color 0.25s, color 0.25s;
+    }
+
+    /* dot-grid paper texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity: 0.5;
+    }
+
+    /* corner colour washes */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(ellipse 55% 40% at 8%  6%,  rgba(196,64,48,0.07)  0%, transparent 100%),
+        radial-gradient(ellipse 55% 40% at 94% 96%, rgba(50,102,89,0.08)  0%, transparent 100%);
+    }
+
+    /* ── shell ── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      max-width: 1160px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      border-radius: 3px 22px 18px 6px;
+      overflow: hidden;
+      box-shadow:
+        4px 4px 0 0 var(--line),
+        0 20px 60px var(--shadow);
+    }
+
+    /* ── topbar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.55rem 1.1rem;
+      border-bottom: 1.5px solid var(--line);
+      background-image: repeating-linear-gradient(
+        transparent, transparent 23px,
+        rgba(100,130,200,0.04) 23px, rgba(100,130,200,0.04) 24px
+      );
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .wordmark {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      position: relative;
+      line-height: 1;
+    }
+    .wordmark::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -2px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      transform: rotate(-0.5deg) skewX(-2deg);
+      opacity: 0.4;
+    }
+
+    .brand-sep { color: var(--line); flex-shrink: 0; }
+
+    .scene-label {
+      color: var(--muted);
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .topbar-end {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .status {
+      padding: 0.15rem 0.6rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-soft);
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transform: rotate(-0.7deg);
+      display: inline-block;
+    }
+
+    .theme-btn {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      border: 1.5px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: transform 0.2s ease, background 0.15s;
+    }
+    .theme-btn:hover { transform: rotate(20deg) scale(1.1); background: var(--accent-soft); }
+
+    /* ── content ── */
+    .content {
+      padding: 1rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    /* ── player: viewport + transport as one card ── */
+    .player {
+      --scene-width: 16;
+      --scene-height: 9;
+      width: min(100%, calc(72vh * (var(--scene-width) / var(--scene-height))));
+      max-width: 100%;
+      margin: 0 auto;
+      border: 2px solid var(--ink);
+      border-radius: 5px;
+      box-shadow: 4px 4px 0 0 var(--ink);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── viewport ── */
+    .viewport {
+      width: 100%;
+      aspect-ratio: var(--scene-width) / var(--scene-height);
+      position: relative;
+      background: var(--viewport-bg);
+      flex-shrink: 0;
+    }
+    .viewport img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: rgba(0,0,0,0.22);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.14s;
+      font-size: 1.1rem;
+    }
+    .overlay.visible { opacity: 1; }
+
+    /* ── transport strip ── */
+    .transport {
+      background: var(--surface-2);
+      border-top: 1.5px solid var(--line);
+      padding: 0.5rem 0.8rem 0.55rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* buttons + timecode + meta in one row */
+    .tbar {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .tbar-buttons { display: flex; gap: 0.3rem; flex-shrink: 0; }
+
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--line);
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+      line-height: 1;
+    }
+    button:hover:not([disabled]) { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--line); }
+    button:active:not([disabled]) { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--line); }
+    button[disabled] { opacity: 0.4; cursor: default; }
+
+    .btn-icon {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .btn-icon.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+    }
+    .btn-icon.primary:hover:not([disabled]) { box-shadow: 3px 3px 0 rgba(0,0,0,0.25); }
+    .btn-icon.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft); }
+
+    .timecode {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tc-sep { opacity: 0.4; }
+
+    .info {
+      flex: 1;
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── error message — hidden when empty ── */
+    .message {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 0 0.1rem;
+      opacity: 0.7;
+    }
+    .message:empty { display: none; }
+    .message.error {
+      padding: 0.5rem 0.75rem;
+      border-radius: 3px;
+      border: 1.5px solid var(--error-line);
+      background: var(--error-bg);
+      color: var(--error);
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    @media (max-width: 580px) {
+      body { padding: 0.6rem; }
+      .topbar, .content { padding-left: 0.8rem; padding-right: 0.8rem; }
+      .player { width: 100%; }
+      .info { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="wordmark">keyed</span>
+        <span class="brand-sep">&middot;</span>
+        <span id="scene-name" class="scene-label">waiting…</span>
+      </div>
+      <div class="topbar-end">
+        <span class="status" id="status-pill">Starting</span>
+        <button class="theme-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light theme">☀</button>
+      </div>
+    </header>
+    <section class="content">
+      <div class="player">
+        <div class="viewport">
+          <img id="frame-view" alt="animation frame">
+          <div class="overlay" id="overlay">Loading…</div>
+        </div>
+        <div class="transport">
+          <input id="scrubber" type="range" min="0" max="0" step="1" value="0">
+          <div class="tbar">
+            <div class="tbar-buttons">
+              <button class="btn-icon primary" id="play-toggle" title="Play / Pause">⏸</button>
+              <button class="btn-icon" id="loop-toggle" title="Toggle loop">↺</button>
+              <button class="btn-icon" id="restart-button" title="Restart">⟳</button>
+            </div>
+            <span class="timecode">
+              <span id="frame-label">0</span>
+              <span class="tc-sep">/</span>
+              <span id="time-label">0.00s</span>
+            </span>
+            <div class="info" id="meta"></div>
+          </div>
+        </div>
+      </div>
+      <p class="message" id="message"></p>
+    </section>
+  </main>
+  <script>
+    // --- theme ---
+    const themeToggle = document.getElementById("theme-toggle");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    let darkMode = localStorage.getItem("keyed-theme") !== null
+      ? localStorage.getItem("keyed-theme") === "dark"
+      : prefersDark;
+    function applyTheme(dark) {
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      themeToggle.textContent = dark ? "☽" : "☀";
+    }
+    applyTheme(darkMode);
+    themeToggle.addEventListener("click", () => {
+      darkMode = !darkMode;
+      applyTheme(darkMode);
+      localStorage.setItem("keyed-theme", darkMode ? "dark" : "light");
+    });
+
+    // --- preview ---
+    const pollIntervalMs = __POLL_INTERVAL_MS__;
+    const frameView = document.getElementById("frame-view");
+    const player = document.querySelector(".player");
+    const overlay = document.getElementById("overlay");
+    const playToggle = document.getElementById("play-toggle");
+    const loopToggle = document.getElementById("loop-toggle");
+    const restartButton = document.getElementById("restart-button");
+    const scrubber = document.getElementById("scrubber");
+    const frameLabel = document.getElementById("frame-label");
+    const timeLabel = document.getElementById("time-label");
+    const message = document.getElementById("message");
+    const meta = document.getElementById("meta");
+    const sceneName = document.getElementById("scene-name");
+    const statusPill = document.getElementById("status-pill");
+
+    let state = null;
+    let currentFrame = 0;
+    let pendingFrame = null;
+    let isPlaying = true;
+    let isLooping = true;
+    let isScrubbing = false;
+    let displayedFrameUrl = null;
+    let frameRequestId = 0;
+    let framePending = false;
+    let nextFrameDueAt = performance.now();
+
+    function clampFrame(frame) {
+      if (!state) return 0;
+      return Math.max(0, Math.min(frame, state.num_frames - 1));
+    }
+
+    function frameUrl(frame) {
+      return `${state.frame_base_url}/${frame}.png`;
+    }
+
+    function setOverlay(visible, text = "Loading…") {
+      overlay.textContent = text;
+      overlay.classList.toggle("visible", visible);
+    }
+
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle("error", isError);
+    }
+
+    function setReadyMessage() {
+      if (!state) return;
+      if (state.error) { setMessage(state.error, true); return; }
+      setMessage("", false);
+    }
+
+    function frameDurationMs() {
+      if (!state) return 0;
+      return 1000 / state.frame_rate;
+    }
+
+    function updateLabels() {
+      if (!state) return;
+      const f = isScrubbing && pendingFrame !== null ? pendingFrame : currentFrame;
+      frameLabel.textContent = `${f} / ${state.num_frames - 1}`;
+      timeLabel.textContent = `${(f / state.frame_rate).toFixed(2)}s`;
+      scrubber.value = f;
+    }
+
+    function updateButtons() {
+      playToggle.textContent = isPlaying ? "⏸" : "▶";
+      loopToggle.classList.toggle("active", isLooping);
+    }
+
+    function renderMeta() {
+      if (!state) return;
+      meta.textContent = `${state.width}×${state.height} · ${state.num_frames} frames · ${state.frame_rate} fps`;
+    }
+
+    function preloadFrames(startFrame) {
+      if (!state) return;
+      const end = Math.min(state.num_frames - 1, startFrame + 10);
+      fetch(`/prefetch?version=${state.version}&start=${startFrame}&end=${end}`, { cache: "no-store" }).catch(() => undefined);
+      for (let frame = startFrame; frame <= end; frame += 1) {
+        const img = new Image();
+        img.src = frameUrl(frame);
+      }
+    }
+
+    function displayFrame(frame, { fromScrub = false } = {}) {
+      if (!state) return;
+      const targetFrame = clampFrame(frame);
+      const nextUrl = frameUrl(targetFrame);
+      if (framePending && pendingFrame === targetFrame) {
+        return;
+      }
+      if (!framePending && targetFrame === currentFrame && displayedFrameUrl === nextUrl) {
+        if (fromScrub) {
+          pendingFrame = targetFrame;
+          updateLabels();
+        }
+        return;
+      }
+      pendingFrame = targetFrame;
+      framePending = true;
+      updateLabels();
+      setOverlay(true);
+      const requestedFrame = targetFrame;
+      const requestId = ++frameRequestId;
+      const loader = new Image();
+      loader.onload = () => {
+        if (requestId !== frameRequestId) {
+          return;
+        }
+        frameView.src = nextUrl;
+        displayedFrameUrl = nextUrl;
+        currentFrame = requestedFrame;
+        pendingFrame = null;
+        framePending = false;
+        nextFrameDueAt = performance.now() + frameDurationMs();
+        updateLabels();
+        setOverlay(false);
+        setReadyMessage();
+      };
+      loader.onerror = () => {
+        if (requestId !== frameRequestId) {
+          return;
+        }
+        pendingFrame = null;
+        framePending = false;
+        displayedFrameUrl = frameView.getAttribute("src") || displayedFrameUrl;
+        updateLabels();
+        setOverlay(false);
+        setMessage(`Failed to load frame ${requestedFrame}. Try scrubbing to it again.`, true);
+      };
+      loader.src = nextUrl;
+      preloadFrames(targetFrame + 1);
+    }
+
+    function setState(nextState) {
+      const versionChanged = !state || state.version !== nextState.version;
+      state = nextState;
+      sceneName.textContent = state.scene_name || "Untitled scene";
+      statusPill.textContent = state.status;
+      renderMeta();
+      scrubber.max = Math.max(0, state.num_frames - 1);
+      player.style.setProperty("--scene-width", String(state.width));
+      player.style.setProperty("--scene-height", String(state.height));
+
+      setReadyMessage();
+
+      if (versionChanged) {
+        currentFrame = 0;
+        pendingFrame = null;
+        framePending = false;
+        displayedFrameUrl = null;
+        nextFrameDueAt = performance.now() + frameDurationMs();
+        displayFrame(0);
+      } else {
+        updateLabels();
+      }
+    }
+
+    async function refreshState() {
+      try {
+        const response = await fetch("/state", { cache: "no-store" });
+        const nextState = await response.json();
+        setState(nextState);
+      } catch (error) {
+        setMessage(`Failed to reach preview server: ${error}`, true);
+        statusPill.textContent = "offline";
+      }
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        nextFrameDueAt = performance.now() + frameDurationMs();
+      }
+      updateButtons();
+    }
+
+    function restartPlayback() {
+      currentFrame = 0;
+      pendingFrame = null;
+      framePending = false;
+      displayedFrameUrl = null;
+      nextFrameDueAt = performance.now() + frameDurationMs();
+      displayFrame(0);
+    }
+
+    scrubber.addEventListener("pointerdown", () => {
+      isScrubbing = true;
+    });
+    scrubber.addEventListener("pointerup", () => {
+      isScrubbing = false;
+      nextFrameDueAt = performance.now() + frameDurationMs();
+    });
+    scrubber.addEventListener("input", (event) => {
+      const nextFrame = Number(event.target.value);
+      displayFrame(nextFrame, { fromScrub: true });
+    });
+    playToggle.addEventListener("click", togglePlay);
+    restartButton.addEventListener("click", restartPlayback);
+    loopToggle.addEventListener("click", () => {
+      isLooping = !isLooping;
+      updateButtons();
+    });
+
+    function tick(now) {
+      if (state && isPlaying && !isScrubbing && !state.error && !framePending && now >= nextFrameDueAt) {
+        let targetFrame = currentFrame + 1;
+        if (targetFrame >= state.num_frames) {
+          if (isLooping) {
+            targetFrame = 0;
+          } else {
+            targetFrame = state.num_frames - 1;
+            isPlaying = false;
+            updateButtons();
+          }
+        }
+        if (targetFrame !== currentFrame) {
+          displayFrame(targetFrame);
+        }
+      }
+      window.requestAnimationFrame(tick);
+    }
+
+    updateButtons();
+    refreshState();
+    window.setInterval(refreshState, pollIntervalMs);
+    window.requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
