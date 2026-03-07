@@ -21,7 +21,7 @@ dependencies = [
     "rich",
     "scipy",
     "shapely",
-    "signified>=0.3.1",
+    "signified>=0.3.2",
     "tqdm",
     "typer",
 ]
