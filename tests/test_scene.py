@@ -56,6 +56,18 @@ def test_add_flattens_selection() -> None:
     assert scene.default_layer.content == [text0, text1]
 
 
+def test_add_flattens_nested_groups() -> None:
+    scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
+    text0 = Text("Hello")
+    text1 = Text("World")
+    nested = Group([Group([text0]), Group([text1])])
+
+    scene.add(nested)
+
+    assert nested.scene is scene
+    assert scene.default_layer.content == [text0, text1]
+
+
 def test_add_flattens_nested_iterables() -> None:
     scene = Scene("test_scene", num_frames=1, output_dir=Path("/tmp"), width=200, height=100)
     text0 = Text("Hello")
