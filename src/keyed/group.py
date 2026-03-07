@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Protocol,
     Self,
     Sequence,
     SupportsIndex,
@@ -19,7 +20,6 @@ import shapely
 from signified import Computed, HasValue, ReactiveValue, Signal, computed
 
 from .animation import Animation
-from .base import Base
 from .constants import ALWAYS, LEFT, ORIGIN, RIGHT, Direction
 from .easing import EasingFunctionT, cubic_in_out, linear_in_out
 from .transforms import (
@@ -34,14 +34,42 @@ if TYPE_CHECKING:
 __all__ = ["Group", "Selection"]
 
 
-T = TypeVar("T", bound=Base)
+# Need a Protocol so that Group can contain Groups, which do not subclass Base.
+class Drawable(Protocol):
+    @property
+    def scene(self) -> Scene: ...
+
+    @property
+    def geom(self) -> Any: ...
+
+    @property
+    def geom_now(self) -> shapely.geometry.base.BaseGeometry: ...
+
+    def _animate(self, property: str, animation: Animation) -> Self: ...
+    def draw(self) -> None: ...
+    def set(self, property: str, value: Any, frame: int = ...) -> Self: ...
+    def set_literal(self, property: str, value: Any) -> Self: ...
+    def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self: ...
+    def cleanup(self) -> None: ...
+    def fade(self, value: HasValue[float], start: int, end: int, ease: EasingFunctionT = ...) -> Self: ...
+    def translate(
+        self,
+        x: HasValue[float] = ...,
+        y: HasValue[float] = ...,
+        start: int = ...,
+        end: int = ...,
+        easing: EasingFunctionT = ...,
+    ) -> Self: ...
+
+
+T = TypeVar("T", bound=Drawable)
 
 
 class Group(Transformable, list[T]):
     """A plain container of drawable objects with batch transformations/animations.
 
     Args:
-        iterable: An iterable of drawable objects.
+        iterable: An iterable of drawable objects or nested groups.
     """
 
     def __init__(self, iterable: Iterable[T] = tuple(), /) -> None:
