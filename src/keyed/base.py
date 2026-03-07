@@ -70,10 +70,6 @@ class Base(TransformNode):
         TransformNode.__init__(self, self.scene.frame)
         self.lifetime = Lifetime()
 
-    @property
-    def dependencies(self) -> list[Variable]:
-        return self._dependencies
-
     def draw(self) -> None:
         """Draw the object on the scene."""
         pass
@@ -172,13 +168,10 @@ class Base(TransformNode):
         """
         prop = getattr(self, property)
         new = step(value, frame)(prop, self.frame)
-        if isinstance(prop, Variable):
-            for p in prop._observers:
-                if isinstance(p, Variable):
-                    p.observe(new)
-                # new.subscribe(p)  # TODO: Using subscribe directly causes color interpolation test to have infinite recursion?
-
         setattr(self, property, new)
+        if isinstance(prop, Variable):
+            prop.invalidate()
+        self._invalidate_cache()
         return self
 
     def set_literal(self, property: str, value: Any) -> Self:

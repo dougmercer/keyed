@@ -1,7 +1,7 @@
 import pytest
 from signified import Signal
 
-from keyed import Animation, AnimationType
+from keyed import Animation, AnimationType, Line, Scene
 from keyed.animation import step
 
 
@@ -202,3 +202,33 @@ def test_offset() -> None:
 
     prop = step(val, animation_type=AnimationType.ADD)(prop, frame)
     assert prop.value == val + 10
+
+
+def test_set_rebinds_geometry_dependencies() -> None:
+    scene = Scene(num_frames=3, width=100, height=100)
+    line = Line(scene=scene, x0=0, y0=0, x1=10, y1=0)
+
+    line.set("x1", 20, frame=1)
+    scene.frame.value = 0
+    assert line.geom_now.coords[1][0] == 10
+
+    scene.frame.value = 1
+    assert line.geom_now.coords[1][0] == 20
+
+    line.set("x1", 30, frame=2)
+    scene.frame.value = 2
+    assert line.geom_now.coords[1][0] == 30
+
+
+def test_set_rebinds_geometry_dependencies_from_computed() -> None:
+    scene = Scene(num_frames=4, width=100, height=100)
+    base_x = Signal(10.0)
+    line = Line(scene=scene, x0=0, y0=0, x1=base_x + 0.0, y1=0)
+
+    line.set("x1", 20, frame=1)
+    scene.frame.value = 1
+    assert line.geom_now.coords[1][0] == 20
+
+    line.set("x1", 30, frame=2)
+    scene.frame.value = 2
+    assert line.geom_now.coords[1][0] == 30
