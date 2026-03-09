@@ -8,7 +8,7 @@ from collections.abc import Iterable, Sequence
 from enum import Enum
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self
+from typing import Any, Literal, Protocol, Self, runtime_checkable
 from weakref import ReferenceType, ref
 
 import cairo
@@ -21,14 +21,12 @@ from .base import Base, is_visible
 from .compositor import BlendMode, composite_layers
 from .config import get_default_render_engine
 from .constants import EXTRAS_INSTALLED
+from .context import ContextT
 from .effects import Effect
 from .group import Selection
 from .helpers import Freezeable, freeze, guard_frozen
 from .renderer import RenderEngine, Renderer, VideoFormat
 from .transforms import TransformNode
-
-if TYPE_CHECKING:
-    from .extras import FreeHandContext
 
 __all__ = ["Scene", "Layer", "resolve_scene"]
 
@@ -85,6 +83,13 @@ def _iter_base_objects(values: Iterable[NestedBase]) -> Iterable[Base]:
             yield from _iter_base_objects(value)
         else:
             raise TypeError(f"Expected Base or iterable of Base, got {type(value).__name__}")
+
+
+@runtime_checkable
+class NestedFindable(Protocol):
+    """Protocol for composite objects that can resolve their own nearest child."""
+
+    def find(self, x: float, y: float, frame: int) -> tuple[Base | None, float]: ...
 
 
 class Blend(Enum):
@@ -434,8 +439,6 @@ class Scene(TransformNode, Freezeable):
         Returns:
             The nearest object if found; otherwise, None.
         """
-        from .extras import Editor
-
         x = unref(x)
         y = unref(y)
 
@@ -448,11 +451,11 @@ class Scene(TransformNode, Freezeable):
             def check_objects(objects: Iterable[Base]) -> None:
                 nonlocal nearest, min_distance
                 for obj in objects:
-                    if isinstance(obj, Editor):
-                        editor_nearest, editor_distance = obj.find(x, y, frame)
-                        if editor_nearest and editor_distance < min_distance:
-                            nearest = editor_nearest
-                            min_distance = editor_distance
+                    if isinstance(obj, NestedFindable):
+                        nested_nearest, nested_distance = obj.find(x, y, frame)
+                        if nested_nearest and nested_distance < min_distance:
+                            nearest = nested_nearest
+                            min_distance = nested_distance
 
                     elif isinstance(obj, Selection):
                         check_objects(list(obj))
@@ -485,16 +488,15 @@ class Scene(TransformNode, Freezeable):
 
         create_animation_window(self, frame_rate=frame_rate)
 
-    def get_context(self) -> cairo.Context[cairo.SVGSurface] | FreeHandContext:
+    def get_context(self) -> ContextT | object:
         """Get the drawing context for the scene.
 
         Returns:
             The context to use for drawing.
         """
-        ctx = cairo.Context(self.surface)
-        from .extras import FreeHandContext
+        from ._extras_compat import wrap_context
 
-        return FreeHandContext(ctx) if self.freehand else ctx
+        return wrap_context(cairo.Context(self.surface), freehand=self.freehand)
 
     @property
     def _raw_geom_now(self) -> shapely.geometry.Polygon:

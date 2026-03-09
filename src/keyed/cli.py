@@ -1,5 +1,6 @@
 """Command line interface for Keyed animations."""
 
+import importlib
 import importlib.util
 import os
 import sys
@@ -44,6 +45,21 @@ def cli():
     if len(sys.argv) > 1 and sys.argv[1] not in ["info", "preview", "render", "iostream", "login", "--help"]:
         sys.argv[1:1] = ["preview"]  # Insert 'preview' command before the file path
     return app()
+
+
+def _load_keyed_extras_feature_registrations() -> str | None:
+    """Best-effort import of keyed-extras feature registrations for `keyed info`."""
+    for module_name in ("keyed_extras._dependencies", "keyed_extras.dependencies"):
+        try:
+            importlib.import_module(module_name)
+            return None
+        except ModuleNotFoundError as exc:
+            if exc.name == module_name:
+                continue
+            return str(exc)
+        except ImportError as exc:
+            return str(exc)
+    return "Unable to load keyed-extras feature registrations."
 
 
 @app.callback(no_args_is_help=True)
@@ -267,6 +283,12 @@ def info():
             return
 
         console.print(version_table)
+
+        registration_error = _load_keyed_extras_feature_registrations()
+        if registration_error:
+            console.print(
+                f"\n[yellow]Warning:[/yellow] keyed-extras diagnostics may be incomplete: {registration_error}"
+            )
 
         # Check system dependencies
         # Display feature availability
