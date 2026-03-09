@@ -164,7 +164,7 @@ class Base(TransformNode):
             Self
 
         See Also:
-            [keyed.Base.set_literal][keyed.Base.set_literal]
+            [keyed.Base.set_literal][keyed.base.Base.set_literal]
         """
         prop = getattr(self, property)
         new = step(value, frame)(prop, self.frame)
@@ -185,7 +185,7 @@ class Base(TransformNode):
             Self
 
         See Also:
-            [keyed.Base.set][keyed.Base.set]
+            [keyed.Base.set][keyed.base.Base.set]
         """
         setattr(self, property, value)
         return self

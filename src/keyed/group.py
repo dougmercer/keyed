@@ -128,7 +128,7 @@ class Group(Transformable, list[T]):
             Self
 
         See Also:
-            [keyed.Group.set_literal][keyed.Group.set_literal]
+            [keyed.Group.set_literal][keyed.group.Group.set_literal]
         """
         for item in self:
             item.set(property, value, frame)
@@ -145,7 +145,7 @@ class Group(Transformable, list[T]):
             Self
 
         See Also:
-            [keyed.Group.set][keyed.Group.set]
+            [keyed.Group.set][keyed.group.Group.set]
         """
         for item in self:
             item.set_literal(property, value)
@@ -215,7 +215,7 @@ class Group(Transformable, list[T]):
 
         Args:
             property: The property to animate.
-            animator : The animation function to apply, which should create an Animation.
+            animator: The animation function to apply, which should create an Animation.
                 See :func:`keyed.animations.stagger`.
             start: The frame at which the first animation should start.
             delay: The delay in frames before starting the next object's animation.

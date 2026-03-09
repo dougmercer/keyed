@@ -159,8 +159,7 @@ nav:
     - Keyed Extras: https://extras.keyed.dev
 
 hooks:
-  - docs/hooks/video_replace.py
-  - docs/hooks/shortcodes.py
+  - docs/hooks/tags.py
 
 plugins:
   - search
@@ -192,8 +191,5 @@ plugins:
             show_symbol_type_heading: true
             show_root_heading: true
             show_source: true
-            extensions:
-              - docs/plugins/custom_tags_extension.py
-
 extra_css:
   - stylesheets/extra.css
