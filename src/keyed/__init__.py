@@ -18,6 +18,7 @@ from . import easing  # noqa
 from . import highlight  # noqa
 from . import transforms  # noqa
 from .animation import *  # noqa
+from .builders import *  # noqa
 from .annotations import *  # noqa
 from .base import *  # noqa
 from .text import *  # noqa
