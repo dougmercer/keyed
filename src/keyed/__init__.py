@@ -33,6 +33,3 @@ from .plot import *  # noqa
 from .scene import *  # noqa
 from .group import *  # noqa
 from .shapes import *  # noqa
-
-# This must go last
-from .extras import *  # noqa
