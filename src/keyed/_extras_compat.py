@@ -52,9 +52,7 @@ def _load_post_processor():
     return post_process_tokens
 
 
-def post_process_tokens(
-    code: str, tokens: list[tuple[_TokenType, str]], filename: str
-) -> list[tuple[_TokenType, str]]:
+def post_process_tokens(code: str, tokens: list[tuple[_TokenType, str]], filename: str) -> list[tuple[_TokenType, str]]:
     """Apply extras token post-processing when available."""
     post_processor = _load_post_processor()
     if post_processor is None:
