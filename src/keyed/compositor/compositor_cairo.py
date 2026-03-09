@@ -1,4 +1,4 @@
-"""Cairo-based compositor for layer blending without Taichi dependency."""
+"""Cairo-based compositor for layer blending."""
 
 import cairo
 import numpy as np

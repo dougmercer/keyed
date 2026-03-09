@@ -9,7 +9,7 @@ def to_value(value: float | Signal) -> float:
 
 
 # Strategy for generating test values
-constant_values = st.floats(allow_nan=False, allow_infinity=False, allow_subnormal=False)  # Taichi breaks Subnormals
+constant_values = st.floats(allow_nan=False, allow_infinity=False, allow_subnormal=False)
 variable_or_constant = st.one_of(constant_values, st.builds(Signal, constant_values))
 
 
