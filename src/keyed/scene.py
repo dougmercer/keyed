@@ -488,7 +488,7 @@ class Scene(TransformNode, Freezeable):
 
         create_animation_window(self, frame_rate=frame_rate)
 
-    def get_context(self) -> ContextT | object:
+    def get_context(self) -> ContextT:
         """Get the drawing context for the scene.
 
         Returns:
