@@ -1,5 +1,7 @@
+from typing import Any, assert_type, cast
+
 import pytest
-from signified import Signal
+from signified import Computed, Signal
 
 from keyed import Animation, AnimationType, Line, Scene
 from keyed.animation import step
@@ -232,3 +234,55 @@ def test_set_rebinds_geometry_dependencies_from_computed() -> None:
     line.set("x1", 30, frame=2)
     scene.frame.value = 2
     assert line.geom_now.coords[1][0] == 30
+
+
+def test_animation_uses_active_scene_frame_by_default() -> None:
+    scene = Scene(num_frames=4, width=100, height=100)
+    prop = Signal(5)
+    anim = Animation(start=1, end=3, start_value=10, end_value=30)(prop)
+
+    scene.frame.value = 0
+    assert anim.value == 5
+
+    scene.frame.value = 2
+    assert anim.value == 20
+
+    scene.frame.value = 3
+    assert anim.value == 30
+
+
+def test_animation_requires_value_argument() -> None:
+    anim = cast(Any, Animation(start=1, end=3, start_value=10, end_value=30))
+
+    with pytest.raises(TypeError):
+        anim()
+
+
+def test_animation_explicit_frame_override_still_works() -> None:
+    Scene(num_frames=4, width=100, height=100)
+    other_frame = Signal(0)
+    anim = Animation(
+        start=1,
+        end=3,
+        start_value=10,
+        end_value=30,
+        animation_type=AnimationType.ADD,
+    )(5, other_frame)
+
+    other_frame.value = 0
+    assert anim.value == 5
+
+    other_frame.value = 2
+    assert anim.value == 25
+
+
+def test_animation_call_type_hints() -> None:
+    scene = Scene(num_frames=4, width=100, height=100)
+
+    inferred_frame_anim = Animation(start=1, end=3, start_value=10, end_value=30)(Signal(10))
+    explicit_anim = Animation(start=1, end=3, start_value=10, end_value=30)(Signal(10), scene.frame)
+    mixed_anim = Animation(start=1, end=3, start_value=10, end_value=30)("before-start")
+
+    assert_type(inferred_frame_anim, Computed[int])
+    assert_type(explicit_anim, Computed[int])
+    assert_type(mixed_anim, Computed[str | int])

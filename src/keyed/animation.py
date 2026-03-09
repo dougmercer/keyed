@@ -36,6 +36,15 @@ T = TypeVar("T")
 A = TypeVar("A")
 
 
+def _resolve_animation_frame(frame: ReactiveValue[int] | None) -> ReactiveValue[int]:
+    if frame is not None:
+        return frame
+
+    from .scene import resolve_scene
+
+    return resolve_scene().frame
+
+
 class Animation(Generic[T]):
     """Define an animation.
 
@@ -78,12 +87,11 @@ class Animation(Generic[T]):
         self.ease = ease
         self.animation_type = animation_type
 
-    def __call__(self, value: HasValue[A], frame: ReactiveValue[int]) -> Computed[A | T]:
-        """Bind the animation to the input value and frame."""
+    def _bind(self, value: HasValue[A], frame: ReactiveValue[int]) -> Computed[A | T]:
         easing = easing_function(start=self.start_frame, end=self.end_frame, ease=self.ease, frame=frame)
 
         @computed
-        def f(value: A, frame: int, easing: float, start: T, end: T) -> A | T:
+        def f(value: Any, frame: int, easing: float, start: T, end: T) -> Any:
             eased_value = end * easing + start * (1 - easing)  # pyright: ignore[reportOperatorIssue] # noqa: E501
 
             match self.animation_type:
@@ -100,12 +108,19 @@ class Animation(Generic[T]):
 
         return f(value, frame, easing, self.start_value, self.end_value)
 
+    def __call__(self, value: HasValue[A], frame: ReactiveValue[int] | None = None) -> Computed[A | T]:
+        """Bind the animation to an input value and frame.
+
+        If omitted, ``frame`` is taken from the active Scene.
+        """
+        return self._bind(value, _resolve_animation_frame(frame))
+
     def __len__(self) -> int:
         """Return number of frames in the animation."""
         return self.end_frame - self.start_frame + 1
 
 
-class Loop(Animation):
+class Loop(Animation[T], Generic[T]):
     """Loop an animation.
 
     Args:
@@ -113,10 +128,10 @@ class Loop(Animation):
         n: Number of times to loop the animation.
     """
 
-    def __init__(self, animation: Animation, n: int = 1):
+    def __init__(self, animation: Animation[T], n: int = 1):
         self.animation = animation
         self.n = n
-        super().__init__(self.start_frame, self.end_frame, 0, 0)
+        super().__init__(self.start_frame, self.end_frame, animation.start_value, animation.end_value)
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
@@ -128,7 +143,7 @@ class Loop(Animation):
         """Frame at which the animation will stop varying."""
         return self.animation.start_frame + len(self.animation) * self.n
 
-    def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
+    def __call__(self, value: HasValue[A], frame: ReactiveValue[int] | None = None) -> Computed[A | T]:
         """Apply the animation to the current value at the current frame.
 
         Args:
@@ -138,9 +153,12 @@ class Loop(Animation):
         Returns:
             The value after the animation.
         """
-        effective_frame = self.animation.start_frame + (frame - self.animation.start_frame) % len(self.animation)
-        active_anim = self.animation(value, effective_frame)
-        post_anim = self.animation(value, Signal(self.animation.end_frame))
+        resolved_frame = _resolve_animation_frame(frame)
+        effective_frame = self.animation.start_frame + (resolved_frame - self.animation.start_frame) % len(
+            self.animation
+        )
+        active_anim = self.animation._bind(value, effective_frame)
+        post_anim = self.animation._bind(value, Signal(self.animation.end_frame))
 
         @computed
         def f(frame: int, value: Any, active_anim: Any, post_anim: Any) -> Any:
@@ -151,13 +169,13 @@ class Loop(Animation):
             else:
                 return post_anim
 
-        return f(frame, value, active_anim, post_anim)
+        return f(resolved_frame, value, active_anim, post_anim)
 
     def __repr__(self) -> str:
         return f"Loop(animation={self.animation}, n={self.n})"
 
 
-class PingPong(Animation):
+class PingPong(Animation[T], Generic[T]):
     """Play an animation forward, then backwards n times.
 
     Args:
@@ -165,10 +183,10 @@ class PingPong(Animation):
         n: Number of full back-and-forth cycles
     """
 
-    def __init__(self, animation: Animation, n: int = 1):
+    def __init__(self, animation: Animation[T], n: int = 1):
         self.animation = animation
         self.n = n
-        super().__init__(self.start_frame, self.end_frame, 0, 0)
+        super().__init__(self.start_frame, self.end_frame, animation.start_value, animation.end_value)
 
     @property
     def start_frame(self) -> int:  # type: ignore[override]
@@ -189,7 +207,7 @@ class PingPong(Animation):
         """Returns the number of frames in one cycle."""
         return 2 * (len(self.animation) - 1)
 
-    def __call__(self, value: HasValue[T], frame: ReactiveValue[int]) -> Computed[T]:
+    def __call__(self, value: HasValue[A], frame: ReactiveValue[int] | None = None) -> Computed[A | T]:
         """Apply the animation to the current value at the current frame.
 
         Args:
@@ -199,6 +217,7 @@ class PingPong(Animation):
         Returns:
             The value after the animation.
         """
+        resolved_frame = _resolve_animation_frame(frame)
 
         # Calculate effective frame based on whether we're in the forward or backward cycle
         @computed
@@ -210,14 +229,14 @@ class PingPong(Animation):
                 else self.animation.end_frame - (frame_in_cycle - len(self.animation) + 1)
             )
 
-        effective_frame = effective_frame_(frame)
-        anim = self.animation(value, effective_frame)
+        effective_frame = effective_frame_(resolved_frame)
+        anim = self.animation._bind(value, effective_frame)
 
         @computed
         def f(frame: int, value: Any) -> Any:
             return value if frame < self.start_frame or frame > self.end_frame else anim.value
 
-        return f(frame, value)
+        return f(resolved_frame, value)
 
     def __repr__(self) -> str:
         return f"PingPong(animation={self.animation}, n={self.n})"

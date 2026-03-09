@@ -38,11 +38,11 @@ as_str = computed(str)
 
 black = Color(0, 0, 0)
 yellow = Color(0.75, 0.75, 0)
-x_color = Animation(120, 120 + 12, black, yellow)(black, s.frame)
-x_color = Animation(120 + 36, 120 + 48, yellow, black)(x_color, s.frame)
-reactive_color = Animation(170, 170 + 12, black, yellow)(black, s.frame)
-reactive_color = Animation(170 + 36, 170 + 48, yellow, black)(reactive_color, s.frame)
-reactive_color2 = Animation(170 + 36, 170 + 48, black, yellow)(black, s.frame)
+x_color = Animation(120, 120 + 12, black, yellow)(black)
+x_color = Animation(120 + 36, 120 + 48, yellow, black)(x_color)
+reactive_color = Animation(170, 170 + 12, black, yellow)(black)
+reactive_color = Animation(170 + 36, 170 + 48, yellow, black)(reactive_color)
+reactive_color2 = Animation(170 + 36, 170 + 48, black, yellow)(black)
 
 
 nodes: list[Selection] = []
