@@ -93,6 +93,29 @@ class Grid(Base):
         self._cell_styles: dict[tuple[int, int], _CellStyle] = {}
         self.content: Group = Group()
 
+    def _validate_grid_dimensions(self, rows: int, cols: int) -> None:
+        if rows <= 0:
+            raise ValueError(f"Grid must have at least 1 row, got {rows}.")
+        if cols <= 0:
+            raise ValueError(f"Grid must have at least 1 column, got {cols}.")
+
+    def _validate_cell_index(
+        self,
+        row: int,
+        col: int,
+        *,
+        rows: int | None = None,
+        cols: int | None = None,
+    ) -> None:
+        rows_ = unref(self.rows) if rows is None else rows
+        cols_ = unref(self.cols) if cols is None else cols
+        self._validate_grid_dimensions(rows_, cols_)
+
+        if not 0 <= row < rows_:
+            raise ValueError(f"Row index {row} is out of bounds for a grid with {rows_} rows.")
+        if not 0 <= col < cols_:
+            raise ValueError(f"Column index {col} is out of bounds for a grid with {cols_} columns.")
+
     @contextmanager
     def _style(self):
         """Set up the drawing style for the grid."""
@@ -119,61 +142,43 @@ class Grid(Base):
 
         # Then draw the grid lines
         with self._style():
-            # Apply the transformation matrix
-            self.ctx.save()
             self.ctx.transform(self.controls.matrix.value)
 
-            # Get current values
             width = unref(self._width)
             height = unref(self._height)
             rows = unref(self.rows)
             cols = unref(self.cols)
+            self._validate_grid_dimensions(rows, cols)
 
             start_x = -width / 2
             start_y = -height / 2
-
-            # Calculate cell dimensions
             cell_width = width / cols
             cell_height = height / rows
 
-            # Draw the border as a single stroke if enabled
             if self.show_border:
                 self.ctx.new_path()
                 self.ctx.rectangle(start_x, start_y, width, height)
                 self.ctx.stroke()
 
-            # Draw inner lines
             if self.show_inner_lines:
-                # Horizontal lines
                 for i in range(1, rows):
-                    # Calculate y position for this line
                     y_pos = start_y + i * cell_height
-
-                    # Start a new path for this line
                     self.ctx.new_path()
                     self.ctx.move_to(start_x, y_pos)
                     self.ctx.line_to(start_x + width, y_pos)
                     self.ctx.stroke()
 
-                # Draw vertical lines
                 for j in range(1, cols):
-                    # Calculate x position for this line
                     x_pos = start_x + j * cell_width
-
-                    # Start a new path for this line
                     self.ctx.new_path()
                     self.ctx.move_to(x_pos, start_y)
                     self.ctx.line_to(x_pos, start_y + height)
                     self.ctx.stroke()
-            self.ctx.restore()
 
-        # Then draw any content
-        if self.content is not None:
-            self.content.draw()
+        self.content.draw()
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
-        if self.content is not None:
-            self.content.apply_transform(matrix)
+        self.content.apply_transform(matrix)
         super().apply_transform(matrix)
         return self
 
@@ -188,6 +193,7 @@ class Grid(Base):
         height = unref(self._height)
         rows = unref(self.rows)
         cols = unref(self.cols)
+        self._validate_grid_dimensions(rows, cols)
 
         # Calculate cell dimensions
         cell_width = width / cols
@@ -196,33 +202,24 @@ class Grid(Base):
         start_x = -width / 2
         start_y = -height / 2
 
-        # Save context state
-        self.ctx.save()
+        with self._style():
+            self.ctx.transform(self.controls.matrix.value)
 
-        # Apply transformation matrix
-        self.ctx.transform(self.controls.matrix.value)
+            grid_alpha = unref(self.alpha)
 
-        # Draw each styled cell
-        for (row, col), style in self._cell_styles.items():
-            if row < 0 or row >= rows or col < 0 or col >= cols:
-                continue
+            for (row, col), style in self._cell_styles.items():
+                self._validate_cell_index(row, col, rows=rows, cols=cols)
 
-            # Calculate cell coordinates
-            x0 = start_x + col * cell_width
-            y0 = start_y + row * cell_height
+                x0 = start_x + col * cell_width
+                y0 = start_y + row * cell_height
 
-            # Get style properties
-            rgb = unref(style.color).rgb
-            alpha = style.alpha
+                rgb = unref(style.color).rgb
+                alpha = grid_alpha * unref(style.alpha)
 
-            # Set drawing style
-            self.ctx.set_source_rgba(*rgb, unref(alpha))
-
-            self.ctx.rectangle(x0, y0, cell_width, cell_height)
-            self.ctx.fill()
-
-        # Restore context state
-        self.ctx.restore()
+                self.ctx.new_path()
+                self.ctx.set_source_rgba(*rgb, alpha)
+                self.ctx.rectangle(x0, y0, cell_width, cell_height)
+                self.ctx.fill()
 
     @property
     def _raw_geom_now(self) -> shapely.Polygon:
@@ -250,26 +247,25 @@ class Grid(Base):
         Raises:
             ValueError: If row or column is out of bounds
         """
+        self._validate_cell_index(row, col)
+
         rows = self.rows
         cols = self.cols
         width = self._width
         height = self._height
 
-        # Calculate cell dimensions
-        cell_width = width / cols
-        cell_height = height / rows
+        @computed
+        def bounds(width: float, height: float, rows: int, cols: int) -> tuple[float, float, float, float]:
+            cell_width = width / cols
+            cell_height = height / rows
+            start_x = -width / 2
+            start_y = -height / 2
+            x0 = start_x + col * cell_width
+            y0 = start_y + row * cell_height
+            return (x0, y0, x0 + cell_width, y0 + cell_height)
 
-        # Calculate starting coordinates (grid is centered)
-        start_x = -width / 2
-        start_y = -height / 2
-
-        # Calculate cell coordinates
-        x0 = start_x + col * cell_width
-        y0 = start_y + row * cell_height
-        x1 = x0 + cell_width
-        y1 = y0 + cell_height
-
-        return (x0, y0, x1, y1)
+        b = bounds(width, height, rows, cols)
+        return (b[0], b[1], b[2], b[3])
 
     # def place_in_cell(self, obj: Base, row: int, col: int, direction: Direction = ORIGIN) -> Self:
     #     """Place an object in a specific cell (handles grid rotation/scale automatically)."""
@@ -311,8 +307,6 @@ class Grid(Base):
         return self
 
     def _add(self, obj: Base) -> None:
-        if self.content is None:
-            self.content = Group([obj])
         self.content.append(obj)
 
     def style_cell(
@@ -336,6 +330,7 @@ class Grid(Base):
         Returns:
             Self for method chaining
         """
+        self._validate_cell_index(row, col)
         style = _CellStyle(color=as_color(color), alpha=alpha)
         self._cell_styles[(row, col)] = style
         return self

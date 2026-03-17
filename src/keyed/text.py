@@ -17,7 +17,7 @@ from signified import Computed, HasValue, ReactiveValue, Signal, as_signal, comp
 from .animation import stagger
 from .base import Base
 from .color import as_color
-from .constants import LEFT, RIGHT
+from .constants import RIGHT
 from .easing import linear_in_out
 from .geometry import Geometry
 from .group import Selection
@@ -263,15 +263,23 @@ class _Character(Base):
         return TextSelection([self])
 
     @property
-    def rep_point(self) -> Computed[shapely.geometry.Point]:
-        ext = self._extents
-        font_extents = self.ctx.font_extents()
-        ascent, descent, height, _, _ = font_extents
-        advance = ext.x_advance
+    def _raw_rep_point(self) -> Computed[shapely.geometry.Point]:
+        @computed
+        def current_raw_rep_point() -> shapely.geometry.Point:
+            with self._style():
+                extents = self.ctx.text_extents(self.text.value)
+                ascent, descent, _, _, _ = self.ctx.font_extents()
 
-        center_y = (descent - ascent) / 2 - height
-        pt = Point(advance, center_y)
-        return computed(affine_transform)(pt, self.controls.matrix)
+            center_y = (descent - ascent) / 2
+            return Point(extents.x_advance, center_y)
+
+        return self._memo_computed("_raw_rep_point", current_raw_rep_point)
+
+    @property
+    def rep_point(self) -> Computed[shapely.geometry.Point]:
+        return self._memo_computed(
+            "rep_point", lambda: computed(affine_transform)(self._raw_rep_point, self.controls.matrix)
+        )
 
 
 CodeTextT = TypeVar("CodeTextT", _Character, "_Token", "_Line")
@@ -375,28 +383,52 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
             tension=tension,
         )
 
+    def _type_animate(
+        self,
+        start: int,
+        delay: int,
+        duration: int,
+        cursor: Base,
+        start_value: float,
+        end_value: float,
+        cursor_from: int | None = None,
+    ) -> Self:
+        animator = stagger(start_value=start_value, end_value=end_value, easing=linear_in_out)
+        frame = start
+        for i, char in enumerate(self):
+            assert isinstance(char, _Character)
+            anim = animator(start=frame, end=frame + duration)
+            char._animate("alpha", anim)
+            anchor = Geometry(char.rep_point, center_geometry=False)
+            if i == 0 and cursor_from is not None:
+                cursor.next_to(anchor, start=cursor_from, end=cursor_from, offset=0, direction=RIGHT)
+            cursor.next_to(anchor, start=frame, end=frame, offset=0, direction=RIGHT)
+            frame += delay
+        return self
+
     def type_on(
         self,
         start: int,
         delay: int,
         duration: int,
         cursor: Base,
+        cursor_from: int | None = None,
     ) -> Self:
-        animator = stagger(start_value=0, end_value=1, easing=linear_in_out)
+        """Animate characters appearing one-by-one while moving a cursor.
 
-        frame = start
-        for char in self:
-            assert isinstance(char, _Character)
+        Args:
+            start: Frame at which the first character begins appearing.
+            delay: Frames between each character starting to appear.
+            duration: Frames each character takes to fade in.
+            cursor: Object to move alongside the typing animation.
+            cursor_from: If given, snap the cursor to the start position at this frame
+                (useful to show the cursor blinking before typing begins).
 
-            anim = animator(start=frame, end=frame + duration)
-            char._animate("alpha", anim)
+        Example::
 
-            anchor = Geometry(char.rep_point, center_geometry=False)
-            cursor.next_to(anchor, start=frame, end=frame, offset=cursor.width, direction=RIGHT)
-
-            frame += delay
-
-        return self
+            chars.type_on(start=30, delay=2, duration=4, cursor=cursor, cursor_from=0)
+        """
+        return self._type_animate(start, delay, duration, cursor, start_value=0, end_value=1, cursor_from=cursor_from)
 
     def type_off(
         self,
@@ -404,22 +436,23 @@ class TextSelection(Selection[CodeTextT]):  # type: ignore[misc]
         delay: int,
         duration: int,
         cursor: Base,
+        cursor_from: int | None = None,
     ) -> Self:
-        animator = stagger(start_value=1, end_value=0, easing=linear_in_out)
+        """Animate characters disappearing one-by-one while moving a cursor.
 
-        frame = start
-        for char in self:
-            assert isinstance(char, _Character)
+        Args:
+            start: Frame at which the first character begins disappearing.
+            delay: Frames between each character starting to disappear.
+            duration: Frames each character takes to fade out.
+            cursor: Object to move alongside the typing animation.
+            cursor_from: If given, snap the cursor to the start position at this frame
+                (useful to show the cursor blinking before erasing begins).
 
-            anim = animator(start=frame, end=frame + duration)
-            char._animate("alpha", anim)
+        Example::
 
-            anchor = Geometry(char.rep_point, center_geometry=False)
-            cursor.next_to(anchor, start=frame, end=frame, offset=-cursor.width, direction=LEFT)
-
-            frame += delay
-
-        return self
+            chars.type_off(start=60, delay=2, duration=4, cursor=cursor, cursor_from=30)
+        """
+        return self._type_animate(start, delay, duration, cursor, start_value=1, end_value=0, cursor_from=cursor_from)
 
 
 class _Token(TextSelection[_Character]):
