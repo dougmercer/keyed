@@ -8,12 +8,12 @@ from typing import Any, Callable, Literal, Self, TypeVar, cast
 import cairo
 import shapely
 import shapely.affinity
+from shapely.geometry.base import BaseGeometry
 from signified import Computed, HasValue, ReactiveValue, Signal, Variable, computed
 
 from .animation import Animation, AnimationType
 from .constants import ALWAYS, LEFT, ORIGIN, Direction
 from .easing import EasingFunctionT, cubic_in_out
-from .types import GeometryT
 
 __all__ = ["Transformable", "TransformNode", "TransformControls"]
 
@@ -80,7 +80,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
         """Rotate the object.
@@ -106,7 +106,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
         """Scale the object.
@@ -152,7 +152,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
         """Move object to absolute coordinates.
@@ -179,7 +179,7 @@ class Transformable:
         start: int = ALWAYS,
         lock: int | None = None,
         end: int = ALWAYS,
-        from_: HasValue[GeometryT] | None = None,
+        from_: HasValue[BaseGeometry] | None = None,
         easing: EasingFunctionT = cubic_in_out,
         direction: Direction = ORIGIN,
         center_on_zero: bool = False,
@@ -223,7 +223,7 @@ class Transformable:
     def lock_on(
         self,
         target: Transformable,
-        reference: ReactiveValue[GeometryT] | None = None,
+        reference: ReactiveValue[BaseGeometry] | None = None,
         start: int = ALWAYS,
         end: int = -ALWAYS,
         direction: Direction = ORIGIN,
@@ -262,7 +262,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
     ) -> Self:
         """Shear the object.
 
@@ -299,7 +299,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
         """Stretch the object.
@@ -339,7 +339,7 @@ class Transformable:
         start: int = ALWAYS,
         end: int = ALWAYS,
         easing: EasingFunctionT = cubic_in_out,
-        center: ReactiveValue[GeometryT] | None = None,
+        center: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
     ) -> Self:
         """Scale object dimensions to match another object.
@@ -416,7 +416,7 @@ class Transformable:
     def lock_on2(
         self,
         target: Transformable,
-        reference: ReactiveValue[GeometryT] | None = None,
+        reference: ReactiveValue[BaseGeometry] | None = None,
         direction: Direction = ORIGIN,
         x: bool = True,
         y: bool = True,
@@ -482,7 +482,7 @@ class TransformNode(Transformable):
         return self
 
     @property
-    def _raw_geom_now(self) -> GeometryT:
+    def _raw_geom_now(self) -> BaseGeometry:
         """Return the geometry at the current frame, before any transformations.
 
         Returns:
@@ -491,22 +491,22 @@ class TransformNode(Transformable):
         ...
 
     @property
-    def _raw_geom(self) -> Computed[GeometryT]:
+    def _raw_geom(self) -> Computed[BaseGeometry]:
         """Return a reactive value of the raw geometry."""
 
         @computed
-        def current_raw_geom() -> GeometryT:
+        def current_raw_geom() -> BaseGeometry:
             return self._raw_geom_now
 
         return self._memo_computed("_raw_geom", current_raw_geom)
 
     @property
-    def geom(self) -> Computed[GeometryT]:
+    def geom(self) -> Computed[BaseGeometry]:
         """Return a reactive value of the transformed geometry."""
         return self._memo_computed("geom", lambda: computed(affine_transform)(self._raw_geom, self.controls.matrix))
 
     @property
-    def geom_now(self) -> GeometryT:
+    def geom_now(self) -> BaseGeometry:
         return self.geom.value
 
     def apply_transform(self, matrix: ReactiveValue[cairo.Matrix]) -> Self:
@@ -552,7 +552,7 @@ class TransformControls:
 
 
 def base_transform_matrix(
-    _raw_geom: GeometryT, delta_x: float, delta_y: float, rotation: float, scale: float
+    _raw_geom: BaseGeometry, delta_x: float, delta_y: float, rotation: float, scale: float
 ) -> cairo.Matrix:
     matrix = cairo.Matrix()
     bounds = _raw_geom.bounds
@@ -580,8 +580,8 @@ def base_transform_matrix(
 
 
 def lock_on(
-    target: ReactiveValue[GeometryT],
-    reference: ReactiveValue[GeometryT],
+    target: ReactiveValue[BaseGeometry],
+    reference: ReactiveValue[BaseGeometry],
     frame: ReactiveValue[int],
     start: int = ALWAYS,
     end: int = -ALWAYS,
@@ -634,8 +634,8 @@ def lock_on(
 
 
 def align_now(
-    target: ReactiveValue[GeometryT],
-    reference: ReactiveValue[GeometryT],
+    target: ReactiveValue[BaseGeometry],
+    reference: ReactiveValue[BaseGeometry],
     direction: Direction = ORIGIN,
     x: bool = True,
     y: bool = True,
@@ -655,8 +655,8 @@ def align_now(
 
 
 def align_to(
-    to: HasValue[GeometryT],
-    from_: HasValue[GeometryT],
+    to: HasValue[BaseGeometry],
+    from_: HasValue[BaseGeometry],
     frame: Signal[int],
     start: int = ALWAYS,
     lock: int = ALWAYS,
@@ -690,7 +690,7 @@ def align_to(
     return translate(start, lock, delta_x, delta_y, frame, ease=ease)
 
 
-def affine_transform(geom: GeometryT, matrix: cairo.Matrix | None) -> GeometryT:
+def affine_transform[T: BaseGeometry](geom: T, matrix: cairo.Matrix | None) -> T:
     """Apply the cairo.Matrix as shapely affine transform to the provided geometry.
 
     Args:
@@ -1021,7 +1021,7 @@ def next_to(
 
 
 def get_position_along_dim_now(
-    geom: GeometryT,
+    geom: BaseGeometry,
     direction: Direction = ORIGIN,
     dim: Literal[0, 1] = 0,
 ) -> float:
@@ -1043,14 +1043,14 @@ def get_position_along_dim_now(
 
 
 def get_position_along_dim(
-    geom: ReactiveValue[GeometryT],
+    geom: ReactiveValue[BaseGeometry],
     direction: Direction = ORIGIN,
     dim: Literal[0, 1] = 0,
 ) -> Computed[float]:
     return computed(get_position_along_dim_now)(geom, direction, dim)
 
 
-def get_critical_point_now(geom: GeometryT, direction: Direction = ORIGIN) -> tuple[float, float]:
+def get_critical_point_now(geom: BaseGeometry, direction: Direction = ORIGIN) -> tuple[float, float]:
     """Get value of a position along both dimensions at the current frame.
 
     Args:
@@ -1065,7 +1065,7 @@ def get_critical_point_now(geom: GeometryT, direction: Direction = ORIGIN) -> tu
 
 
 def get_critical_point(
-    geom: HasValue[GeometryT], direction: Direction = ORIGIN
+    geom: HasValue[BaseGeometry], direction: Direction = ORIGIN
 ) -> tuple[Computed[float], Computed[float]]:
     """Get value of a position along both dimensions at the current frame.
 
