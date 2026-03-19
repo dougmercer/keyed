@@ -1,4 +1,4 @@
-from keyed import Code, Scene, TextSelection, tokenize
+from keyed import Code, Scene, TextGroup, tokenize
 
 with open("examples/_example.py", "r") as f:
     content = f.read()
@@ -11,7 +11,7 @@ curve = (
     # Select specific charaters for the highlight to pass through
     # But if you want a noisier look, could just do ...
     # code.chars[:39]
-    TextSelection([code.chars[0], code.chars[10], code.chars[11], code.chars[30], code.chars[39]])
+    TextGroup([code.chars[0], code.chars[10], code.chars[11], code.chars[30], code.chars[39]])
     # Create the curve
     .highlight(alpha=0.5, line_width=5, tension=0.5)
     # Start the curve completely undrawn, and animate it being drawn
