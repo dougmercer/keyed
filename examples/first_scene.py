@@ -6,11 +6,11 @@ scene = Scene("bouncing_ball", width=1024, height=576, num_frames=120)
 # Create a ball
 ball = (
     Circle(radius=25)
-    .translate(0, 150, start=0, end=24, easing=easing.bounce_out)
+    .translate(0, 150, start=0, end=24, ease=easing.bounce_out)
     .scale(2, start=24, end=48, direction=DOWN)
     .stretch(2, 0.5, start=50, end=60, direction=DOWN)
-    .stretch(0.5, 2, start=60, end=65, easing=easing.cubic_in, direction=DOWN)
-    .translate(0, -150, start=65, end=110, easing=easing.elastic_out)
+    .stretch(0.5, 2, start=60, end=65, ease=easing.cubic_in, direction=DOWN)
+    .translate(0, -150, start=65, end=110, ease=easing.elastic_out)
 )
 
 # Make a floor for the ball to bounce on

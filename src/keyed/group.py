@@ -58,7 +58,7 @@ class Drawable(Protocol):
         y: HasValue[float] = ...,
         start: int = ...,
         end: int = ...,
-        easing: EasingFunctionT = ...,
+        ease: EasingFunctionT = ...,
     ) -> Self: ...
 
 
@@ -281,7 +281,7 @@ class Group(Transformable, list[T]):
         direction: Direction = ORIGIN,
         start: int = ALWAYS,
         end: int = ALWAYS,
-        easing: EasingFunctionT = cubic_in_out,
+        ease: EasingFunctionT = cubic_in_out,
         x: bool = True,
         y: bool = True,
     ) -> Self:
@@ -294,7 +294,7 @@ class Group(Transformable, list[T]):
             direction: Direction used to get anchor points on objects
             start: Starting frame for the animation
             end: Ending frame for the animation
-            easing: Easing function to use
+            ease: Easing function to use
             x: Whether to distribute along the x-axis
             y: Whether to distribute along the y-axis
 
@@ -330,7 +330,7 @@ class Group(Transformable, list[T]):
             dy = (start_y + t * (end_y - start_y) - obj_y) if y else 0
 
             # Apply transformation
-            obj.translate(x=dx, y=dy, start=start, end=end, easing=easing)
+            obj.translate(x=dx, y=dy, start=start, end=end, ease=ease)
 
         return self
 

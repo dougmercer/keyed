@@ -18,7 +18,7 @@ for d in [UR, RIGHT, DR, DOWN, DL, LEFT, UL, UP, ORIGIN]:
     r2.align_to(r1, start=start_frame, end=start_frame + 2, direction=d, center_on_zero=True)
     start_frame += 4
 
-r1.rotate(180, start_frame, start_frame + 80, easing=linear_in_out)
+r1.rotate(180, start_frame, start_frame + 80, ease=linear_in_out)
 for d in [UR, RIGHT, DR, DOWN, DL, LEFT, UL, UP, ORIGIN]:
     r2.align_to(r1, start=start_frame, end=start_frame + 2, direction=d, center_on_zero=True)
     start_frame += 8

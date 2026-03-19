@@ -9,8 +9,8 @@ r.translate(300, 0, 0, 24)
 
 s.add(r, r2)
 s.translate(0, 200, 0, 6)
-r.rotate(90, 12, 24, easing=linear_in_out)
-r2.rotate(90, 12, 24, easing=linear_in_out)
-r2.rotate(-90, 24, 60, center=r.geom, direction=DOWN, easing=linear_in_out)
+r.rotate(90, 12, 24, ease=linear_in_out)
+r2.rotate(90, 12, 24, ease=linear_in_out)
+r2.rotate(-90, 24, 60, center=r.geom, direction=DOWN, ease=linear_in_out)
 
 s.translate(200, 0, 30, 36)

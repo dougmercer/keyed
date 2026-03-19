@@ -4,7 +4,7 @@ scene = Scene(scene_name="easing-demo", num_frames=60, width=800, height=200)
 
 # Move a circle across the screen
 circle = Circle(x=scene.nx(0.2), y=scene.ny(0.5), radius=30).move_to(
-    x=scene.nx(0.8), y=None, start=0, end=60, easing=easing.cubic_in_out
+    x=scene.nx(0.8), y=None, start=0, end=60, ease=easing.cubic_in_out
 )
 
 # Make labels to indicate the start/end of the circle's journey

@@ -19,7 +19,7 @@ rectangles = Group(
 )
 
 # Distribute them across both x and y dimensions
-rectangles.distribute(start=50, end=70, easing=elastic_out)
+rectangles.distribute(start=50, end=70, ease=elastic_out)
 
 y = computed(lambda x: scene.ny(0.7) + 120 * math.sin(x))(scene.frame / 6)
 
@@ -34,7 +34,7 @@ circles = Group(
 )
 
 # Distribute the circles horizontally while moving
-circles.distribute(start=30, end=50, x=True, y=False, easing=cubic_in_out)
+circles.distribute(start=30, end=50, x=True, y=False, ease=cubic_in_out)
 
 # Transform the circles after they've been distributed
 circles.translate(x=100, start=60, end=80)
