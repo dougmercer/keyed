@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build >= 0.10.0"]
+build-backend = "uv_build"
 
 [project]
 name = "keyed"
@@ -29,12 +29,20 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 keywords = ["keyed", "animation", "reactive"]
 
-
 [project.optional-dependencies]
 login = ["keyed-login"]
+previewer = [
+    "pyside6",
+    "watchdog",
+]
+all = ["keyed[previewer,login]"]
+
+[dependency-groups]
 lint = [
     "ruff",
     "pyright",
@@ -52,11 +60,6 @@ docs = [
     "mkdocstrings[python]",
     "mkdocs-material-extensions",
 ]
-previewer = [
-    "pyside6",
-    "watchdog",
-]
-all = ["keyed[lint,test,docs,login,previewer]"]
 
 [tool.setuptools.package-data]
 keyed = ["py.typed"]
