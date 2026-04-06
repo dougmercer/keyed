@@ -6,7 +6,7 @@ from typing import Generator, Self, Sequence, TypeVar, cast, overload
 import cairo
 import numpy as np
 import shapely
-from signified import Computed, HasValue, ReactiveValue, Signal, Variable, as_signal, has_value, unref
+from signified import Computed, HasValue, ReactiveValue, Signal, Variable, as_rx, has_value, unref
 
 from keyed.types import Cleanable
 
@@ -35,7 +35,7 @@ def lerp(x0: T, x1: T, t: float) -> T: ...
 def lerp(x0: HasValue[T], x1: HasValue[T], t: HasValue[float]) -> T | Computed[T] | HasValue[str]:  # noqa: E302
     if has_value(x0, str) and has_value(x1, str):
         if isinstance(t, Variable):
-            return (t < 0.5).where(x0, x1)
+            return (t < 0.5).rx.where(x0, x1)
         else:
             return x0 if t < 0.5 else x1
     else:
@@ -98,18 +98,18 @@ class Line(Base):
         self.ctx = scene.get_context()
         self.start: ReactiveValue[float] = Signal(0)
         self.end: ReactiveValue[float] = Signal(1)
-        self.x0 = as_signal(x0 if x0 is not None else 0)
-        self.y0 = as_signal(y0 if y0 is not None else scene.ny(0.5))
-        self.x1 = as_signal(x1 if x1 is not None else scene.nx(1))
-        self.y1 = as_signal(y1 if y1 is not None else scene.ny(0.5))
+        self.x0 = as_rx(x0 if x0 is not None else 0)
+        self.y0 = as_rx(y0 if y0 is not None else scene.ny(0.5))
+        self.x1 = as_rx(x1 if x1 is not None else scene.nx(1))
+        self.y1 = as_rx(y1 if y1 is not None else scene.ny(0.5))
         self.color = as_color(color)
-        self.alpha = as_signal(alpha)
+        self.alpha = as_rx(alpha)
         self.dash = dash
         self.operator = operator
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         # consider adding line cap/join to args
-        self.line_width = as_signal(line_width)
+        self.line_width = as_rx(line_width)
         self.draw_fill = False
         self.draw_stroke = True
         # Todo consider how to draw outlined line.
@@ -226,22 +226,22 @@ class BezierCurve(Base):
         self.ctx = scene.get_context()
         self.start: ReactiveValue[float] = Signal(0.0)
         self.end: ReactiveValue[float] = Signal(1.0)
-        self.x0 = as_signal(x0)
-        self.y0 = as_signal(y0)
-        self.x1 = as_signal(x1)
-        self.y1 = as_signal(y1)
-        self.x2 = as_signal(x2)
-        self.y2 = as_signal(y2)
-        self.x3 = as_signal(x3)
-        self.y3 = as_signal(y3)
+        self.x0 = as_rx(x0)
+        self.y0 = as_rx(y0)
+        self.x1 = as_rx(x1)
+        self.y1 = as_rx(y1)
+        self.x2 = as_rx(x2)
+        self.y2 = as_rx(y2)
+        self.x3 = as_rx(x3)
+        self.y3 = as_rx(y3)
         self.color = as_color(color)
-        self.alpha = as_signal(alpha)
+        self.alpha = as_rx(alpha)
         self.dash = dash
         self.operator = operator
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         # consider adding line cap/join to args
-        self.line_width = as_signal(line_width)
+        self.line_width = as_rx(line_width)
         self.draw_fill = False
         self.draw_stroke = True
         # Todo consider how to draw outlined line.

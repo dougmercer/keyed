@@ -11,7 +11,7 @@ import shapely
 import shapely.geometry
 import shapely.ops
 from shapely.geometry.base import BaseGeometry
-from signified import HasValue, ReactiveValue, Signal, as_signal, unref
+from signified import HasValue, ReactiveValue, Signal, as_rx, unref
 
 from keyed.types import Cleanable
 
@@ -242,17 +242,17 @@ class Rectangle(Shape):
         self.controls.delta_x.value = self.x
         self.controls.delta_y.value = self.y
         self.controls.rotation.value = rotation
-        self._width = as_signal(width)
-        self._height = as_signal(height)
-        self.radius = as_signal(radius)
-        self.alpha = as_signal(alpha)
+        self._width = as_rx(width)
+        self._height = as_rx(height)
+        self.radius = as_rx(radius)
+        self.alpha = as_rx(alpha)
         self.color = as_color(color)
         self.fill_color = as_color(fill_color)
         self.dash = dash
         self.operator = operator
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
-        self.line_width = as_signal(line_width)
+        self.line_width = as_rx(line_width)
         self.line_cap = cairo.LINE_CAP_ROUND
         self.line_join = cairo.LINE_JOIN_ROUND
         self.round_tl = round_tl
@@ -420,15 +420,15 @@ class Circle(Shape):
         self.y = y if y is not None else scene.ny(0.5)
         self.controls.delta_x.value = self.x
         self.controls.delta_y.value = self.y
-        self.radius = as_signal(radius)
-        self.alpha = as_signal(alpha)
+        self.radius = as_rx(radius)
+        self.alpha = as_rx(alpha)
         self.color = as_color(color)
         self.fill_color = as_color(fill_color)
         self.dash = dash
         self.operator = operator
         self.draw_fill = draw_fill
         self.draw_stroke = draw_stroke
-        self.line_width = as_signal(line_width)
+        self.line_width = as_rx(line_width)
         self.line_cap = cairo.LINE_CAP_BUTT
         self.line_join = cairo.LINE_JOIN_MITER
         assert isinstance(self.controls.matrix, Signal)

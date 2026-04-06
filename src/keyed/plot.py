@@ -7,7 +7,7 @@ import cairo
 import numpy as np
 import shapely
 import shapely.affinity
-from signified import Computed, Signal, as_signal, computed
+from signified import Computed, Signal, as_rx, computed
 
 from .animation import Animation
 from .base import Base
@@ -242,8 +242,8 @@ class ParametricPlot(Base, AxesAnchorable):
         # Store styling parameters
         self.point_color = point_color
         self.curve_color = curve_color
-        self.line_width = as_signal(line_width)
-        self.point_radius = as_signal(point_radius)
+        self.line_width = as_rx(line_width)
+        self.point_radius = as_rx(point_radius)
         self.alpha = Signal(1.0)
 
         # Add progress property for animation

@@ -7,7 +7,7 @@ import cairo
 import shapely
 from shapely.affinity import translate
 from shapely.geometry.base import BaseGeometry
-from signified import HasValue, Signal, as_signal, computed, unref
+from signified import HasValue, Signal, as_rx, computed, unref
 
 from .color import Color, as_color
 from .scene import Scene
@@ -65,7 +65,7 @@ class Geometry(Shape):
         super().__init__(scene)
         scene = self.scene
         self.ctx = scene.get_context()
-        g = as_signal(geometry)
+        g = as_rx(geometry)
         self.geometry = center(g, scene) if center_geometry else g
         self.color = as_color(color)
         self.fill_color = as_color(fill_color)

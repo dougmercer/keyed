@@ -11,7 +11,7 @@ import shapely
 import shapely.ops
 from pygments.token import Token as PygmentsToken
 from pygments.token import _TokenType as Pygments_TokenType
-from signified import HasValue, ReactiveValue, Signal, as_signal, unref
+from signified import HasValue, ReactiveValue, Signal, as_rx, unref
 
 from .base import Base
 from .color import as_color
@@ -63,15 +63,15 @@ class Text(Base):
     ):
         super().__init__(scene)
         scene = self.scene
-        self.text = as_signal(text)
+        self.text = as_rx(text)
         self.font = font
         self.color = as_color(color)
         self.fill_color = as_color(fill_color) if fill_color is not None else None
-        self.alpha = as_signal(alpha)
-        self.line_width = as_signal(line_width)
+        self.alpha = as_rx(alpha)
+        self.line_width = as_rx(line_width)
         self.slant = slant
         self.weight = weight
-        self.size: ReactiveValue[float] = as_signal(size)
+        self.size: ReactiveValue[float] = as_rx(size)
         self.x = x if x is not None else scene.nx(0.5)
         self.y = y if y is not None else scene.ny(0.5)
         self.controls.delta_x.value = self.x
@@ -170,13 +170,13 @@ class _Character(Base):
     ):
         super().__init__(scene)
         self.scene = scene
-        self.text = as_signal(char)
+        self.text = as_rx(char)
         self.token_type = token_type
         self.code = code
         self.font = font
         self.color = as_color(style.color)
-        self.alpha = as_signal(alpha)
-        self.size = as_signal(size)
+        self.alpha = as_rx(alpha)
+        self.size = as_rx(size)
         self.slant = style.to_cairo()["slant"]
         self.weight = style.to_cairo()["weight"]
         self.x = x
